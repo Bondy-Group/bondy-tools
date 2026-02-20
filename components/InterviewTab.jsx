@@ -57,7 +57,6 @@ function CandidateSearch({ onSelect, selectedCandidate }) {
           onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
           placeholder="Buscar por nombre..."
           className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
-          style={{ focusRingColor: BONDY_ORANGE }}
         />
         {loading && (
           <div className="absolute right-3 top-3.5">
@@ -93,76 +92,25 @@ function CandidateSearch({ onSelect, selectedCandidate }) {
   )
 }
 
-function generateScreeningHTML(markdownReport, candidateName) {
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Screening Report - ${candidateName || 'Candidato'}</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: #f8f9fa; color: #1a1a2e; line-height: 1.6; }
-  .container { max-width: 800px; margin: 0 auto; background: white; min-height: 100vh; }
-  .header { background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%); padding: 40px; }
-  .logo { width: 44px; height: 44px; background: linear-gradient(135deg, #F47C20, #e86c10); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 18px; margin-bottom: 24px; }
-  .header h1 { color: white; font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-  .header p { color: rgba(147,197,253,0.8); font-size: 14px; }
-  .content { padding: 40px; }
-  h2 { color: #1a1a2e; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid #F47C20; }
-  h2:first-child { margin-top: 0; }
-  p { color: #374151; font-size: 15px; line-height: 1.8; margin-bottom: 12px; }
-  strong { color: #1a1a2e; }
-  .footer { border-top: 1px solid #e5e7eb; padding: 24px 40px; background: #f9fafb; text-align: center; color: #9ca3af; font-size: 12px; }
-</style>
-</head>
-<body>
-<div class="container">
-  <div class="header">
-    <div class="logo">B</div>
-    <h1>Screening Report</h1>
-    <p>${candidateName || 'Candidato'} · Generado por Bondy Tools</p>
-  </div>
-  <div class="content">
-    ${markdownToHtml(markdownReport)}
-  </div>
-  <div class="footer">
-    Generado por Bondy Tools · ${new Date().toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
-  </div>
-</div>
-</body>
-</html>`
-}
-
-function markdownToHtml(md) {
-  if (!md) return ''
-  return md
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^### (.+)$/gm, '<h3 style="font-size:14px;font-weight:600;color:#374151;margin:16px 0 8px;">$1</h3>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^- (.+)$/gm, '<li style="margin-bottom:6px;color:#374151;font-size:15px;">$1</li>')
-    .replace(/((<li[^>]*>.*<\/li>\n?)+)/g, '<ul style="padding-left:20px;margin:8px 0 16px;">$1</ul>')
-    .replace(/^(?!<[hlu]|$)(.+)$/gm, '<p>$1</p>')
-    .replace(/\n{2,}/g, '')
-}
-
 export default function InterviewTab() {
   const [transcript, setTranscript] = useState('')
   const [summary, setSummary] = useState('')
-  const [candidateName, setCandidateName] = useState('')
+  const [recruiterName, setRecruiterName] = useState('')
   const [selectedCandidate, setSelectedCandidate] = useState(null)
   const [loading, setLoading] = useState(false)
   const [report, setReport] = useState(null)
   const [saving, setSaving] = useState(false)
   const [savedToAirtable, setSavedToAirtable] = useState(false)
   const [error, setError] = useState(null)
+  const [copied, setCopied] = useState(false)
+  const reportRef = useRef(null)
 
   const generate = async () => {
     if (!transcript.trim()) return
     setLoading(true)
     setError(null)
     setReport(null)
+    setSavedToAirtable(false)
 
     try {
       const res = await fetch('/api/generate', {
@@ -172,19 +120,29 @@ export default function InterviewTab() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      setReport(data.result)
+
+      // Append recruiter line if provided
+      const fullReport = recruiterName
+        ? `${data.result}\n\nEntrevista realizada por ${recruiterName}`
+        : data.result
+
+      setReport(fullReport)
 
       // Auto-save to Airtable if candidate selected
       if (selectedCandidate) {
         setSaving(true)
-        const html = generateScreeningHTML(data.result, selectedCandidate.name)
-        await fetch('/api/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recordId: selectedCandidate.id, reportHtml: data.result }),
-        })
-        setSavedToAirtable(true)
-        setSaving(false)
+        try {
+          await fetch('/api/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recordId: selectedCandidate.id, reportHtml: fullReport }),
+          })
+          setSavedToAirtable(true)
+        } catch (e) {
+          console.error('Airtable save error:', e)
+        } finally {
+          setSaving(false)
+        }
       }
     } catch (e) {
       setError(e.message)
@@ -193,17 +151,21 @@ export default function InterviewTab() {
     }
   }
 
-  const downloadHTML = () => {
+  const copyToClipboard = async () => {
     if (!report) return
-    const name = selectedCandidate?.name || candidateName || 'candidato'
-    const html = generateScreeningHTML(report, name)
-    const blob = new Blob([html], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `screening-${name.toLowerCase().replace(/\s+/g, '-')}.html`
-    a.click()
-    URL.revokeObjectURL(url)
+    try {
+      await navigator.clipboard.writeText(report)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch (e) {
+      // Fallback: select the textarea text
+      if (reportRef.current) {
+        reportRef.current.select()
+        document.execCommand('copy')
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2500)
+      }
+    }
   }
 
   const inputStyle = {
@@ -216,6 +178,7 @@ export default function InterviewTab() {
     resize: 'vertical',
     fontFamily: 'Inter, sans-serif',
     transition: 'border-color 0.2s',
+    backgroundColor: 'white',
   }
 
   return (
@@ -226,20 +189,32 @@ export default function InterviewTab() {
 
         <CandidateSearch onSelect={setSelectedCandidate} selectedCandidate={selectedCandidate} />
 
-        {!selectedCandidate && (
-          <div>
+        <div className="grid grid-cols-2 gap-4">
+          {!selectedCandidate && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Nombre del candidato <span className="text-gray-400 font-normal">(si no está en Airtable)</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Martín González"
+                style={{ ...inputStyle, paddingTop: '10px', paddingBottom: '10px', resize: 'none' }}
+              />
+            </div>
+          )}
+          <div className={selectedCandidate ? 'col-span-2' : ''}>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Nombre del candidato <span className="text-gray-400 font-normal">(para el reporte)</span>
+              Recruiter <span className="text-gray-400 font-normal">(aparece al pie del reporte)</span>
             </label>
             <input
               type="text"
-              value={candidateName}
-              onChange={e => setCandidateName(e.target.value)}
-              placeholder="Ej: Martín González"
-              style={{ ...inputStyle, paddingTop: '10px', paddingBottom: '10px' }}
+              value={recruiterName}
+              onChange={e => setRecruiterName(e.target.value)}
+              placeholder="Ej: Lucía Palomeque"
+              style={{ ...inputStyle, paddingTop: '10px', paddingBottom: '10px', resize: 'none' }}
             />
           </div>
-        )}
+        </div>
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -298,34 +273,42 @@ export default function InterviewTab() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style={{ background: BONDY_ORANGE }}>
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+                style={{ background: BONDY_ORANGE }}
+              >
                 ✓
               </div>
               <div>
                 <p className="font-semibold text-gray-800 text-sm">Reporte generado</p>
-                {savedToAirtable && (
-                  <p className="text-xs text-green-600">✓ Guardado en Airtable</p>
-                )}
-                {saving && (
-                  <p className="text-xs text-blue-500">Guardando en Airtable...</p>
-                )}
+                {saving && <p className="text-xs text-blue-500">Guardando en Airtable...</p>}
+                {savedToAirtable && <p className="text-xs text-green-600">✓ Guardado en Airtable</p>}
               </div>
             </div>
             <button
-              onClick={downloadHTML}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ background: `linear-gradient(135deg, ${BONDY_ORANGE}, #e86c10)` }}
+              onClick={copyToClipboard}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+              style={{ background: copied ? '#22c55e' : `linear-gradient(135deg, ${BONDY_ORANGE}, #e86c10)` }}
             >
-              ⬇ Descargar HTML
+              {copied ? '✓ Copiado!' : '📋 Copiar texto'}
             </button>
           </div>
+
+          {/* Hidden textarea for fallback copy */}
+          <textarea
+            ref={reportRef}
+            value={report}
+            readOnly
+            style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}
+          />
+
           <div className="p-6">
-            <div
-              className="prose max-w-none text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"
+            <pre
+              className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"
               style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.8 }}
             >
               {report}
-            </div>
+            </pre>
           </div>
         </div>
       )}
