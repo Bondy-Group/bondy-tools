@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 const BONDY_ORANGE = '#F47C20'
-const BONDY_DARK = '#1A1A2E'
 
+// ─── Candidate search ────────────────────────────────────────────────────────
 function CandidateSearch({ onSelect, selectedCandidate }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
@@ -22,11 +22,8 @@ function CandidateSearch({ onSelect, selectedCandidate }) {
         const data = await res.json()
         setResults(data.candidates || [])
         setShowDropdown(true)
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
+      } catch (e) { console.error(e) }
+      finally { setLoading(false) }
     }, 400)
   }, [])
 
@@ -36,18 +33,16 @@ function CandidateSearch({ onSelect, selectedCandidate }) {
     if (selectedCandidate) onSelect(null)
   }
 
-  const handleSelect = (candidate) => {
-    onSelect(candidate)
-    setQuery(candidate.name)
+  const handleSelect = (c) => {
+    onSelect(c)
+    setQuery(c.name)
     setShowDropdown(false)
     setResults([])
   }
 
   return (
     <div className="relative">
-      <label className="block text-sm font-semibold text-gray-700 mb-1">
-        Candidato en Airtable <span className="text-gray-400 font-normal">(opcional — para guardar automáticamente)</span>
-      </label>
+      <Label>Candidato en Airtable <Muted>(opcional — para guardar automáticamente)</Muted></Label>
       <div className="relative">
         <input
           type="text"
@@ -56,47 +51,105 @@ function CandidateSearch({ onSelect, selectedCandidate }) {
           onFocus={() => results.length > 0 && setShowDropdown(true)}
           onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
           placeholder="Buscar por nombre..."
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+          style={inputStyle}
         />
-        {loading && (
-          <div className="absolute right-3 top-3.5">
-            <div className="w-4 h-4 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin" />
-          </div>
-        )}
-        {selectedCandidate && (
-          <div className="absolute right-3 top-3.5 text-green-500 text-sm">✓</div>
-        )}
+        {loading && <Spinner />}
+        {selectedCandidate && <div className="absolute right-3 top-3 text-green-500 text-sm">✓</div>}
       </div>
       {showDropdown && results.length > 0 && (
         <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-xl mt-1 shadow-lg max-h-48 overflow-y-auto">
-          {results.map((c) => (
-            <button
-              key={c.id}
-              className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0"
-              onClick={() => handleSelect(c)}
-            >
+          {results.map(c => (
+            <button key={c.id} className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0" onClick={() => handleSelect(c)}>
               <div className="font-medium text-gray-800 text-sm">{c.name}</div>
-              <div className="text-gray-400 text-xs mt-0.5">
-                {[c.profile, c.seniority, c.status].filter(Boolean).join(' · ')}
-              </div>
+              <div className="text-gray-400 text-xs mt-0.5">{[c.profile, c.seniority, c.status].filter(Boolean).join(' · ')}</div>
             </button>
           ))}
         </div>
       )}
       {selectedCandidate && (
-        <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
-          ✓ {selectedCandidate.name} seleccionado — el reporte se guardará en Airtable automáticamente
-        </div>
+        <p className="mt-1.5 text-xs text-green-600">✓ {selectedCandidate.name} — el reporte se guardará en Airtable automáticamente</p>
       )}
     </div>
   )
 }
 
+// ─── Client selector ─────────────────────────────────────────────────────────
+function ClientSelector({ value, onChange, onLanguageChange }) {
+  const [clients, setClients] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/clients')
+      .then(r => r.json())
+      .then(d => { setClients(d.clients || []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const handleChange = (e) => {
+    const selected = clients.find(c => c.id === e.target.value) || null
+    onChange(selected)
+    // Auto-set language based on client name heuristic
+    // You can improve this later by adding a "language" field to Airtable
+    if (selected) {
+      const name = selected.name.toLowerCase()
+      const looksEnglish = !name.match(/\b(sa|srl|ltda|arg|mex|col|chile|peru|brasil|latam)\b/i)
+      onLanguageChange(looksEnglish ? 'en' : 'es')
+    }
+  }
+
+  return (
+    <div>
+      <Label>Cliente <Muted>(opcional)</Muted></Label>
+      <select
+        value={value?.id || ''}
+        onChange={handleChange}
+        style={{ ...inputStyle, paddingTop: '10px', paddingBottom: '10px', cursor: 'pointer' }}
+        disabled={loading}
+      >
+        <option value="">{loading ? 'Cargando clientes...' : 'Seleccionar cliente...'}</option>
+        {clients.map(c => (
+          <option key={c.id} value={c.id}>{c.name}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+// ─── Small helpers ────────────────────────────────────────────────────────────
+const inputStyle = {
+  width: '100%',
+  border: '1.5px solid #e5e7eb',
+  borderRadius: '12px',
+  padding: '12px 16px',
+  fontSize: '14px',
+  outline: 'none',
+  resize: 'vertical',
+  fontFamily: 'Inter, sans-serif',
+  backgroundColor: 'white',
+}
+
+const Label = ({ children }) => (
+  <label className="block text-sm font-semibold text-gray-700 mb-1">{children}</label>
+)
+const Muted = ({ children }) => (
+  <span className="text-gray-400 font-normal">{children}</span>
+)
+const Spinner = () => (
+  <div className="absolute right-3 top-3.5">
+    <div className="w-4 h-4 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin" />
+  </div>
+)
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function InterviewTab() {
   const [transcript, setTranscript] = useState('')
   const [summary, setSummary] = useState('')
+  const [jd, setJd] = useState('')
+  const [linkedin, setLinkedin] = useState('')
   const [recruiterName, setRecruiterName] = useState('')
   const [selectedCandidate, setSelectedCandidate] = useState(null)
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [language, setLanguage] = useState('es')
   const [loading, setLoading] = useState(false)
   const [report, setReport] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -116,19 +169,25 @@ export default function InterviewTab() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript, summary, type: 'screening' }),
+        body: JSON.stringify({
+          transcript,
+          summary,
+          jd,
+          linkedin,
+          language,
+          clientName: selectedClient?.name || null,
+          type: 'screening',
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
 
-      // Append recruiter line if provided
       const fullReport = recruiterName
-        ? `${data.result}\n\nEntrevista realizada por ${recruiterName}`
+        ? `${data.result}\n\n${language === 'en' ? 'Interview conducted by' : 'Entrevista realizada por'} ${recruiterName}`
         : data.result
 
       setReport(fullReport)
 
-      // Auto-save to Airtable if candidate selected
       if (selectedCandidate) {
         setSaving(true)
         try {
@@ -138,11 +197,8 @@ export default function InterviewTab() {
             body: JSON.stringify({ recordId: selectedCandidate.id, reportHtml: fullReport }),
           })
           setSavedToAirtable(true)
-        } catch (e) {
-          console.error('Airtable save error:', e)
-        } finally {
-          setSaving(false)
-        }
+        } catch (e) { console.error('Airtable save error:', e) }
+        finally { setSaving(false) }
       }
     } catch (e) {
       setError(e.message)
@@ -157,8 +213,7 @@ export default function InterviewTab() {
       await navigator.clipboard.writeText(report)
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
-    } catch (e) {
-      // Fallback: select the textarea text
+    } catch {
       if (reportRef.current) {
         reportRef.current.select()
         document.execCommand('copy')
@@ -168,71 +223,91 @@ export default function InterviewTab() {
     }
   }
 
-  const inputStyle = {
-    width: '100%',
-    border: '1.5px solid #e5e7eb',
-    borderRadius: '12px',
-    padding: '12px 16px',
-    fontSize: '14px',
-    outline: 'none',
-    resize: 'vertical',
-    fontFamily: 'Inter, sans-serif',
-    transition: 'border-color 0.2s',
-    backgroundColor: 'white',
-  }
-
   return (
     <div className="space-y-6">
-      {/* Input Card */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5 shadow-sm">
         <h2 className="font-bold text-gray-800 text-lg">Nueva entrevista</h2>
 
-        <CandidateSearch onSelect={setSelectedCandidate} selectedCandidate={selectedCandidate} />
-
+        {/* Row 1: Candidate + Client */}
         <div className="grid grid-cols-2 gap-4">
-          {!selectedCandidate && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Nombre del candidato <span className="text-gray-400 font-normal">(si no está en Airtable)</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Ej: Martín González"
-                style={{ ...inputStyle, paddingTop: '10px', paddingBottom: '10px', resize: 'none' }}
-              />
-            </div>
-          )}
-          <div className={selectedCandidate ? 'col-span-2' : ''}>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Recruiter <span className="text-gray-400 font-normal">(aparece al pie del reporte)</span>
-            </label>
+          <CandidateSearch onSelect={setSelectedCandidate} selectedCandidate={selectedCandidate} />
+          <ClientSelector
+            value={selectedClient}
+            onChange={setSelectedClient}
+            onLanguageChange={setLanguage}
+          />
+        </div>
+
+        {/* Row 2: LinkedIn + Recruiter + Language */}
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <Label>LinkedIn URL <Muted>(opcional)</Muted></Label>
+            <input
+              type="text"
+              value={linkedin}
+              onChange={e => setLinkedin(e.target.value)}
+              placeholder="linkedin.com/in/..."
+              style={{ ...inputStyle, resize: 'none', paddingTop: '10px', paddingBottom: '10px' }}
+            />
+          </div>
+          <div>
+            <Label>Recruiter <Muted>(pie del reporte)</Muted></Label>
             <input
               type="text"
               value={recruiterName}
               onChange={e => setRecruiterName(e.target.value)}
               placeholder="Ej: Lucía Palomeque"
-              style={{ ...inputStyle, paddingTop: '10px', paddingBottom: '10px', resize: 'none' }}
+              style={{ ...inputStyle, resize: 'none', paddingTop: '10px', paddingBottom: '10px' }}
             />
+          </div>
+          <div>
+            <Label>Idioma del reporte</Label>
+            <div className="flex gap-2 mt-1">
+              {['es', 'en'].map(lang => (
+                <button
+                  key={lang}
+                  onClick={() => setLanguage(lang)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all"
+                  style={{
+                    background: language === lang ? BONDY_ORANGE : 'white',
+                    color: language === lang ? 'white' : '#6b7280',
+                    borderColor: language === lang ? BONDY_ORANGE : '#e5e7eb',
+                  }}
+                >
+                  {lang === 'es' ? '🇦🇷 Español' : '🇺🇸 English'}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
+        {/* Job Description */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Resumen de Gemini <span className="text-gray-400 font-normal">(opcional pero recomendado)</span>
-          </label>
+          <Label>Job Description <Muted>(opcional — mejora el análisis de match)</Muted></Label>
           <textarea
-            value={summary}
-            onChange={e => setSummary(e.target.value)}
-            placeholder="Pegá el resumen que generó Gemini de la entrevista..."
+            value={jd}
+            onChange={e => setJd(e.target.value)}
+            placeholder="Pegá la job description de la posición..."
             rows={4}
             style={inputStyle}
           />
         </div>
 
+        {/* Gemini summary */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Transcripción completa <span className="text-red-400">*</span>
-          </label>
+          <Label>Resumen de Gemini <Muted>(opcional pero recomendado)</Muted></Label>
+          <textarea
+            value={summary}
+            onChange={e => setSummary(e.target.value)}
+            placeholder="Pegá el resumen que generó Gemini de la entrevista..."
+            rows={3}
+            style={inputStyle}
+          />
+        </div>
+
+        {/* Transcript */}
+        <div>
+          <Label>Transcripción completa <span className="text-red-400">*</span></Label>
           <textarea
             value={transcript}
             onChange={e => setTranscript(e.target.value)}
@@ -248,9 +323,7 @@ export default function InterviewTab() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
-            ⚠️ {error}
-          </div>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">⚠️ {error}</div>
         )}
 
         <button
@@ -268,17 +341,12 @@ export default function InterviewTab() {
         </button>
       </div>
 
-      {/* Report Output */}
+      {/* Report output */}
       {report && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
-                style={{ background: BONDY_ORANGE }}
-              >
-                ✓
-              </div>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style={{ background: BONDY_ORANGE }}>✓</div>
               <div>
                 <p className="font-semibold text-gray-800 text-sm">Reporte generado</p>
                 {saving && <p className="text-xs text-blue-500">Guardando en Airtable...</p>}
@@ -293,20 +361,9 @@ export default function InterviewTab() {
               {copied ? '✓ Copiado!' : '📋 Copiar texto'}
             </button>
           </div>
-
-          {/* Hidden textarea for fallback copy */}
-          <textarea
-            ref={reportRef}
-            value={report}
-            readOnly
-            style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}
-          />
-
+          <textarea ref={reportRef} value={report} readOnly style={{ position: 'absolute', left: '-9999px' }} />
           <div className="p-6">
-            <pre
-              className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap"
-              style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.8 }}
-            >
+            <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap" style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.8 }}>
               {report}
             </pre>
           </div>

@@ -6,22 +6,26 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request) {
   try {
-    const { transcript, type, clientProfile, summary } = await request.json()
+    const { transcript, type, clientProfile, summary, language, clientName, jd, linkedin } = await request.json()
 
     if (!transcript) {
       return NextResponse.json({ error: 'Transcript requerido' }, { status: 400 })
     }
 
     if (type === 'screening') {
-      const userContent = summary
-        ? `RESUMEN DE LA ENTREVISTA:\n${summary}\n\n---\nTRANSCRIPCIÓN:\n${transcript}`
-        : `TRANSCRIPCIÓN DE LA ENTREVISTA:\n${transcript}`
+      const prompt = SCREENING_PROMPT({ language, clientName, jd })
+
+      let userContent = ''
+      if (linkedin) userContent += `LINKEDIN URL: ${linkedin}\n\n`
+      if (jd) userContent += `JOB DESCRIPTION:\n${jd}\n\n---\n\n`
+      if (summary) userContent += `INTERVIEW SUMMARY:\n${summary}\n\n---\n\n`
+      userContent += `INTERVIEW TRANSCRIPT:\n${transcript}`
 
       const message = await client.messages.create({
         model: 'claude-opus-4-6',
-        max_tokens: 2000,
+        max_tokens: 2500,
         messages: [
-          { role: 'user', content: `${SCREENING_PROMPT}\n\n---\n\n${userContent}` }
+          { role: 'user', content: `${prompt}\n\n---\n\n${userContent}` }
         ]
       })
 
