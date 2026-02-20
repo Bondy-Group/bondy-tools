@@ -1,121 +1,9 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 
 const BONDY_ORANGE = '#F47C20'
 
-// ─── Candidate search ────────────────────────────────────────────────────────
-function CandidateSearch({ onSelect, selectedCandidate }) {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [showDropdown, setShowDropdown] = useState(false)
-  const debounceRef = useRef(null)
-
-  const search = useCallback((value) => {
-    clearTimeout(debounceRef.current)
-    if (value.length < 2) { setResults([]); return }
-    debounceRef.current = setTimeout(async () => {
-      setLoading(true)
-      try {
-        const res = await fetch(`/api/candidates?q=${encodeURIComponent(value)}`)
-        const data = await res.json()
-        setResults(data.candidates || [])
-        setShowDropdown(true)
-      } catch (e) { console.error(e) }
-      finally { setLoading(false) }
-    }, 400)
-  }, [])
-
-  const handleChange = (e) => {
-    setQuery(e.target.value)
-    search(e.target.value)
-    if (selectedCandidate) onSelect(null)
-  }
-
-  const handleSelect = (c) => {
-    onSelect(c)
-    setQuery(c.name)
-    setShowDropdown(false)
-    setResults([])
-  }
-
-  return (
-    <div className="relative">
-      <Label>Candidato en Airtable <Muted>(opcional — para guardar automáticamente)</Muted></Label>
-      <div className="relative">
-        <input
-          type="text"
-          value={query}
-          onChange={handleChange}
-          onFocus={() => results.length > 0 && setShowDropdown(true)}
-          onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-          placeholder="Buscar por nombre..."
-          style={inputStyle}
-        />
-        {loading && <Spinner />}
-        {selectedCandidate && <div className="absolute right-3 top-3 text-green-500 text-sm">✓</div>}
-      </div>
-      {showDropdown && results.length > 0 && (
-        <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-xl mt-1 shadow-lg max-h-48 overflow-y-auto">
-          {results.map(c => (
-            <button key={c.id} className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0" onClick={() => handleSelect(c)}>
-              <div className="font-medium text-gray-800 text-sm">{c.name}</div>
-              <div className="text-gray-400 text-xs mt-0.5">{[c.profile, c.seniority, c.status].filter(Boolean).join(' · ')}</div>
-            </button>
-          ))}
-        </div>
-      )}
-      {selectedCandidate && (
-        <p className="mt-1.5 text-xs text-green-600">✓ {selectedCandidate.name} — el reporte se guardará en Airtable automáticamente</p>
-      )}
-    </div>
-  )
-}
-
-// ─── Client selector ─────────────────────────────────────────────────────────
-function ClientSelector({ value, onChange, onLanguageChange }) {
-  const [clients, setClients] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch('/api/clients')
-      .then(r => r.json())
-      .then(d => { setClients(d.clients || []); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
-
-  const handleChange = (e) => {
-    const selected = clients.find(c => c.id === e.target.value) || null
-    onChange(selected)
-    // Auto-set language based on client name heuristic
-    // You can improve this later by adding a "language" field to Airtable
-    if (selected) {
-      const name = selected.name.toLowerCase()
-      const looksEnglish = !name.match(/\b(sa|srl|ltda|arg|mex|col|chile|peru|brasil|latam)\b/i)
-      onLanguageChange(looksEnglish ? 'en' : 'es')
-    }
-  }
-
-  return (
-    <div>
-      <Label>Cliente <Muted>(opcional)</Muted></Label>
-      <select
-        value={value?.id || ''}
-        onChange={handleChange}
-        style={{ ...inputStyle, paddingTop: '10px', paddingBottom: '10px', cursor: 'pointer' }}
-        disabled={loading}
-      >
-        <option value="">{loading ? 'Cargando clientes...' : 'Seleccionar cliente...'}</option>
-        {clients.map(c => (
-          <option key={c.id} value={c.id}>{c.name}</option>
-        ))}
-      </select>
-    </div>
-  )
-}
-
-// ─── Small helpers ────────────────────────────────────────────────────────────
 const inputStyle = {
   width: '100%',
   border: '1.5px solid #e5e7eb',
@@ -134,26 +22,17 @@ const Label = ({ children }) => (
 const Muted = ({ children }) => (
   <span className="text-gray-400 font-normal">{children}</span>
 )
-const Spinner = () => (
-  <div className="absolute right-3 top-3.5">
-    <div className="w-4 h-4 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin" />
-  </div>
-)
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export default function InterviewTab() {
   const [transcript, setTranscript] = useState('')
   const [summary, setSummary] = useState('')
   const [jd, setJd] = useState('')
   const [linkedin, setLinkedin] = useState('')
   const [recruiterName, setRecruiterName] = useState('')
-  const [selectedCandidate, setSelectedCandidate] = useState(null)
-  const [selectedClient, setSelectedClient] = useState(null)
+  const [clientName, setClientName] = useState('')
   const [language, setLanguage] = useState('es')
   const [loading, setLoading] = useState(false)
   const [report, setReport] = useState(null)
-  const [saving, setSaving] = useState(false)
-  const [savedToAirtable, setSavedToAirtable] = useState(false)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
   const reportRef = useRef(null)
@@ -163,7 +42,6 @@ export default function InterviewTab() {
     setLoading(true)
     setError(null)
     setReport(null)
-    setSavedToAirtable(false)
 
     try {
       const res = await fetch('/api/generate', {
@@ -175,7 +53,7 @@ export default function InterviewTab() {
           jd,
           linkedin,
           language,
-          clientName: selectedClient?.name || null,
+          clientName: clientName || null,
           type: 'screening',
         }),
       })
@@ -187,19 +65,6 @@ export default function InterviewTab() {
         : data.result
 
       setReport(fullReport)
-
-      if (selectedCandidate) {
-        setSaving(true)
-        try {
-          await fetch('/api/save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ recordId: selectedCandidate.id, reportHtml: fullReport }),
-          })
-          setSavedToAirtable(true)
-        } catch (e) { console.error('Airtable save error:', e) }
-        finally { setSaving(false) }
-      }
     } catch (e) {
       setError(e.message)
     } finally {
@@ -228,25 +93,15 @@ export default function InterviewTab() {
       <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5 shadow-sm">
         <h2 className="font-bold text-gray-800 text-lg">Nueva entrevista</h2>
 
-        {/* Row 1: Candidate + Client */}
+        {/* Row 1: Cliente + Recruiter */}
         <div className="grid grid-cols-2 gap-4">
-          <CandidateSearch onSelect={setSelectedCandidate} selectedCandidate={selectedCandidate} />
-          <ClientSelector
-            value={selectedClient}
-            onChange={setSelectedClient}
-            onLanguageChange={setLanguage}
-          />
-        </div>
-
-        {/* Row 2: LinkedIn + Recruiter + Language */}
-        <div className="grid grid-cols-3 gap-4">
           <div>
-            <Label>LinkedIn URL <Muted>(opcional)</Muted></Label>
+            <Label>Cliente <Muted>(opcional)</Muted></Label>
             <input
               type="text"
-              value={linkedin}
-              onChange={e => setLinkedin(e.target.value)}
-              placeholder="linkedin.com/in/..."
+              value={clientName}
+              onChange={e => setClientName(e.target.value)}
+              placeholder="Ej: Uala, Mercado Libre..."
               style={{ ...inputStyle, resize: 'none', paddingTop: '10px', paddingBottom: '10px' }}
             />
           </div>
@@ -257,6 +112,20 @@ export default function InterviewTab() {
               value={recruiterName}
               onChange={e => setRecruiterName(e.target.value)}
               placeholder="Ej: Lucía Palomeque"
+              style={{ ...inputStyle, resize: 'none', paddingTop: '10px', paddingBottom: '10px' }}
+            />
+          </div>
+        </div>
+
+        {/* Row 2: LinkedIn + Language */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>LinkedIn URL <Muted>(opcional)</Muted></Label>
+            <input
+              type="text"
+              value={linkedin}
+              onChange={e => setLinkedin(e.target.value)}
+              placeholder="linkedin.com/in/..."
               style={{ ...inputStyle, resize: 'none', paddingTop: '10px', paddingBottom: '10px' }}
             />
           </div>
@@ -347,11 +216,7 @@ export default function InterviewTab() {
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style={{ background: BONDY_ORANGE }}>✓</div>
-              <div>
-                <p className="font-semibold text-gray-800 text-sm">Reporte generado</p>
-                {saving && <p className="text-xs text-blue-500">Guardando en Airtable...</p>}
-                {savedToAirtable && <p className="text-xs text-green-600">✓ Guardado en Airtable</p>}
-              </div>
+              <p className="font-semibold text-gray-800 text-sm">Reporte generado</p>
             </div>
             <button
               onClick={copyToClipboard}
