@@ -1,101 +1,144 @@
-'use client'
-
 import Link from 'next/link'
 
-const BONDY_ORANGE = '#F47C20'
+const BondyLogo = () => (
+  <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+    <rect width="7" height="26" rx="1" fill="#111111"/>
+    <rect x="7" y="1" width="16" height="11" rx="5.5" fill="#111111"/>
+    <rect x="7" y="14" width="17" height="11" rx="5.5" fill="#111111"/>
+    <circle cx="27" cy="29" r="3" fill="#E05C00"/>
+  </svg>
+)
 
 const sections = [
   {
     href: '/internal',
-    emoji: '⚡',
-    title: 'Bondy Team',
-    subtitle: 'Tools internas',
-    description: 'Screening reports, cultural fit, scorecards y todo lo que el equipo de Bondy necesita para hacer su trabajo.',
+    number: '01',
+    title: 'Equipo',
+    titleItalic: 'Bondy',
+    description: 'Asistente de informes, extensión de Chrome, scorecard y recursos del equipo.',
     available: true,
-    color: BONDY_ORANGE,
   },
   {
     href: '/recruitment',
-    emoji: '🎯',
-    title: 'Recruiters',
-    subtitle: 'Recursos y tools',
-    description: 'Herramientas y recursos gratuitos para recruiters y equipos de talent acquisition de cualquier organización.',
+    number: '02',
+    title: 'Recursos para',
+    titleItalic: 'Recruiters',
+    description: 'Herramientas y materiales gratuitos para equipos de talent acquisition.',
     available: false,
-    color: '#6366f1',
   },
   {
     href: '/hiring',
-    emoji: '🏢',
-    title: 'Hiring Strategy',
-    subtitle: 'Para HMs y VCs',
-    description: 'Guías y herramientas para hiring managers y fondos planeando su estrategia de contratación en LATAM.',
+    number: '03',
+    title: 'Hiring',
+    titleItalic: 'Strategy',
+    description: 'Guías para hiring managers y fondos planeando su estrategia en LATAM.',
     available: false,
-    color: '#10b981',
   },
 ]
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f8f9fa', fontFamily: 'Inter, sans-serif' }}>
-      <div style={{ background: 'linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%)' }}>
-        <div className="max-w-5xl mx-auto px-6 py-12">
-          <div className="flex items-center gap-4 mb-8">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white text-xl"
-              style={{ background: `linear-gradient(135deg, ${BONDY_ORANGE}, #e86c10)` }}
-            >
-              B
-            </div>
-            <div>
-              <h1 className="text-white font-bold text-2xl">Bondy Tools</h1>
-              <p className="text-blue-300 text-sm">tools.wearebondy.com</p>
-            </div>
-          </div>
-          <p className="text-white/60 text-lg max-w-xl">
-            Plataforma de herramientas para recruiting, hiring y estrategia de talento en LATAM.
-          </p>
+    <main style={{ background: '#F9F8F6', minHeight: '100vh' }}>
+
+      {/* Nav */}
+      <nav style={{
+        borderBottom: '1px solid #EBEBEB',
+        padding: '20px 64px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: 'rgba(249,248,246,0.95)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        backdropFilter: 'blur(8px)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <BondyLogo />
+          <span className="font-display" style={{ fontSize: '18px', fontWeight: 900, color: '#111111', letterSpacing: '-0.02em' }}>
+            Bond<em style={{ color: '#E05C00', fontStyle: 'italic' }}>y</em>.
+          </span>
         </div>
+        <span className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#D8D6D2' }}>
+          tools.wearebondy.com
+        </span>
+      </nav>
+
+      {/* Header */}
+      <section style={{ padding: '56px 64px 48px', borderBottom: '1px solid #EBEBEB' }}>
+        <div className="font-mono-bondy" style={{
+          fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
+          color: '#E05C00', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px'
+        }}>
+          <span style={{ display: 'block', width: '20px', height: '1px', background: '#E05C00' }} />
+          Bondy Tools
+        </div>
+        <h1 className="font-display" style={{
+          fontSize: 'clamp(40px, 5vw, 60px)', fontWeight: 900, lineHeight: 1.0,
+          letterSpacing: '-0.02em', color: '#111111', marginBottom: '16px'
+        }}>
+          Todo en un<br />
+          <em style={{ color: '#E05C00', fontStyle: 'italic' }}>solo lugar.</em>
+        </h1>
+        <p style={{ fontSize: '15px', color: '#888885', fontWeight: 300, maxWidth: '480px', lineHeight: 1.7 }}>
+          Plataforma de recursos para el equipo Bondy, recruiters y equipos de hiring en LATAM.
+        </p>
+      </section>
+
+      {/* Grid */}
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1px solid #EBEBEB' }}>
+        {sections.map((s, i) => (
+          s.available ? (
+            <Link key={s.href} href={s.href} style={{
+              borderRight: i < sections.length - 1 ? '1px solid #EBEBEB' : 'none',
+              padding: '40px 36px',
+              display: 'flex', flexDirection: 'column',
+              textDecoration: 'none', color: 'inherit',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.6)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#D8D6D2', marginBottom: '32px' }}>{s.number}</div>
+              <h2 className="font-display" style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.01em', color: '#111111', marginBottom: '12px', lineHeight: 1.2 }}>
+                {s.title}<br /><em style={{ color: '#E05C00', fontStyle: 'italic' }}>{s.titleItalic}</em>
+              </h2>
+              <p style={{ fontSize: '13px', color: '#888885', fontWeight: 300, lineHeight: 1.7, marginBottom: '32px', flex: 1 }}>{s.description}</p>
+              <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#E05C00' }}>
+                Entrar →
+              </div>
+            </Link>
+          ) : (
+            <div key={s.href} style={{
+              borderRight: i < sections.length - 1 ? '1px solid #EBEBEB' : 'none',
+              padding: '40px 36px',
+              display: 'flex', flexDirection: 'column',
+              opacity: 0.4,
+            }}>
+              <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#D8D6D2', marginBottom: '32px' }}>{s.number}</div>
+              <h2 className="font-display" style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.01em', color: '#111111', marginBottom: '12px', lineHeight: 1.2 }}>
+                {s.title}<br /><em style={{ color: '#E05C00', fontStyle: 'italic' }}>{s.titleItalic}</em>
+              </h2>
+              <p style={{ fontSize: '13px', color: '#888885', fontWeight: 300, lineHeight: 1.7, marginBottom: '32px', flex: 1 }}>{s.description}</p>
+              <div className="font-mono-bondy" style={{ fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#D8D6D2', border: '1px solid #EBEBEB', padding: '4px 10px', display: 'inline-block' }}>
+                Próximamente
+              </div>
+            </div>
+          )
+        ))}
+      </section>
+
+      {/* Footer bar */}
+      <div style={{ padding: '20px 64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.1em', color: '#D8D6D2', textTransform: 'uppercase' }}>
+          © {new Date().getFullYear()} Bondy Group
+        </span>
+        <a href="https://newbondy.wearebondy.com" target="_blank" rel="noopener noreferrer"
+          className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.1em', color: '#D8D6D2', textTransform: 'uppercase', textDecoration: 'none' }}>
+          wearebondy.com ↗
+        </a>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {sections.map((s) => (
-            <div key={s.href}>
-              {s.available ? (
-                <Link href={s.href} className="block group">
-                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
-                      style={{ background: `${s.color}18` }}>
-                      {s.emoji}
-                    </div>
-                    <h2 className="font-bold text-gray-900 text-lg mb-0.5">{s.title}</h2>
-                    <p className="text-xs font-semibold mb-3" style={{ color: s.color }}>{s.subtitle}</p>
-                    <p className="text-sm text-gray-500 leading-relaxed">{s.description}</p>
-                    <div className="mt-5 flex items-center gap-1 text-sm font-semibold" style={{ color: s.color }}>
-                      Entrar <span>→</span>
-                    </div>
-                  </div>
-                </Link>
-              ) : (
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm opacity-55">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
-                    style={{ background: `${s.color}18` }}>
-                    {s.emoji}
-                  </div>
-                  <h2 className="font-bold text-gray-900 text-lg mb-0.5">{s.title}</h2>
-                  <p className="text-xs font-semibold mb-3" style={{ color: s.color }}>{s.subtitle}</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">{s.description}</p>
-                  <div className="mt-5">
-                    <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-gray-100 text-gray-400">
-                      Próximamente
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    </main>
   )
 }
