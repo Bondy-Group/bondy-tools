@@ -54,6 +54,7 @@ export default function InterviewTab() {
           linkedin,
           language,
           clientName: clientName || null,
+          recruiterName: recruiterName || null,
           type: 'screening',
         }),
       })
