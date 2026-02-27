@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { SCREENING_PROMPT, CULTURAL_FIT_PROMPT } from '@/lib/prompts'
+import { saveInterviewToSupabase } from '@/lib/supabase'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -29,7 +30,21 @@ export async function POST(request) {
         ]
       })
 
-      return NextResponse.json({ result: message.content[0].text, type: 'screening' })
+      const result = message.content[0].text
+
+      // Auto-guardar en Supabase (no bloqueante — si falla no rompe el flujo)
+      saveInterviewToSupabase({
+        candidateName: null, // se puede enriquecer luego desde Airtable
+        clientName: clientName || null,
+        reportType: 'screening',
+        reportContent: result,
+        jobDescription: jd || null,
+        linkedinUrl: linkedin || null,
+        recruiterName: null, // se agrega en frontend al reporte final
+        rawTranscript: transcript,
+      }).catch(err => console.error('Supabase auto-save failed (non-blocking):', err))
+
+      return NextResponse.json({ result, type: 'screening' })
 
     } else if (type === 'cultural') {
       if (!clientProfile) {
@@ -57,6 +72,15 @@ export async function POST(request) {
       } catch (e) {
         return NextResponse.json({ error: 'Error al parsear respuesta de cultural fit', raw: message.content[0].text }, { status: 500 })
       }
+
+      // Auto-guardar en Supabase (no bloqueante)
+      saveInterviewToSupabase({
+        candidateName: null,
+        clientName: clientProfile?.name || null,
+        reportType: 'cultural',
+        reportContent: JSON.stringify(parsed, null, 2),
+        rawTranscript: transcript,
+      }).catch(err => console.error('Supabase auto-save failed (non-blocking):', err))
 
       return NextResponse.json({ result: parsed, type: 'cultural' })
     }
