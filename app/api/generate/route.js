@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { SCREENING_PROMPT, CULTURAL_FIT_PROMPT } from '@/lib/prompts'
+import { SCREENING_PROMPT, CULTURAL_FIT_PROMPT, SCORECARD_PROMPT } from '@/lib/prompts'
 import { saveInterviewToSupabase } from '@/lib/supabase'
+import { SCORECARDS } from '@/lib/scorecards'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request) {
   try {
-    const { transcript, type, clientProfile, summary, language, clientName, jd, linkedin, recruiterName } = await request.json()
+    const { transcript, type, clientProfile, summary, language, clientName, jd, linkedin, recruiterName, scorecardId } = await request.json()
 
     if (!transcript) {
       return NextResponse.json({ error: 'Transcript requerido' }, { status: 400 })
@@ -22,17 +23,47 @@ export async function POST(request) {
       if (summary) userContent += `INTERVIEW SUMMARY:\n${summary}\n\n---\n\n`
       userContent += `INTERVIEW TRANSCRIPT:\n${transcript}`
 
-      const message = await client.messages.create({
+      const screeningPromise = client.messages.create({
         model: 'claude-opus-4-6',
         max_tokens: 2500,
-        messages: [
-          { role: 'user', content: `${prompt}\n\n---\n\n${userContent}` }
-        ]
+        messages: [{ role: 'user', content: `${prompt}\n\n---\n\n${userContent}` }]
       })
 
-      const result = message.content[0].text
+      const scorecard = scorecardId && scorecardId !== 'NONE' ? SCORECARDS[scorecardId] : null
+      let scorecardPromise = null
+      if (scorecard) {
+        const scPrompt = SCORECARD_PROMPT({ scorecard, language })
+        scorecardPromise = client.messages.create({
+          model: 'claude-opus-4-6',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: `${scPrompt}\n\n---\n\nINTERVIEW TRANSCRIPT:\n${transcript}` }]
+        })
+      }
 
-      // Auto-guardar en Supabase (no bloqueante — si falla no rompe el flujo)
+      const [screeningMsg, scorecardMsg] = await Promise.all([
+        screeningPromise,
+        scorecardPromise || Promise.resolve(null)
+      ])
+
+      const result = screeningMsg.content[0].text
+      let scorecardResult = null
+      if (scorecardMsg) {
+        try {
+          const text = scorecardMsg.content[0].text.trim()
+          const jsonMatch = text.match(/\{[\s\S]*\}/)
+          scorecardResult = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text)
+          scorecardResult.scorecardId = scorecardId
+          scorecardResult.scorecardName = scorecard.name
+          scorecardResult.scorecard = scorecard
+        } catch (e) {
+          console.error('Scorecard parse error:', e)
+        }
+      }
+
+      const fullReport = recruiterName
+        ? `${result}\n\n${language === 'en' ? 'Interview conducted by' : 'Entrevista realizada por'} ${recruiterName}`
+        : result
+
       saveInterviewToSupabase({
         candidateName: null,
         clientName: clientName || null,
@@ -42,9 +73,11 @@ export async function POST(request) {
         linkedinUrl: linkedin || null,
         recruiterName: recruiterName || null,
         rawTranscript: transcript,
+        scorecardId: scorecardId || null,
+        scorecardData: scorecardResult ? JSON.stringify(scorecardResult) : null,
       }).catch(err => console.error('Supabase auto-save failed (non-blocking):', err))
 
-      return NextResponse.json({ result, type: 'screening' })
+      return NextResponse.json({ result: fullReport, type: 'screening', scorecard: scorecardResult })
 
     } else if (type === 'cultural') {
       if (!clientProfile) {
@@ -59,9 +92,7 @@ export async function POST(request) {
       const message = await client.messages.create({
         model: 'claude-opus-4-6',
         max_tokens: 2000,
-        messages: [
-          { role: 'user', content: `${prompt}\n\n---\n\n${userContent}` }
-        ]
+        messages: [{ role: 'user', content: `${prompt}\n\n---\n\n${userContent}` }]
       })
 
       let parsed
@@ -73,7 +104,6 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Error al parsear respuesta de cultural fit', raw: message.content[0].text }, { status: 500 })
       }
 
-      // Auto-guardar en Supabase (no bloqueante)
       saveInterviewToSupabase({
         candidateName: null,
         clientName: clientProfile?.name || null,

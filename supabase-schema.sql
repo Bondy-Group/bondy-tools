@@ -71,3 +71,8 @@ SELECT
   updated_at
 FROM interview_reports
 ORDER BY created_at DESC;
+
+-- Add scorecard columns if not exist
+ALTER TABLE interview_reports
+  ADD COLUMN IF NOT EXISTS scorecard_id TEXT,
+  ADD COLUMN IF NOT EXISTS scorecard_data TEXT;
