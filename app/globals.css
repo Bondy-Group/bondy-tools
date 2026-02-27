@@ -1,18 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-* {
-  box-sizing: border-box;
+:root {
+  --b-black: #111111;
+  --b-off: #F9F8F6;
+  --b-orange: #E05C00;
+  --b-mid: #888885;
+  --b-light: #D8D6D2;
+  --b-rule: #EBEBEB;
+  --b-white: #FFFFFF;
 }
+
+* { box-sizing: border-box; }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: #f8f9fa;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-weight: 300;
+  background: var(--b-off);
+  color: var(--b-black);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.bondy-gradient {
-  background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%);
-}
+.font-display { font-family: 'Playfair Display', Georgia, serif; }
+.font-mono-bondy { font-family: 'DM Mono', monospace; }
