@@ -7,7 +7,7 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request) {
   try {
-    const { transcript, type, clientProfile, summary, language, clientName, jd, linkedin } = await request.json()
+    const { transcript, type, clientProfile, summary, language, clientName, jd, linkedin, recruiterName } = await request.json()
 
     if (!transcript) {
       return NextResponse.json({ error: 'Transcript requerido' }, { status: 400 })
@@ -34,13 +34,13 @@ export async function POST(request) {
 
       // Auto-guardar en Supabase (no bloqueante — si falla no rompe el flujo)
       saveInterviewToSupabase({
-        candidateName: null, // se puede enriquecer luego desde Airtable
+        candidateName: null,
         clientName: clientName || null,
         reportType: 'screening',
         reportContent: result,
         jobDescription: jd || null,
         linkedinUrl: linkedin || null,
-        recruiterName: null, // se agrega en frontend al reporte final
+        recruiterName: recruiterName || null,
         rawTranscript: transcript,
       }).catch(err => console.error('Supabase auto-save failed (non-blocking):', err))
 
@@ -79,6 +79,7 @@ export async function POST(request) {
         clientName: clientProfile?.name || null,
         reportType: 'cultural',
         reportContent: JSON.stringify(parsed, null, 2),
+        recruiterName: recruiterName || null,
         rawTranscript: transcript,
       }).catch(err => console.error('Supabase auto-save failed (non-blocking):', err))
 
