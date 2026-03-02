@@ -1,125 +1,82 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { SCREENING_PROMPT, CULTURAL_FIT_PROMPT, SCORECARD_PROMPT } from '@/lib/prompts'
-import { saveInterviewToSupabase } from '@/lib/supabase'
-import { SCORECARDS } from '@/lib/scorecards'
+import { SCREENING_PROMPT, SCORECARD_PROMPT } from '@/lib/prompts'
+import { saveInterviewToSupabase, getSupabaseAdmin } from '@/lib/supabase'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+async function getScorecardById(id) {
+  try {
+    const supabase = getSupabaseAdmin()
+    const { data } = await supabase.from('client_scorecards').select('*').eq('id', id).single()
+    return data
+  } catch { return null }
+}
+
 export async function POST(request) {
   try {
-    const { transcript, type, clientProfile, summary, language, clientName, jd, linkedin, recruiterName, scorecardId } = await request.json()
-
-    if (!transcript) {
-      return NextResponse.json({ error: 'Transcript requerido' }, { status: 400 })
-    }
+    const { transcript, type, clientProfile, summary, language, clientName, jd, linkedin, recruiterName, candidateName, candidateEmail, techScorecardId, cultScorecardId } = await request.json()
+    if (!transcript) return NextResponse.json({ error: 'Transcript requerido' }, { status: 400 })
 
     if (type === 'screening') {
       const prompt = SCREENING_PROMPT({ language, clientName, jd })
-
       let userContent = ''
-      if (linkedin) userContent += `LINKEDIN URL: ${linkedin}\n\n`
-      if (jd) userContent += `JOB DESCRIPTION:\n${jd}\n\n---\n\n`
-      if (summary) userContent += `INTERVIEW SUMMARY:\n${summary}\n\n---\n\n`
-      userContent += `INTERVIEW TRANSCRIPT:\n${transcript}`
+      if (linkedin) userContent += 'LINKEDIN URL: ' + linkedin + '\n\n'
+      if (jd) userContent += 'JOB DESCRIPTION:\n' + jd + '\n\n---\n\n'
+      if (summary) userContent += 'INTERVIEW SUMMARY:\n' + summary + '\n\n---\n\n'
+      userContent += 'INTERVIEW TRANSCRIPT:\n' + transcript
 
-      const screeningPromise = client.messages.create({
-        model: 'claude-opus-4-6',
-        max_tokens: 2500,
-        messages: [{ role: 'user', content: `${prompt}\n\n---\n\n${userContent}` }]
-      })
+      const [techScData, cultScData] = await Promise.all([
+        techScorecardId ? getScorecardById(techScorecardId) : Promise.resolve(null),
+        cultScorecardId ? getScorecardById(cultScorecardId) : Promise.resolve(null),
+      ])
 
-      const scorecard = scorecardId && scorecardId !== 'NONE' ? SCORECARDS[scorecardId] : null
-      let scorecardPromise = null
-      if (scorecard) {
-        const scPrompt = SCORECARD_PROMPT({ scorecard, language })
-        scorecardPromise = client.messages.create({
-          model: 'claude-opus-4-6',
-          max_tokens: 2000,
-          messages: [{ role: 'user', content: `${scPrompt}\n\n---\n\nINTERVIEW TRANSCRIPT:\n${transcript}` }]
-        })
+      const makeScorecardCall = (scData) => {
+        if (!scData) return Promise.resolve(null)
+        const scPrompt = SCORECARD_PROMPT({ scorecard: scData, language })
+        return client.messages.create({ model: 'claude-opus-4-6', max_tokens: 2000, messages: [{ role: 'user', content: scPrompt + '\n\n---\n\nINTERVIEW TRANSCRIPT:\n' + transcript }] })
       }
 
-      const [screeningMsg, scorecardMsg] = await Promise.all([
-        screeningPromise,
-        scorecardPromise || Promise.resolve(null)
+      const [screeningMsg, techMsg, cultMsg] = await Promise.all([
+        client.messages.create({ model: 'claude-opus-4-6', max_tokens: 2500, messages: [{ role: 'user', content: prompt + '\n\n---\n\n' + userContent }] }),
+        makeScorecardCall(techScData),
+        makeScorecardCall(cultScData),
       ])
 
       const result = screeningMsg.content[0].text
-      let scorecardResult = null
-      if (scorecardMsg) {
+      const parseScorecard = (msg, scData) => {
+        if (!msg) return null
         try {
-          const text = scorecardMsg.content[0].text.trim()
-          const jsonMatch = text.match(/\{[\s\S]*\}/)
-          scorecardResult = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text)
-          scorecardResult.scorecardId = scorecardId
-          scorecardResult.scorecardName = scorecard.name
-          scorecardResult.scorecard = scorecard
-        } catch (e) {
-          console.error('Scorecard parse error:', e)
-        }
+          const text = msg.content[0].text.trim()
+          const match = text.match(/\{[\s\S]*\}/)
+          const parsed = match ? JSON.parse(match[0]) : JSON.parse(text)
+          parsed.scorecard = scData
+          return parsed
+        } catch { return null }
       }
 
-      const fullReport = recruiterName
-        ? `${result}\n\n${language === 'en' ? 'Interview conducted by' : 'Entrevista realizada por'} ${recruiterName}`
-        : result
+      const techResult = parseScorecard(techMsg, techScData)
+      const cultResult = parseScorecard(cultMsg, cultScData)
+      const fullReport = recruiterName ? result + '\n\n' + (language === 'en' ? 'Interview conducted by' : 'Entrevista realizada por') + ' ' + recruiterName : result
 
-      saveInterviewToSupabase({
-        candidateName: null,
-        clientName: clientName || null,
-        reportType: 'screening',
-        reportContent: result,
-        jobDescription: jd || null,
-        linkedinUrl: linkedin || null,
-        recruiterName: recruiterName || null,
-        rawTranscript: transcript,
-        scorecardId: scorecardId || null,
-        scorecardData: scorecardResult ? JSON.stringify(scorecardResult) : null,
-      }).catch(err => console.error('Supabase auto-save failed (non-blocking):', err))
+      saveInterviewToSupabase({ candidateName, candidateEmail, clientName, reportType: 'screening', reportContent: result, jobDescription: jd, linkedinUrl: linkedin, recruiterName, rawTranscript: transcript, scorecardId: techScorecardId, scorecardData: techResult ? JSON.stringify(techResult) : null, language: language || 'es' }).catch(console.error)
 
-      return NextResponse.json({ result: fullReport, type: 'screening', scorecard: scorecardResult })
+      return NextResponse.json({ result: fullReport, type: 'screening', techScorecard: techResult, cultScorecard: cultResult })
 
     } else if (type === 'cultural') {
-      if (!clientProfile) {
-        return NextResponse.json({ error: 'Perfil de cliente requerido para cultural fit' }, { status: 400 })
-      }
-
+      const { CULTURAL_FIT_PROMPT } = await import('@/lib/prompts')
+      if (!clientProfile) return NextResponse.json({ error: 'Perfil requerido' }, { status: 400 })
       const prompt = CULTURAL_FIT_PROMPT(clientProfile)
-      const userContent = summary
-        ? `RESUMEN DE LA ENTREVISTA:\n${summary}\n\n---\nTRANSCRIPCIÓN:\n${transcript}`
-        : `TRANSCRIPCIÓN DE LA ENTREVISTA:\n${transcript}`
-
-      const message = await client.messages.create({
-        model: 'claude-opus-4-6',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: `${prompt}\n\n---\n\n${userContent}` }]
-      })
-
+      const uc = summary ? 'RESUMEN:\n' + summary + '\n\n---\nTRANSCRIPCIÓN:\n' + transcript : 'TRANSCRIPCIÓN:\n' + transcript
+      const message = await client.messages.create({ model: 'claude-opus-4-6', max_tokens: 2000, messages: [{ role: 'user', content: prompt + '\n\n---\n\n' + uc }] })
       let parsed
-      try {
-        const text = message.content[0].text.trim()
-        const jsonMatch = text.match(/\{[\s\S]*\}/)
-        parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text)
-      } catch (e) {
-        return NextResponse.json({ error: 'Error al parsear respuesta de cultural fit', raw: message.content[0].text }, { status: 500 })
-      }
-
-      saveInterviewToSupabase({
-        candidateName: null,
-        clientName: clientProfile?.name || null,
-        reportType: 'cultural',
-        reportContent: JSON.stringify(parsed, null, 2),
-        recruiterName: recruiterName || null,
-        rawTranscript: transcript,
-      }).catch(err => console.error('Supabase auto-save failed (non-blocking):', err))
-
+      try { const text = message.content[0].text.trim(); const m = text.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : JSON.parse(text) }
+      catch (e) { return NextResponse.json({ error: 'Error parseo', raw: message.content[0].text }, { status: 500 }) }
+      saveInterviewToSupabase({ candidateName, clientName: clientProfile?.name, reportType: 'cultural', reportContent: JSON.stringify(parsed), recruiterName, rawTranscript: transcript }).catch(console.error)
       return NextResponse.json({ result: parsed, type: 'cultural' })
     }
-
-    return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 })
-
+    return NextResponse.json({ error: 'Tipo invalido' }, { status: 400 })
   } catch (error) {
-    console.error('Generate error:', error)
-    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
