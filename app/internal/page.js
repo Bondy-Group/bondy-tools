@@ -217,9 +217,9 @@ export default function InternalPage() {
         <span className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.1em', color: '#D8D6D2', textTransform: 'uppercase' }}>
           Uso exclusivo equipo Bondy
         </span>
-        <span className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.1em', color: '#D8D6D2', textTransform: 'uppercase' }}>
-          tools.wearebondy.com/internal
-        </span>
+        <a href="/internal/admin" className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.1em', color: '#D8D6D2', textTransform: 'uppercase', textDecoration: 'none' }}>
+          ⚙️ admin · scorecards
+        </a>
       </div>
 
     </main>
