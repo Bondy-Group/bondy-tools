@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import ImportScorecardTab from '@/components/ImportScorecardTab'
+import ScorecardUploader from '@/components/ScorecardUploader'
 
 const BONDY_ORANGE = '#E05C00'
 const FONT_MONO = 'DM Mono, monospace'
@@ -225,7 +225,7 @@ function ScorecardRow({ sc, onEdit, onDeactivate, isDefault }) {
 function ScorecardContent({ embedded }) {
   const [scorecards, setScorecards] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('list') // list | new | edit | import
+  const [view, setView] = useState('list') // list | new | edit | upload
   const [editing, setEditing] = useState(null)
   const [successMsg, setSuccessMsg] = useState(null)
 
@@ -243,14 +243,14 @@ function ScorecardContent({ embedded }) {
   useEffect(() => { load() }, [])
 
   const handleSave = () => {
-    load(); setActiveTab('list'); setEditing(null)
+    load(); setView('list'); setEditing(null)
     setSuccessMsg('Scorecard guardada ✓')
     setTimeout(() => setSuccessMsg(null), 4000)
   }
 
-  const handleImportSaved = () => {
-    load(); setActiveTab('list')
-    setSuccessMsg('Scorecard importada y guardada ✓')
+  const handleUploadComplete = () => {
+    load(); setView('list')
+    setSuccessMsg('Scorecard importada y banco de preguntas actualizado ✓')
     setTimeout(() => setSuccessMsg(null), 5000)
   }
 
@@ -260,15 +260,10 @@ function ScorecardContent({ embedded }) {
     load()
   }
 
-  const CONTENT_TABS = [
-    { id: 'list', label: 'Mis scorecards' },
-    { id: 'import', label: '📥 Importar Excel' },
-  ]
-
   return (
     <div style={embedded ? {} : { padding: '48px 64px' }}>
       {!embedded && (
-        <div style={{ marginBottom: '32px' }}>
+        <div style={{ marginBottom: '40px' }}>
           <div style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: BONDY_ORANGE, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: FONT_MONO }}>
             <span style={{ display: 'block', width: '20px', height: '1px', background: BONDY_ORANGE }} />
             Gestión de evaluaciones
@@ -278,45 +273,30 @@ function ScorecardContent({ embedded }) {
         </div>
       )}
 
-      {embedded && (
-        <div style={{ marginBottom: '20px', padding: '14px 18px', background: 'rgba(224,92,0,0.04)', border: '1px solid rgba(224,92,0,0.12)', borderRadius: '10px' }}>
+      {embedded && view === 'list' && (
+        <div style={{ marginBottom: '20px', padding: '14px 18px', background: 'rgba(224,92,0,0.04)', border: '1px solid rgba(224,92,0,0.12)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
           <p style={{ fontSize: '13px', color: '#555', margin: 0, lineHeight: 1.6 }}>
-            <strong style={{ color: BONDY_ORANGE }}>Client Management</strong> — Creá y gestioná scorecards por cliente, o importalas directo desde Excel.
+            <strong style={{ color: BONDY_ORANGE }}>Client Management</strong> — Scorecards por cliente para el asistente de entrevistas.
           </p>
         </div>
       )}
 
-      {successMsg && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px', marginBottom: '20px' }}>
-          ✓ {successMsg}
-        </div>
-      )}
+      {successMsg && <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px', marginBottom: '24px' }}>✓ {successMsg}</div>}
 
-      {/* Tab bar dentro de Client Management */}
-      {(activeTab === 'list' || activeTab === 'import') && (
-        <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #EBEBEB', marginBottom: '24px' }}>
-          {CONTENT_TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '10px 20px', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase',
-                background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT_MONO,
-                color: activeTab === tab.id ? '#111' : '#888',
-                borderBottom: activeTab === tab.id ? `2px solid ${BONDY_ORANGE}` : '2px solid transparent',
-                marginBottom: '-1px', transition: 'all 0.15s',
-              }}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* LIST */}
-      {activeTab === 'list' && (
+      {view === 'list' && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-            <button onClick={() => { setEditing(null); setActiveTab('new') }}
-              style={{ padding: '10px 24px', border: 'none', background: `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
-              + Nueva manual
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '24px' }}>
+            <button
+              onClick={() => setView('upload')}
+              style={{ padding: '10px 20px', border: `1.5px solid ${BONDY_ORANGE}`, background: 'transparent', color: BONDY_ORANGE, borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, fontFamily: FONT_MONO, letterSpacing: '0.06em' }}
+            >
+              📊 Importar desde Excel
+            </button>
+            <button
+              onClick={() => { setEditing(null); setView('new') }}
+              style={{ padding: '10px 20px', border: 'none', background: `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+            >
+              + Nueva scorecard
             </button>
           </div>
           {loading ? (
@@ -325,44 +305,47 @@ function ScorecardContent({ embedded }) {
             <div style={{ border: '1.5px dashed #e5e7eb', borderRadius: '14px', padding: '60px', textAlign: 'center' }}>
               <p style={{ color: '#bbb', fontSize: '15px', marginBottom: '20px' }}>No hay scorecards todavía.</p>
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                <button onClick={() => setActiveTab('new')} style={{ padding: '10px 24px', border: `1.5px solid ${BONDY_ORANGE}`, background: 'transparent', color: BONDY_ORANGE, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>Crear manual</button>
-                <button onClick={() => setActiveTab('import')} style={{ padding: '10px 24px', border: '1.5px solid #4A90D9', background: 'transparent', color: '#4A90D9', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>📥 Importar Excel</button>
+                <button onClick={() => setView('upload')} style={{ padding: '10px 24px', border: `1.5px solid ${BONDY_ORANGE}`, background: 'transparent', color: BONDY_ORANGE, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>📊 Importar Excel</button>
+                <button onClick={() => setView('new')} style={{ padding: '10px 24px', border: '1.5px solid #e5e7eb', background: 'white', color: '#555', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>Crear manualmente</button>
               </div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {scorecards.filter(s => s.client_name === '__DEFAULT__').map(sc => (
-                <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setActiveTab('edit') }} onDeactivate={() => handleDeactivate(sc.id)} isDefault />
+                <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setView('edit') }} onDeactivate={() => handleDeactivate(sc.id)} isDefault />
               ))}
               {scorecards.filter(s => s.client_name !== '__DEFAULT__').map(sc => (
-                <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setActiveTab('edit') }} onDeactivate={() => handleDeactivate(sc.id)} />
+                <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setView('edit') }} onDeactivate={() => handleDeactivate(sc.id)} />
               ))}
             </div>
           )}
         </>
       )}
 
-      {/* IMPORT */}
-      {activeTab === 'import' && (
-        <ImportScorecardTab onScorecardSaved={handleImportSaved} />
+      {view === 'upload' && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div>
+              <h3 style={{ fontFamily: FONT_DISPLAY, fontSize: '20px', fontWeight: 700, margin: '0 0 4px' }}>Importar desde Excel</h3>
+              <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>El sistema detecta automáticamente skills, pesos y preguntas del archivo.</p>
+            </div>
+            <button onClick={() => setView('list')} style={{ fontSize: '11px', fontFamily: FONT_MONO, color: '#888', background: 'none', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '7px 14px', cursor: 'pointer' }}>← Volver</button>
+          </div>
+          <ScorecardUploader onComplete={handleUploadComplete} existingClients={existingClients} />
+        </div>
       )}
 
-      {/* NEW / EDIT */}
-      {(activeTab === 'new' || activeTab === 'edit') && (
-        <ScorecardForm
-          initial={activeTab === 'edit' ? editing : null}
-          existingClients={existingClients}
-          onSave={handleSave}
-          onCancel={() => { setActiveTab('list'); setEditing(null) }}
-        />
+      {(view === 'new' || view === 'edit') && (
+        <ScorecardForm initial={view === 'edit' ? editing : null} existingClients={existingClients} onSave={handleSave} onCancel={() => { setView('list'); setEditing(null) }} />
       )}
     </div>
   )
 }
 
 export default function ScorecardAdminPage({ embedded = false }) {
-  if (embedded) return <ScorecardContent embedded />
-
+  if (embedded) {
+    return <ScorecardContent embedded />
+  }
   return (
     <main style={{ background: '#F9F8F6', minHeight: '100vh' }}>
       <nav style={{ borderBottom: '1px solid #EBEBEB', padding: '20px 64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(249,248,246,0.95)', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(8px)' }}>
