@@ -5,32 +5,19 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 export async function GET() {
   try {
     const supabase = getSupabaseAdmin()
+    // Get unique clients that have scorecards, plus all active scorecards
     const { data, error } = await supabase
-      .from('clients')
-      .select('id, name, display_name, industry, is_active')
+      .from('client_scorecards')
+      .select('client_name, scorecard_name')
       .eq('is_active', true)
-      .order('name')
+      .neq('client_name', '__DEFAULT__')
+      .order('client_name', { ascending: true })
     if (error) throw error
-    return NextResponse.json({ clients: data })
-  } catch (error) {
-    console.error('Clients GET error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
-export async function POST(request) {
-  try {
-    const body = await request.json()
-    const { name, display_name, industry, website, notes } = body
-    if (!name) return NextResponse.json({ error: 'name requerido' }, { status: 400 })
-    const supabase = getSupabaseAdmin()
-    const { data, error } = await supabase
-      .from('clients')
-      .insert({ name: name.toUpperCase().trim(), display_name, industry, website, notes })
-      .select().single()
-    if (error) throw error
-    return NextResponse.json({ client: data })
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const clients = [...new Map((data || []).map(r => [r.client_name, r])).values()]
+      .map(r => ({ id: r.client_name, name: r.client_name }))
+    return NextResponse.json({ clients })
+  } catch (e) {
+    // fallback empty list
+    return NextResponse.json({ clients: [] })
   }
 }
