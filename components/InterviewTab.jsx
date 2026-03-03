@@ -189,6 +189,7 @@ export default function InterviewTab() {
   const [positionId, setPositionId] = useState('')
   const [positionName, setPositionName] = useState('')
 
+  const [jobDescription, setJobDescription] = useState('')
   const [interviewerNotes, setInterviewerNotes] = useState('')
   const [transcript, setTranscript] = useState('')
   const [originalTranscript, setOriginalTranscript] = useState(null)
@@ -312,6 +313,7 @@ export default function InterviewTab() {
           cvText: cvText.trim() || null,
           clientName: clientName === '__DEFAULT__' ? null : (clientName.trim() || null),
           positionName: positionName.trim() || null,
+          jobDescription: jobDescription.trim() || null,
           scorecardId: scorecard?.id || null,
           scorecardData: scorecard?.scorecard_data || null,
         }),
@@ -408,6 +410,23 @@ export default function InterviewTab() {
                   </div>
                 : <span style={{ fontSize: '12px', color: '#888' }}>Sin scorecard para este cliente</span>}
           </div>
+        )}
+      </section>
+
+
+      <section>
+        <SectionHeader label="Job Description" />
+        <textarea
+          className="input-field"
+          value={jobDescription}
+          onChange={e => setJobDescription(e.target.value)}
+          placeholder="Pegá la job description de la posición..."
+          style={{ ...textareaStyle, minHeight: '140px' }}
+        />
+        {!jobDescription.trim() && (
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#f59e0b', fontFamily: FONT_MONO }}>
+            ⚠️ Sin JD el agente no puede evaluar el match con la posición
+          </p>
         )}
       </section>
 
@@ -534,3 +553,4 @@ export default function InterviewTab() {
     </div>
   )
 }
+
