@@ -38,7 +38,6 @@ function CopyBtn({ text, id, copied, onCopy }) {
   )
 }
 
-// Barra de rating visual 1-5
 function RatingBar({ rating, max = 5 }) {
   const pct = rating < 1 ? 0 : Math.round(((rating - 1) / (max - 1)) * 100)
   const color = pct >= 75 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444'
@@ -52,7 +51,6 @@ function RatingBar({ rating, max = 5 }) {
   )
 }
 
-// Render legible del scorecard evaluado
 function ScorecardResultPanel({ scorecard, scorecardSkills, technicalScore, softScore, overallScore, copied, onCopy }) {
   if (!scorecard?.skillRatings) return null
 
@@ -135,7 +133,6 @@ function ScorecardResultPanel({ scorecard, scorecardSkills, technicalScore, soft
         <CopyBtn text={buildCopyText()} id="scorecard" copied={copied} onCopy={onCopy} />
       </div>
 
-      {/* Score summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
         {technicalScore !== null && (
           <div style={{ textAlign: 'center', padding: '14px', background: '#FFF3EC', borderRadius: '10px' }}>
@@ -186,6 +183,7 @@ export default function InterviewTab() {
   const fileRef = useRef()
 
   const [clients, setClients] = useState([])
+  const [hasDefaultScorecard, setHasDefaultScorecard] = useState(false)
   const [clientName, setClientName] = useState('')
   const [positions, setPositions] = useState([])
   const [positionId, setPositionId] = useState('')
@@ -210,7 +208,10 @@ export default function InterviewTab() {
   useEffect(() => {
     fetch('/api/scorecards?clients=true')
       .then(r => r.json())
-      .then(d => setClients(d.clients || []))
+      .then(d => {
+        setClients(d.clients || [])
+        setHasDefaultScorecard(d.hasDefault || false)
+      })
       .catch(() => {})
   }, [])
 
@@ -292,6 +293,9 @@ export default function InterviewTab() {
   const canGenerate = candidateName.trim().length > 0 && transcript.trim().length > 50
   const showOptimizeBtn = transcript.length > 1500 && !optimizeResult
 
+  // Para display: si el cliente es __DEFAULT__, mostrar "Bondy (Default)"
+  const displayClientName = clientName === '__DEFAULT__' ? 'Bondy (Default)' : clientName
+
   const handleGenerate = async () => {
     if (!candidateName.trim()) return setError('Ingresá el nombre del candidato')
     if (!transcript.trim() || transcript.trim().length < 50) return setError('Pegá la transcripción de la entrevista')
@@ -306,7 +310,7 @@ export default function InterviewTab() {
           candidateName: candidateName.trim(),
           linkedinUrl: linkedinUrl.trim() || null,
           cvText: cvText.trim() || null,
-          clientName: clientName.trim() || null,
+          clientName: clientName === '__DEFAULT__' ? null : (clientName.trim() || null),
           positionName: positionName.trim() || null,
           scorecardId: scorecard?.id || null,
           scorecardData: scorecard?.scorecard_data || null,
@@ -369,14 +373,25 @@ export default function InterviewTab() {
           <div>
             <Label>Cliente</Label>
             <select value={clientName} onChange={e => setClientName(e.target.value)} style={selectStyle}>
-              <option value="">— Seleccioná cliente —</option>
+              <option value="">— Selección cliente —</option>
+              {hasDefaultScorecard && (
+                <option value="__DEFAULT__">⭐ Bondy (Default)</option>
+              )}
+              {clients.length > 0 && hasDefaultScorecard && (
+                <option disabled>──────────</option>
+              )}
               {clients.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
             <Label>Posición</Label>
-            <select value={positionId} onChange={e => { const sel = positions.find(p => p.id === e.target.value); setPositionId(e.target.value); setPositionName(sel?.scorecard_name || '') }} disabled={!clientName || positions.length === 0} style={{ ...selectStyle, opacity: (!clientName || positions.length === 0) ? 0.5 : 1 }}>
-              <option value="">{!clientName ? '— Primero elegí cliente —' : positions.length === 0 ? '— Sin posiciones cargadas —' : '— Seleccioná posición —'}</option>
+            <select
+              value={positionId}
+              onChange={e => { const sel = positions.find(p => p.id === e.target.value); setPositionId(e.target.value); setPositionName(sel?.scorecard_name || '') }}
+              disabled={!clientName || positions.length === 0}
+              style={{ ...selectStyle, opacity: (!clientName || positions.length === 0) ? 0.5 : 1 }}
+            >
+              <option value="">{!clientName ? '— Primero elegí cliente —' : positions.length === 0 ? '— Sin posiciones cargadas —' : '— Selección posición —'}</option>
               {positions.map(p => <option key={p.id} value={p.id}>{p.scorecard_name}</option>)}
             </select>
           </div>
@@ -481,7 +496,7 @@ export default function InterviewTab() {
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <button onClick={handleGenerate} disabled={loading || !canGenerate}
           style={{ padding: '16px 48px', border: 'none', background: (!canGenerate || loading) ? '#ccc' : `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '12px', cursor: (!canGenerate || loading) ? 'not-allowed' : 'pointer', fontSize: '15px', fontWeight: 800, letterSpacing: '0.02em', boxShadow: (!canGenerate || loading) ? 'none' : '0 4px 20px rgba(224,92,0,0.35)', transition: 'all 0.2s' }}>
-          {loading ? 'Generando...' : scorecard ? `Generar informe + scorecard ${positionName || clientName}` : 'Generar informe de entrevista'}
+          {loading ? 'Generando...' : scorecard ? `Generar informe + scorecard ${positionName || displayClientName}` : 'Generar informe de entrevista'}
         </button>
       </div>
 
