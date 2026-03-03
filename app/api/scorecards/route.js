@@ -3,11 +3,11 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 
-// GET /api/scorecards?client=IOL&position=TL+Frontend  → scorecard específica
-// GET /api/scorecards?client=IOL                        → primera scorecard del cliente
-// GET /api/scorecards                                   → lista todas con scorecard_data
-// GET /api/scorecards?clients=true                      → lista clientes únicos
-// GET /api/scorecards?positions=IOL                     → posiciones de un cliente
+// GET /api/scorecards?client=IOL&position=TL+Frontend
+// GET /api/scorecards?client=IOL
+// GET /api/scorecards?client=__DEFAULT__              → scorecard default
+// GET /api/scorecards?clients=true                   → lista clientes (incluye Bondy Default)
+// GET /api/scorecards?positions=IOL
 export async function GET(request) {
   try {
     const supabase = getSupabaseAdmin()
@@ -17,25 +17,30 @@ export async function GET(request) {
     const clientsOnly = searchParams.get('clients')
     const positionsFor = searchParams.get('positions')
 
-    // Lista de clientes únicos (excluyendo __DEFAULT__)
+    // Lista de clientes únicos — incluye __DEFAULT__ como opción explícita
     if (clientsOnly) {
       const { data, error } = await supabase
         .from('client_scorecards')
         .select('client_name')
         .eq('is_active', true)
-        .neq('client_name', '__DEFAULT__')
         .order('client_name')
       if (error) throw error
-      const unique = [...new Set((data || []).map(r => r.client_name))].sort()
-      return NextResponse.json({ clients: unique })
+      // Clientes reales (sin __DEFAULT__)
+      const unique = [...new Set((data || []).map(r => r.client_name))]
+        .filter(n => n !== '__DEFAULT__')
+        .sort()
+      // __DEFAULT__ va primero como opción especial
+      const hasDefault = (data || []).some(r => r.client_name === '__DEFAULT__')
+      return NextResponse.json({ clients: unique, hasDefault })
     }
 
-    // Posiciones de un cliente (= scorecard_names de ese cliente)
+    // Posiciones de un cliente
     if (positionsFor) {
+      const clientKey = positionsFor === '__DEFAULT__' ? '__DEFAULT__' : positionsFor
       const { data, error } = await supabase
         .from('client_scorecards')
         .select('id, scorecard_name')
-        .eq('client_name', positionsFor)
+        .eq('client_name', clientKey)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -52,7 +57,9 @@ export async function GET(request) {
         .eq('is_active', true)
         .limit(1)
       if (error) throw error
-      if (data && data.length > 0) return NextResponse.json({ scorecard: data[0], isDefault: false })
+      if (data && data.length > 0) {
+        return NextResponse.json({ scorecard: data[0], isDefault: client === '__DEFAULT__' })
+      }
     }
 
     // Scorecard por cliente (la más reciente)
@@ -65,19 +72,23 @@ export async function GET(request) {
         .order('created_at', { ascending: false })
         .limit(1)
       if (error) throw error
-      if (data && data.length > 0) return NextResponse.json({ scorecard: data[0], isDefault: false })
-
-      // Sin scorecard propia → default
-      const { data: defaultData } = await supabase
-        .from('client_scorecards')
-        .select('*')
-        .eq('client_name', '__DEFAULT__')
-        .eq('is_active', true)
-        .limit(1)
-      return NextResponse.json({ scorecard: defaultData?.[0] || null, isDefault: true })
+      if (data && data.length > 0) {
+        return NextResponse.json({ scorecard: data[0], isDefault: client === '__DEFAULT__' })
+      }
+      // Si pidió un cliente real y no hay scorecard, cae al default
+      if (client !== '__DEFAULT__') {
+        const { data: defaultData } = await supabase
+          .from('client_scorecards')
+          .select('*')
+          .eq('client_name', '__DEFAULT__')
+          .eq('is_active', true)
+          .limit(1)
+        return NextResponse.json({ scorecard: defaultData?.[0] || null, isDefault: true })
+      }
+      return NextResponse.json({ scorecard: null, isDefault: true })
     }
 
-    // Lista completa CON scorecard_data para mostrar conteos correctos
+    // Lista completa
     const { data, error } = await supabase
       .from('client_scorecards')
       .select('*')
