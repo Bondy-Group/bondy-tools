@@ -4,6 +4,23 @@ import { useState, useEffect, useRef } from 'react'
 
 const BONDY_ORANGE = '#E05C00'
 const FONT_MONO = 'DM Mono, monospace'
+const BONDY_DIMS_A = [
+  { id: 'claridad_motivacional', label: 'Claridad motivacional', description: '¿El candidato sabe por qué busca cambio y qué quiere?' },
+  { id: 'consistencia_discurso', label: 'Consistencia del discurso', description: '¿Lo que dice se sostiene a lo largo de la entrevista?' },
+  { id: 'alineacion_cultural', label: 'Alineación cultural', description: '¿Encaja con el tipo de empresa y equipo al que va?' },
+  { id: 'motivacion_pertenencia', label: 'Motivación de pertenencia', description: '¿Quiere estar en esta empresa o la usa de puente?' },
+]
+
+const BONDY_POSITIONAL = [
+  { id: 'preferencia_entorno', label: 'Preferencia de entorno', leftLabel: 'Muy estructurado', rightLabel: 'Muy dinámico' },
+]
+
+const SCORE_LABELS = {
+  1: { label: 'Bajo', color: '#ef4444' },
+  2: { label: 'Con reservas', color: '#f59e0b' },
+  3: { label: 'Bueno', color: '#84cc16' },
+  4: { label: 'Sólido', color: '#22c55e' },
+}
 
 const Label = ({ children, required }) => (
   <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: '#555', marginBottom: '8px', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>
@@ -175,6 +192,170 @@ function ScorecardResultPanel({ scorecard, scorecardSkills, technicalScore, soft
   )
 }
 
+
+function SliderDimension({ dim, value, onChange }) {
+  const scoreInfo = value ? SCORE_LABELS[value] : null
+  return (
+    <div style={{ marginBottom: '20px', padding: '16px', background: '#fafafa', borderRadius: '10px', border: '1px solid #f0f0f0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+        <div>
+          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#222' }}>{dim.label}</p>
+          <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#888' }}>{dim.description}</p>
+        </div>
+        {scoreInfo && (
+          <span style={{ fontSize: '11px', fontWeight: 700, color: scoreInfo.color, background: `${scoreInfo.color}15`, padding: '3px 8px', borderRadius: '4px', fontFamily: FONT_MONO, whiteSpace: 'nowrap', marginLeft: '12px' }}>
+            {value} — {scoreInfo.label}
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '10px', color: '#aaa', fontFamily: FONT_MONO }}>1</span>
+        <input
+          type="range" min="1" max="4" step="1"
+          value={value || 1}
+          onChange={e => onChange(dim.id, parseInt(e.target.value))}
+          style={{ flex: 1, accentColor: BONDY_ORANGE, cursor: 'pointer' }}
+        />
+        <span style={{ fontSize: '10px', color: '#aaa', fontFamily: FONT_MONO }}>4</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
+        {[1,2,3,4].map(n => (
+          <span key={n} style={{ fontSize: '9px', color: value === n ? SCORE_LABELS[n].color : '#ccc', fontFamily: FONT_MONO, fontWeight: value === n ? 700 : 400 }}>
+            {SCORE_LABELS[n].label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PositionalSlider({ dim, value, onChange }) {
+  const positions = [
+    { v: 1, label: 'Muy estructurado' },
+    { v: 2, label: 'Estructurado' },
+    { v: 3, label: 'Centro' },
+    { v: 4, label: 'Dinámico' },
+    { v: 5, label: 'Muy dinámico' },
+  ]
+  const current = positions.find(p => p.v === value)
+  return (
+    <div style={{ marginBottom: '20px', padding: '16px', background: '#fafafa', borderRadius: '10px', border: '1px solid #f0f0f0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#222' }}>{dim.label}</p>
+        {current && (
+          <span style={{ fontSize: '11px', fontWeight: 700, color: '#555', background: '#f0f0f0', padding: '3px 8px', borderRadius: '4px', fontFamily: FONT_MONO }}>
+            {current.label}
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '10px', color: '#888', fontFamily: FONT_MONO, whiteSpace: 'nowrap' }}>{dim.leftLabel}</span>
+        <input
+          type="range" min="1" max="5" step="1"
+          value={value || 3}
+          onChange={e => onChange(dim.id, parseInt(e.target.value))}
+          style={{ flex: 1, accentColor: BONDY_ORANGE, cursor: 'pointer' }}
+        />
+        <span style={{ fontSize: '10px', color: '#888', fontFamily: FONT_MONO, whiteSpace: 'nowrap' }}>{dim.rightLabel}</span>
+      </div>
+    </div>
+  )
+}
+
+function DisonanciaModal({ modelScores, recruiterScores, onSave, onClose }) {
+  const [nota, setNota] = useState('')
+  const [visibleCliente, setVisibleCliente] = useState(false)
+
+  const LABELS = {
+    claridad_motivacional: 'Claridad motivacional',
+    consistencia_discurso: 'Consistencia del discurso',
+    alineacion_cultural: 'Alineación cultural',
+    motivacion_pertenencia: 'Motivación de pertenencia',
+  }
+
+  const disonancia = Object.entries(LABELS).map(([id, label]) => {
+    const modelVal = modelScores?.block_a?.[id]?.score
+    const recVal = recruiterScores?.[id]
+    const diff = modelVal && recVal ? Math.abs(modelVal - recVal) : null
+    return { id, label, modelVal, recVal, diff }
+  })
+
+  const hasDisonancia = disonancia.some(d => d.diff !== null && d.diff >= 2)
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ background: 'white', borderRadius: '16px', padding: '32px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h2 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 800, color: '#111' }}>Confirmar scorecard</h2>
+        <p style={{ margin: '0 0 24px', fontSize: '13px', color: '#888' }}>Revisá la comparación antes de guardar</p>
+
+        <div style={{ marginBottom: '24px' }}>
+          <p style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: BONDY_ORANGE, margin: '0 0 12px', fontFamily: FONT_MONO }}>Comparación recruiter vs. modelo</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <thead>
+              <tr style={{ borderBottom: '1.5px solid #e5e7eb' }}>
+                <th style={{ textAlign: 'left', padding: '6px 8px', color: '#888', fontWeight: 600, fontFamily: FONT_MONO, fontSize: '10px' }}>Dimensión</th>
+                <th style={{ textAlign: 'center', padding: '6px 8px', color: '#888', fontWeight: 600, fontFamily: FONT_MONO, fontSize: '10px' }}>Recruiter</th>
+                <th style={{ textAlign: 'center', padding: '6px 8px', color: '#888', fontWeight: 600, fontFamily: FONT_MONO, fontSize: '10px' }}>Modelo</th>
+                <th style={{ textAlign: 'center', padding: '6px 8px', color: '#888', fontWeight: 600, fontFamily: FONT_MONO, fontSize: '10px' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {disonancia.map(({ id, label, modelVal, recVal, diff }) => (
+                <tr key={id} style={{ borderBottom: '1px solid #f5f5f5', background: diff >= 2 ? '#fff7ed' : 'white' }}>
+                  <td style={{ padding: '8px', color: '#333' }}>{label}</td>
+                  <td style={{ padding: '8px', textAlign: 'center', fontWeight: 700, color: recVal ? SCORE_LABELS[recVal]?.color : '#ccc', fontFamily: FONT_MONO }}>{recVal || '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'center', fontWeight: 700, color: modelVal ? SCORE_LABELS[modelVal]?.color : '#ccc', fontFamily: FONT_MONO }}>{modelVal || '—'}</td>
+                  <td style={{ padding: '8px', textAlign: 'center' }}>
+                    {diff >= 2 ? <span title="Disonancia alta">⚠️</span> : diff === 1 ? <span style={{ color: '#aaa' }}>~</span> : <span style={{ color: '#86efac' }}>✓</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {hasDisonancia && (
+            <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#d97706', fontFamily: FONT_MONO }}>⚠️ Diferencias de 2+ puntos detectadas. ¿Hubo algo en la entrevista que no quedó en el transcript?</p>
+          )}
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: '#555', marginBottom: '8px', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>
+            Nota interna (opcional)
+          </label>
+          <textarea
+            value={nota}
+            onChange={e => setNota(e.target.value)}
+            placeholder="¿Algo que observaste en vivo que no quedó en el transcript? Esta nota es solo interna."
+            style={{ width: '100%', border: '1.5px solid #EBEBEB', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', background: 'white', color: '#111', boxSizing: 'border-box', resize: 'vertical', minHeight: '80px', lineHeight: '1.6' }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px', padding: '14px 16px', background: '#f9f9f9', borderRadius: '10px' }}>
+          <input
+            type="checkbox"
+            id="visible-cliente"
+            checked={visibleCliente}
+            onChange={e => setVisibleCliente(e.target.checked)}
+            style={{ width: '16px', height: '16px', accentColor: BONDY_ORANGE, cursor: 'pointer' }}
+          />
+          <label htmlFor="visible-cliente" style={{ fontSize: '13px', color: '#333', cursor: 'pointer' }}>
+            <strong>Incluir scorecard en el reporte para el cliente</strong>
+            <span style={{ display: 'block', fontSize: '11px', color: '#888', marginTop: '2px' }}>Si no lo activás, la scorecard queda solo en la base interna de Bondy</span>
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '12px', border: '1.5px solid #e5e7eb', background: 'white', color: '#555', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+            Cancelar
+          </button>
+          <button onClick={() => onSave({ nota, visibleCliente })} style={{ flex: 2, padding: '12px', border: 'none', background: `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: 800, boxShadow: '0 4px 16px rgba(224,92,0,0.3)' }}>
+            Guardar scorecard
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function InterviewTab() {
   const [candidateName, setCandidateName] = useState('')
   const [linkedinUrl, setLinkedinUrl] = useState('')
@@ -189,7 +370,6 @@ export default function InterviewTab() {
   const [positionId, setPositionId] = useState('')
   const [positionName, setPositionName] = useState('')
 
-  const [jobDescription, setJobDescription] = useState('')
   const [interviewerNotes, setInterviewerNotes] = useState('')
   const [transcript, setTranscript] = useState('')
   const [originalTranscript, setOriginalTranscript] = useState(null)
@@ -205,6 +385,13 @@ export default function InterviewTab() {
   const [error, setError] = useState(null)
   const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState(null)
+  const [recruiterScores, setRecruiterScores] = useState({})
+  const [recruiterPositional, setRecruiterPositional] = useState({ preferencia_entorno: 3 })
+  const [bondyScorecard, setBondyScorecard] = useState(null)
+  const [showDisonanciaModal, setShowDisonanciaModal] = useState(false)
+  const [bondyScorecardSaved, setBondyScorecardSaved] = useState(false)
+  const [reportId, setReportId] = useState(null)
+  const [bondyScorecardLoading, setBondyScorecardLoading] = useState(false)
 
   useEffect(() => {
     fetch('/api/scorecards?clients=true')
@@ -241,6 +428,22 @@ export default function InterviewTab() {
       .catch(() => setScorecard(null))
       .finally(() => setScorecardLoading(false))
   }, [clientName, positionName])
+
+  const handleRecruiterScore = (id, val) => setRecruiterScores(prev => ({ ...prev, [id]: val }))
+  const handleRecruiterPositional = (id, val) => setRecruiterPositional(prev => ({ ...prev, [id]: val }))
+
+  const handleSaveBondyScorecard = async ({ nota, visibleCliente }) => {
+    if (!reportId || !bondyScorecard) { setShowDisonanciaModal(false); return }
+    try {
+      await fetch('/api/bondy-scorecard', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId, bondyScorecard, recruiterScores, recruiterPositional, nota, visibleCliente }),
+      })
+      setBondyScorecardSaved(true)
+    } catch (e) { console.error('Error saving bondy scorecard:', e) }
+    setShowDisonanciaModal(false)
+  }
 
   const handleTranscriptChange = (val) => {
     setTranscript(val)
@@ -313,7 +516,6 @@ export default function InterviewTab() {
           cvText: cvText.trim() || null,
           clientName: clientName === '__DEFAULT__' ? null : (clientName.trim() || null),
           positionName: positionName.trim() || null,
-          jobDescription: jobDescription.trim() || null,
           scorecardId: scorecard?.id || null,
           scorecardData: scorecard?.scorecard_data || null,
         }),
@@ -322,6 +524,31 @@ export default function InterviewTab() {
       if (!res.ok) throw new Error(data.error || 'Error generando informe')
       setResults(data)
       if (data.saved) setSaved(true)
+      if (data.reportId) setReportId(data.reportId)
+      // Run Bondy scorecard in parallel after report is generated
+      if (transcript.trim().length > 50) {
+        setBondyScorecardLoading(true)
+        try {
+          const scRes = await fetch('/api/bondy-scorecard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              transcript: transcript.trim(),
+              candidateName: candidateName.trim(),
+              clientName: clientName === '__DEFAULT__' ? null : (clientName.trim() || null),
+              positionName: positionName.trim() || null,
+              recruiterScores,
+              recruiterPositional,
+            }),
+          })
+          const scData = await scRes.json()
+          if (scData.bondyScorecard) {
+            setBondyScorecard(scData.bondyScorecard)
+            setShowDisonanciaModal(true)
+          }
+        } catch (e) { console.error('Bondy scorecard error:', e) }
+        finally { setBondyScorecardLoading(false) }
+      }
     } catch (e) { setError(e.message) } finally { setLoading(false) }
   }
 
@@ -413,23 +640,6 @@ export default function InterviewTab() {
         )}
       </section>
 
-
-      <section>
-        <SectionHeader label="Job Description" />
-        <textarea
-          className="input-field"
-          value={jobDescription}
-          onChange={e => setJobDescription(e.target.value)}
-          placeholder="Pegá la job description de la posición..."
-          style={{ ...textareaStyle, minHeight: '140px' }}
-        />
-        {!jobDescription.trim() && (
-          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#f59e0b', fontFamily: FONT_MONO }}>
-            ⚠️ Sin JD el agente no puede evaluar el match con la posición
-          </p>
-        )}
-      </section>
-
       <section>
         <SectionHeader label="Notas del entrevistador" />
         <textarea className="input-field" value={interviewerNotes} onChange={e => setInterviewerNotes(e.target.value)} placeholder="Opcional — impresiones, señales, contexto extra que no quedó en la transcripción..." style={{ ...textareaStyle, minHeight: '100px' }} />
@@ -512,10 +722,33 @@ export default function InterviewTab() {
         </section>
       )}
 
+      <section>
+        <SectionHeader label="Tu evaluación — Perfil motivacional y cultural" />
+        <p style={{ fontSize: '12px', color: '#888', margin: '-8px 0 20px' }}>
+          Puntuá lo que observaste en la entrevista. El modelo evaluará las mismas dimensiones y verás la comparación al generar.
+        </p>
+        {BONDY_DIMS_A.map(dim => (
+          <SliderDimension
+            key={dim.id}
+            dim={dim}
+            value={recruiterScores[dim.id] || null}
+            onChange={handleRecruiterScore}
+          />
+        ))}
+        {BONDY_POSITIONAL.map(dim => (
+          <PositionalSlider
+            key={dim.id}
+            dim={dim}
+            value={recruiterPositional[dim.id] || 3}
+            onChange={handleRecruiterPositional}
+          />
+        ))}
+      </section>
+
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <button onClick={handleGenerate} disabled={loading || !canGenerate}
           style={{ padding: '16px 48px', border: 'none', background: (!canGenerate || loading) ? '#ccc' : `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '12px', cursor: (!canGenerate || loading) ? 'not-allowed' : 'pointer', fontSize: '15px', fontWeight: 800, letterSpacing: '0.02em', boxShadow: (!canGenerate || loading) ? 'none' : '0 4px 20px rgba(224,92,0,0.35)', transition: 'all 0.2s' }}>
-          {loading ? 'Generando...' : scorecard ? `Generar informe + scorecard ${positionName || displayClientName}` : 'Generar informe de entrevista'}
+          {loading ? 'Generando informe...' : bondyScorecardLoading ? 'Analizando perfil...' : scorecard ? `Generar informe + scorecard ${positionName || displayClientName}` : 'Generar informe de entrevista'}
         </button>
       </div>
 
@@ -548,6 +781,20 @@ export default function InterviewTab() {
               onCopy={copy}
             />
           )}
+        </div>
+      )}
+      {showDisonanciaModal && bondyScorecard && (
+        <DisonanciaModal
+          modelScores={bondyScorecard}
+          recruiterScores={recruiterScores}
+          onSave={handleSaveBondyScorecard}
+          onClose={() => setShowDisonanciaModal(false)}
+        />
+      )}
+
+      {bondyScorecardSaved && (
+        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px' }}>
+          ✓ Scorecard Bondy guardada en base de datos
         </div>
       )}
     </div>
