@@ -1,4 +1,4 @@
-''use client''
+'use client'
 
 import { useState, useEffect, useRef } from 'react'
 
@@ -33,7 +33,7 @@ function CopyBtn({ text, id, copied, onCopy }) {
   return (
     <button onClick={() => onCopy(text, id)}
       style={{ padding: '6px 14px', border: `1px solid ${copied === id ? '#86efac' : '#e5e7eb'}`, background: copied === id ? '#f0fdf4' : 'white', color: copied === id ? '#16a34a' : '#666', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontFamily: FONT_MONO, transition: 'all 0.2s' }}>
-      {copied === id ? '✓ Copiado' : 'Copiar'}
+      {copied === id ? '\u2713 Copiado' : 'Copiar'}
     </button>
   )
 }
@@ -153,8 +153,8 @@ export default function InterviewTab() {
   const showOptimizeBtn = transcript.length > 1500 && !optimizeResult
 
   const handleGenerate = async () => {
-    if (!candidateName.trim()) return setError('Ingresá el nombre del candidato')
-    if (!transcript.trim() || transcript.trim().length < 50) return setError('Pegá la transcripción de la entrevista')
+    if (!candidateName.trim()) return setError('Ingres\u00e1 el nombre del candidato')
+    if (!transcript.trim() || transcript.trim().length < 50) return setError('Peg\u00e1 la transcripci\u00f3n de la entrevista')
     setLoading(true); setError(null); setResults(null); setSaved(false)
     try {
       const res = await fetch('/api/generate', {
@@ -197,7 +197,6 @@ export default function InterviewTab() {
         .input-field:focus { border-color: ${BONDY_ORANGE} !important; }
       `}</style>
 
-      {/* CANDIDATO */}
       <section>
         <SectionHeader label="Candidato" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
@@ -213,32 +212,31 @@ export default function InterviewTab() {
         <div>
           <Label>CV (opcional)</Label>
           <div onClick={() => fileRef.current.click()} style={{ border: `1.5px dashed ${cvFile ? '#86efac' : '#EBEBEB'}`, borderRadius: '10px', padding: '14px 18px', cursor: 'pointer', background: cvFile ? '#f0fdf4' : 'white', display: 'flex', alignItems: 'center', gap: '12px', transition: 'all 0.2s' }}>
-            <span style={{ fontSize: '20px' }}>{cvFile ? '📄' : '📎'}</span>
+            <span style={{ fontSize: '20px' }}>{cvFile ? '\ud83d\udcc4' : '\ud83d\udcce'}</span>
             <div>
               <p style={{ margin: 0, fontSize: '13px', color: cvFile ? '#16a34a' : '#555', fontWeight: cvFile ? 600 : 400 }}>{cvFile ? cvFile.name : 'Subir CV del candidato'}</p>
-              {!cvFile && <p style={{ margin: 0, fontSize: '11px', color: '#aaa', fontFamily: FONT_MONO }}>PDF · DOCX · TXT</p>}
+              {!cvFile && <p style={{ margin: 0, fontSize: '11px', color: '#aaa', fontFamily: FONT_MONO }}>PDF \u00b7 DOCX \u00b7 TXT</p>}
             </div>
-            {cvFile && <button onClick={e => { e.stopPropagation(); setCvFile(null); setCvText('') }} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: '14px' }}>✕</button>}
+            {cvFile && <button onClick={e => { e.stopPropagation(); setCvFile(null); setCvText('') }} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: '14px' }}>\u2715</button>}
           </div>
           <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt" style={{ display: 'none' }} onChange={e => handleCvFile(e.target.files[0])} />
         </div>
       </section>
 
-      {/* CLIENTE */}
       <section>
-        <SectionHeader label="Cliente y posición" />
+        <SectionHeader label="Cliente y posici\u00f3n" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div>
             <Label>Cliente</Label>
             <select value={clientName} onChange={e => setClientName(e.target.value)} style={selectStyle}>
-              <option value="">— Seleccioná cliente —</option>
+              <option value="">\u2014 Selecci\u00f3n\u00e1 cliente \u2014</option>
               {clients.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <Label>Posición</Label>
+            <Label>Posici\u00f3n</Label>
             <select value={positionId} onChange={e => { const sel = positions.find(p => p.id === e.target.value); setPositionId(e.target.value); setPositionName(sel?.scorecard_name || '') }} disabled={!clientName || positions.length === 0} style={{ ...selectStyle, opacity: (!clientName || positions.length === 0) ? 0.5 : 1 }}>
-              <option value="">{!clientName ? '— Primero elegí cliente —' : positions.length === 0 ? '— Sin posiciones cargadas —' : '— Seleccioná posición —'}</option>
+              <option value="">{!clientName ? '\u2014 Primero eleg\u00ed cliente \u2014' : positions.length === 0 ? '\u2014 Sin posiciones cargadas \u2014' : '\u2014 Selecci\u00f3n\u00e1 posici\u00f3n \u2014'}</option>
               {positions.map(p => <option key={p.id} value={p.id}>{p.scorecard_name}</option>)}
             </select>
           </div>
@@ -251,29 +249,26 @@ export default function InterviewTab() {
                 ? <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '12px', fontWeight: 700, color: '#111' }}>{scorecard.scorecard_name}</span>
                     {isDefaultScorecard && <span style={{ fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#d97706', background: '#fef9c3', padding: '2px 6px', borderRadius: '4px', fontFamily: FONT_MONO }}>Default</span>}
-                    <span style={{ fontSize: '11px', color: '#888', marginLeft: 'auto' }}>🔧 {techSkills.length} técnicos · 💬 {softSkills.length} blandos</span>
+                    <span style={{ fontSize: '11px', color: '#888', marginLeft: 'auto' }}>\ud83d\udd27 {techSkills.length} t\u00e9cnicos \u00b7 \ud83d\udcac {softSkills.length} blandos</span>
                   </div>
                 : <span style={{ fontSize: '12px', color: '#888' }}>Sin scorecard para este cliente</span>}
           </div>
         )}
       </section>
 
-      {/* NOTAS */}
       <section>
         <SectionHeader label="Notas del entrevistador" />
-        <textarea className="input-field" value={interviewerNotes} onChange={e => setInterviewerNotes(e.target.value)} placeholder="Opcional — impresiones, señales, contexto extra que no quedó en la transcripción..." style={{ ...textareaStyle, minHeight: '100px' }} />
+        <textarea className="input-field" value={interviewerNotes} onChange={e => setInterviewerNotes(e.target.value)} placeholder="Opcional \u2014 impresiones, se\u00f1ales, contexto extra que no qued\u00f3 en la transcripci\u00f3n..." style={{ ...textareaStyle, minHeight: '100px' }} />
       </section>
 
-      {/* TRANSCRIPCIÓN */}
       <section>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ display: 'block', width: '16px', height: '1px', background: BONDY_ORANGE }} />
             <span style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: BONDY_ORANGE, fontFamily: FONT_MONO }}>
-              Transcripción <span style={{ color: '#ef4444' }}>*</span>
+              Transcripci\u00f3n <span style={{ color: '#ef4444' }}>*</span>
             </span>
           </div>
-
           {showOptimizeBtn && (
             <button
               className="optimize-btn"
@@ -291,7 +286,7 @@ export default function InterviewTab() {
               }}>
               {optimizing
                 ? <><span style={{ display: 'inline-block', width: '11px', height: '11px', border: `2px solid ${BONDY_ORANGE}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Limpiando...</>
-                : <><span>✂️</span> Limpiar transcript</>}
+                : <><span>\u2702\ufe0f</span> Limpiar transcript</>}
             </button>
           )}
         </div>
@@ -304,23 +299,23 @@ export default function InterviewTab() {
             border: `1px solid ${optimizeResult.alreadyShort ? '#bae6fd' : '#86efac'}`,
             display: 'flex', alignItems: 'center', gap: '12px'
           }}>
-            <span style={{ fontSize: '16px' }}>{optimizeResult.alreadyShort ? '✓' : '✅'}</span>
+            <span style={{ fontSize: '16px' }}>{optimizeResult.alreadyShort ? '\u2713' : '\u2705'}</span>
             <div style={{ flex: 1 }}>
               {optimizeResult.alreadyShort
-                ? <span style={{ fontSize: '13px', color: '#0369a1' }}>El transcript ya es corto — no necesita limpieza</span>
+                ? <span style={{ fontSize: '13px', color: '#0369a1' }}>El transcript ya es corto \u2014 no necesita limpieza</span>
                 : <>
                     <span style={{ fontSize: '13px', fontWeight: 700, color: '#16a34a' }}>
-                      Transcript limpiado — {optimizeResult.savings}% más corto
+                      Transcript limpiado \u2014 {optimizeResult.savings}% m\u00e1s corto
                     </span>
                     <span style={{ fontSize: '11px', color: '#666', marginLeft: '10px', fontFamily: FONT_MONO }}>
-                      {(optimizeResult.originalLength / 1000).toFixed(1)}k → {(optimizeResult.optimizedLength / 1000).toFixed(1)}k chars
+                      {(optimizeResult.originalLength / 1000).toFixed(1)}k \u2192 {(optimizeResult.optimizedLength / 1000).toFixed(1)}k chars
                     </span>
                   </>}
             </div>
             {!optimizeResult.alreadyShort && originalTranscript && (
               <button onClick={handleRestoreTranscript}
                 style={{ fontSize: '11px', color: '#666', background: 'none', border: '1px solid #d1d5db', borderRadius: '6px', padding: '5px 12px', cursor: 'pointer', fontFamily: FONT_MONO, whiteSpace: 'nowrap' }}>
-                ↩ Restaurar original
+                \u21a9 Restaurar original
               </button>
             )}
           </div>
@@ -330,34 +325,33 @@ export default function InterviewTab() {
           className="input-field"
           value={transcript}
           onChange={e => handleTranscriptChange(e.target.value)}
-          placeholder="Pegá aquí la transcripción completa de la entrevista..."
+          placeholder="Peg\u00e1 aqu\u00ed la transcripci\u00f3n completa de la entrevista..."
           style={{ ...textareaStyle, minHeight: charCount > 2000 ? '260px' : '180px' }}
         />
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
           <span style={{ fontSize: '11px', color: charColor, fontFamily: FONT_MONO, transition: 'color 0.2s' }}>
-            {charCount > 0 ? `${charCount.toLocaleString()} caracteres` : 'Mínimo recomendado: 1.000 caracteres'}
+            {charCount > 0 ? `${charCount.toLocaleString()} caracteres` : 'M\u00ednimo recomendado: 1.000 caracteres'}
           </span>
           {charCount > 2500 && !optimizeResult && (
             <span style={{ fontSize: '11px', color: '#f59e0b', fontFamily: FONT_MONO }}>
-              ⚠️ Transcript largo — recomendamos limpiar antes de generar
+              \u26a0\ufe0f Transcript largo \u2014 recomendamos limpiar antes de generar
             </span>
           )}
         </div>
       </section>
 
-      {/* SKILLS PREVIEW */}
       {scorecard && (techSkills.length > 0 || softSkills.length > 0) && (
         <section>
           <SectionHeader label="Skills a evaluar" />
           <div style={{ display: 'grid', gridTemplateColumns: techSkills.length > 0 && softSkills.length > 0 ? '1fr 1fr' : '1fr', gap: '16px' }}>
             {techSkills.length > 0 && (
               <div style={{ background: 'white', border: '1px solid #f0f0f0', borderRadius: '10px', padding: '16px' }}>
-                <p style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: BONDY_ORANGE, margin: '0 0 10px', fontFamily: FONT_MONO }}>Técnicos</p>
+                <p style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: BONDY_ORANGE, margin: '0 0 10px', fontFamily: FONT_MONO }}>T\u00e9cnicos</p>
                 {techSkills.map((s, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #f8f8f8', fontSize: '12px' }}>
                     <span style={{ color: '#333' }}>{s.name}</span>
-                    <span style={{ color: '#aaa', fontFamily: FONT_MONO }}>×{s.weight}%</span>
+                    <span style={{ color: '#aaa', fontFamily: FONT_MONO }}>{s.weight}%</span>
                   </div>
                 ))}
               </div>
@@ -368,7 +362,7 @@ export default function InterviewTab() {
                 {softSkills.map((s, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #f8f8f8', fontSize: '12px' }}>
                     <span style={{ color: '#333' }}>{s.name}</span>
-                    <span style={{ color: '#aaa', fontFamily: FONT_MONO }}>×{s.weight}%</span>
+                    <span style={{ color: '#aaa', fontFamily: FONT_MONO }}>{s.weight}%</span>
                   </div>
                 ))}
               </div>
@@ -377,7 +371,6 @@ export default function InterviewTab() {
         </section>
       )}
 
-      {/* BOTÓN GENERAR */}
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <button onClick={handleGenerate} disabled={loading || !canGenerate}
           style={{ padding: '16px 48px', border: 'none', background: (!canGenerate || loading) ? '#ccc' : `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '12px', cursor: (!canGenerate || loading) ? 'not-allowed' : 'pointer', fontSize: '15px', fontWeight: 800, letterSpacing: '0.02em', boxShadow: (!canGenerate || loading) ? 'none' : '0 4px 20px rgba(224,92,0,0.35)', transition: 'all 0.2s' }}>
@@ -386,18 +379,18 @@ export default function InterviewTab() {
       </div>
 
       {error && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '16px', color: '#dc2626', fontSize: '14px' }}>⚠️ {error}</div>
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '16px', color: '#dc2626', fontSize: '14px' }}>\u26a0\ufe0f {error}</div>
       )}
 
       {results && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.3s ease' }}>
-          {saved && <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px' }}>✓ Guardado en Supabase</div>}
+          {saved && <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px' }}>\u2713 Guardado en Supabase</div>}
 
           {(results.technicalScore != null || results.softScore != null || results.overallScore != null) && (
             <div style={{ background: 'white', border: '1.5px solid #e5e7eb', borderRadius: '14px', padding: '24px' }}>
               <SectionHeader label="Scores" />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                {results.technicalScore != null && <div style={{ textAlign: 'center', padding: '16px', background: '#FFF3EC', borderRadius: '10px' }}><div style={{ fontSize: '28px', fontWeight: 900, color: BONDY_ORANGE, fontFamily: FONT_MONO }}>{Math.round(results.technicalScore)}</div><div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>Técnico</div></div>}
+                {results.technicalScore != null && <div style={{ textAlign: 'center', padding: '16px', background: '#FFF3EC', borderRadius: '10px' }}><div style={{ fontSize: '28px', fontWeight: 900, color: BONDY_ORANGE, fontFamily: FONT_MONO }}>{Math.round(results.technicalScore)}</div><div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>T\u00e9cnico</div></div>}
                 {results.softScore != null && <div style={{ textAlign: 'center', padding: '16px', background: '#EFF6FF', borderRadius: '10px' }}><div style={{ fontSize: '28px', fontWeight: 900, color: '#4A90D9', fontFamily: FONT_MONO }}>{Math.round(results.softScore)}</div><div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>Blando</div></div>}
                 {results.overallScore != null && <div style={{ textAlign: 'center', padding: '16px', background: '#F9F8F6', borderRadius: '10px', border: '1.5px solid #e5e7eb' }}><div style={{ fontSize: '28px', fontWeight: 900, color: '#111', fontFamily: FONT_MONO }}>{Math.round(results.overallScore)}</div><div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>Overall</div></div>}
               </div>
@@ -417,7 +410,7 @@ export default function InterviewTab() {
           {results.scorecardReport && (
             <div style={{ background: 'white', border: '1.5px solid #e5e7eb', borderRadius: '14px', padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <SectionHeader label="Evaluación por Scorecard" />
+                <SectionHeader label="Evaluaci\u00f3n por Scorecard" />
                 <CopyBtn text={results.scorecardReport} id="scorecard" copied={copied} onCopy={copy} />
               </div>
               <div style={{ fontSize: '14px', lineHeight: '1.8', color: '#333', whiteSpace: 'pre-wrap' }}>{results.scorecardReport}</div>
