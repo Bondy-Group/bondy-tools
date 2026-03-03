@@ -18,7 +18,7 @@ const BondyLogo = () => (
 
 const Label = ({ children, required }) => (
   <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: '#555', marginBottom: '6px', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>
-    {children}{required && <span style={{ color: '#ef4444' }}> *</span>}
+    {children} {required && <span style={{ color: '#ef4444' }}>*</span>}
   </label>
 )
 
@@ -77,19 +77,17 @@ function SkillEditor({ skill, index, onChange, onDelete, onMove, total }) {
               <Label>Preguntas de entrevista</Label>
               <button onClick={() => onChange(index, 'questions', [...(skill.questions || []), ''])}
                 style={{ fontSize: '11px', padding: '4px 10px', border: `1px solid ${BONDY_ORANGE}`, background: 'transparent', color: BONDY_ORANGE, borderRadius: '6px', cursor: 'pointer', fontFamily: FONT_MONO }}>
-                + Agregar
+                + Pregunta
               </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {(skill.questions || []).map((q, qi) => (
-                <div key={qi} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <span style={{ color: '#bbb', fontSize: '11px', fontFamily: FONT_MONO, paddingTop: '10px', flexShrink: 0 }}>{qi + 1}.</span>
-                  <input value={q} onChange={e => { const nq = [...skill.questions]; nq[qi] = e.target.value; onChange(index, 'questions', nq) }} placeholder="Pregunta para la entrevista..." style={{ ...inputStyle, flex: 1 }} />
-                  <button onClick={() => onChange(index, 'questions', skill.questions.filter((_, i) => i !== qi))} style={{ padding: '8px', border: 'none', background: 'none', cursor: 'pointer', color: '#ddd', flexShrink: 0 }}>✕</button>
-                </div>
-              ))}
-              {(!skill.questions || skill.questions.length === 0) && <p style={{ fontSize: '12px', color: '#bbb', fontStyle: 'italic', margin: 0 }}>Sin preguntas aún.</p>}
-            </div>
+            {(skill.questions || []).map((q, qi) => (
+              <div key={qi} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '6px' }}>
+                <span style={{ color: '#bbb', fontSize: '11px', fontFamily: FONT_MONO, paddingTop: '10px', flexShrink: 0 }}>{qi + 1}.</span>
+                <input value={q} onChange={e => { const nq = [...skill.questions]; nq[qi] = e.target.value; onChange(index, 'questions', nq) }} placeholder="Pregunta..." style={{ ...inputStyle, flex: 1 }} />
+                <button onClick={() => onChange(index, 'questions', skill.questions.filter((_, i) => i !== qi))} style={{ padding: '8px', border: 'none', background: 'none', cursor: 'pointer', color: '#ddd' }}>✕</button>
+              </div>
+            ))}
+            {(!skill.questions || skill.questions.length === 0) && <p style={{ fontSize: '12px', color: '#bbb', fontStyle: 'italic', margin: 0 }}>Sin preguntas.</p>}
           </div>
         </div>
       )}
@@ -97,7 +95,7 @@ function SkillEditor({ skill, index, onChange, onDelete, onMove, total }) {
   )
 }
 
-function ScorecardForm({ initial, onSave, onCancel, clients }) {
+function ScorecardForm({ initial, onSave, onCancel, existingClients }) {
   const [clientName, setClientName] = useState(initial?.client_name || '')
   const [customClient, setCustomClient] = useState('')
   const [scorecardName, setScorecardName] = useState(initial?.scorecard_name || '')
@@ -106,19 +104,20 @@ function ScorecardForm({ initial, onSave, onCancel, clients }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
-  const totalWeight = skills.reduce((s, sk) => s + (sk.weight || 0), 0)
+  const isDefault = clientName === '__DEFAULT__'
+  const totalWeight = skills.reduce((s, sk) => s + (parseInt(sk.weight) || 0), 0)
   const techSkills = skills.filter(s => s.skill_type === 'technical')
   const softSkills = skills.filter(s => s.skill_type === 'soft')
 
   const addSkill = (type) => setSkills(prev => [...prev, { id: `skill_${Date.now()}`, name: '', weight: 10, skill_type: type, description: '', questions: [] }])
-  const updateSkill = (index, field, value) => setSkills(prev => { const c = [...prev]; c[index] = { ...c[index], [field]: value }; return c })
-  const deleteSkill = (index) => setSkills(prev => prev.filter((_, i) => i !== index))
-  const moveSkill = (index, dir) => setSkills(prev => { const c = [...prev]; [c[index], c[index + dir]] = [c[index + dir], c[index]]; return c })
+  const updateSkill = (i, field, value) => setSkills(prev => { const c = [...prev]; c[i] = { ...c[i], [field]: value }; return c })
+  const deleteSkill = (i) => setSkills(prev => prev.filter((_, idx) => idx !== i))
+  const moveSkill = (i, dir) => setSkills(prev => { const c = [...prev]; const t = i + dir; [c[i], c[t]] = [c[t], c[i]]; return c })
 
   const save = async () => {
     const finalClient = clientName === '__CUSTOM__' ? customClient.trim() : clientName
     if (!finalClient) return setError('Seleccioná o ingresá un cliente')
-    if (!scorecardName.trim()) return setError('Ingresá un nombre para la scorecard')
+    if (!scorecardName.trim()) return setError('Ingresá un nombre')
     if (skills.length === 0) return setError('Agregá al menos un skill')
     setSaving(true); setError(null)
     try {
@@ -141,11 +140,11 @@ function ScorecardForm({ initial, onSave, onCancel, clients }) {
             <select value={clientName} onChange={e => setClientName(e.target.value)} style={inputStyle}>
               <option value="">— Seleccioná —</option>
               <option value="__DEFAULT__">⭐ Default (sin cliente)</option>
-              <option value="__CUSTOM__">✏️ Cliente nuevo...</option>
-              {clients.filter(c => c !== '__DEFAULT__').map(c => <option key={c} value={c}>{c}</option>)}
+              <option value="__CUSTOM__">✏️ Nuevo cliente</option>
+              {existingClients.filter(c => c !== '__DEFAULT__').map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             {clientName === '__CUSTOM__' && <input value={customClient} onChange={e => setCustomClient(e.target.value)} placeholder="Nombre del cliente..." style={{ ...inputStyle, marginTop: '8px' }} />}
-            {clientName === '__DEFAULT__' && <p style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>Se usa cuando no hay cliente asignado.</p>}
+            {isDefault && <p style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>Se usa cuando no se selecciona cliente específico.</p>}
           </div>
           <div>
             <Label required>Nombre de la scorecard</Label>
@@ -154,38 +153,40 @@ function ScorecardForm({ initial, onSave, onCancel, clients }) {
         </div>
         <div>
           <Label>Descripción</Label>
-          <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción del perfil que evalúa..." style={inputStyle} />
+          <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción breve del perfil que evalúa..." style={inputStyle} />
         </div>
         {skills.length > 0 && (
           <div style={{ background: totalWeight === 100 ? '#f0fdf4' : '#fff7ed', border: `1px solid ${totalWeight === 100 ? '#86efac' : '#fde68a'}`, borderRadius: '8px', padding: '10px 14px', display: 'flex', gap: '16px', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: totalWeight === 100 ? '#16a34a' : '#d97706', fontFamily: FONT_MONO }}>{totalWeight === 100 ? '✓' : '⚠'} Peso total: {totalWeight}%</span>
-            <span style={{ fontSize: '11px', color: '#999' }}>🔧 {techSkills.length} técnicos · 💬 {softSkills.length} blandos</span>
-            {totalWeight !== 100 && <span style={{ fontSize: '11px', color: '#d97706' }}>La IA normaliza automáticamente.</span>}
+            <span style={{ fontSize: '11px', color: '#999' }}>{techSkills.length} técnicos · {softSkills.length} blandos</span>
+            {totalWeight !== 100 && <span style={{ fontSize: '11px', color: '#d97706' }}>La IA normaliza si no suma 100.</span>}
           </div>
         )}
       </div>
 
-      {['technical', 'soft'].map(type => (
-        <div key={type}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: type === 'technical' ? BONDY_ORANGE : '#4A90D9', fontFamily: FONT_MONO }}>
-              {type === 'technical' ? `🔧 Skills Técnicos (${techSkills.length})` : `💬 Skills Blandos (${softSkills.length})`}
-            </span>
-            <button onClick={() => addSkill(type)}
-              style={{ padding: '8px 16px', border: `1.5px solid ${type === 'technical' ? BONDY_ORANGE : '#4A90D9'}`, background: 'transparent', color: type === 'technical' ? BONDY_ORANGE : '#4A90D9', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, fontFamily: FONT_MONO }}>
-              + Agregar skill {type === 'technical' ? 'técnico' : 'blando'}
-            </button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {skills.filter(s => s.skill_type === type).length === 0 && (
-              <div style={{ border: '1.5px dashed #e5e7eb', borderRadius: '10px', padding: '24px', textAlign: 'center', color: '#bbb', fontSize: '13px' }}>Sin skills {type === 'technical' ? 'técnicos' : 'blandos'} aún.</div>
-            )}
-            {skills.map((skill, i) => skill.skill_type === type && (
-              <SkillEditor key={skill.id || i} skill={skill} index={i} onChange={updateSkill} onDelete={deleteSkill} onMove={moveSkill} total={skills.length} />
-            ))}
-          </div>
+      {/* Skills técnicos */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: BONDY_ORANGE, fontFamily: FONT_MONO }}>Skills Técnicos ({techSkills.length})</span>
+          <button onClick={() => addSkill('technical')} style={{ padding: '8px 16px', border: `1.5px solid ${BONDY_ORANGE}`, background: 'transparent', color: BONDY_ORANGE, borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, fontFamily: FONT_MONO }}>+ Técnico</button>
         </div>
-      ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {techSkills.length === 0 && <div style={{ border: '1.5px dashed #e5e7eb', borderRadius: '10px', padding: '20px', textAlign: 'center', color: '#bbb', fontSize: '13px' }}>Sin skills técnicos todavía.</div>}
+          {skills.map((skill, i) => skill.skill_type === 'technical' && <SkillEditor key={skill.id || i} skill={skill} index={i} onChange={updateSkill} onDelete={deleteSkill} onMove={moveSkill} total={skills.length} />)}
+        </div>
+      </div>
+
+      {/* Skills blandos */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4A90D9', fontFamily: FONT_MONO }}>Skills Blandos ({softSkills.length})</span>
+          <button onClick={() => addSkill('soft')} style={{ padding: '8px 16px', border: '1.5px solid #4A90D9', background: 'transparent', color: '#4A90D9', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, fontFamily: FONT_MONO }}>+ Blando</button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {softSkills.length === 0 && <div style={{ border: '1.5px dashed #e5e7eb', borderRadius: '10px', padding: '20px', textAlign: 'center', color: '#bbb', fontSize: '13px' }}>Sin skills blandos todavía.</div>}
+          {skills.map((skill, i) => skill.skill_type === 'soft' && <SkillEditor key={skill.id || i} skill={skill} index={i} onChange={updateSkill} onDelete={deleteSkill} onMove={moveSkill} total={skills.length} />)}
+        </div>
+      </div>
 
       {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 16px', color: '#dc2626', fontSize: '13px' }}>⚠️ {error}</div>}
 
@@ -209,12 +210,12 @@ function ScorecardRow({ sc, onEdit, onDeactivate, isDefault }) {
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
           <span style={{ fontSize: '14px', fontWeight: 700, color: '#111' }}>{sc.scorecard_name}</span>
-          {isDefault && <span style={{ fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: BONDY_ORANGE, background: 'rgba(224,92,0,0.08)', padding: '2px 6px', border: '1px solid rgba(224,92,0,0.2)', fontFamily: 'DM Mono, monospace' }}>Default</span>}
+          {isDefault && <span style={{ fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: BONDY_ORANGE, background: 'rgba(224,92,0,0.08)', padding: '2px 6px', border: '1px solid rgba(224,92,0,0.2)', fontFamily: FONT_MONO }}>Default</span>}
         </div>
         <div style={{ fontSize: '12px', color: '#888' }}>
           <span style={{ color: BONDY_ORANGE, fontWeight: 600 }}>{isDefault ? 'Sin cliente asignado' : sc.client_name}</span>
           <span style={{ margin: '0 8px', color: '#ddd' }}>·</span>
-          <span>🔧 {techCount} · 💬 {softCount}</span>
+          <span>🔧 {techCount} técnicos · 💬 {softCount} blandos</span>
           {sc.description && <><span style={{ margin: '0 8px', color: '#ddd' }}>·</span><span style={{ color: '#aaa' }}>{sc.description}</span></>}
         </div>
       </div>
@@ -233,7 +234,7 @@ export default function ScorecardAdminPage() {
   const [editing, setEditing] = useState(null)
   const [successMsg, setSuccessMsg] = useState(null)
 
-  const allClients = [...new Set(scorecards.map(s => s.client_name))].sort()
+  const existingClients = [...new Set(scorecards.map(s => s.client_name))].sort()
 
   const load = async () => {
     setLoading(true)
@@ -272,12 +273,11 @@ export default function ScorecardAdminPage() {
       <div style={{ padding: '48px 64px' }}>
         <div style={{ marginBottom: '40px' }}>
           <div style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: BONDY_ORANGE, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: FONT_MONO }}>
-            <span style={{ display: 'block', width: '20px', height: '1px', background: BONDY_ORANGE }} />Gestión de evaluaciones
+            <span style={{ display: 'block', width: '20px', height: '1px', background: BONDY_ORANGE }} />
+            Gestión de evaluaciones
           </div>
           <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '40px', fontWeight: 900, color: '#111', marginBottom: '12px', lineHeight: 1 }}>Scorecards<br /><em style={{ color: BONDY_ORANGE }}>por cliente.</em></h1>
-          <p style={{ fontSize: '14px', color: '#888', maxWidth: '520px', lineHeight: 1.7 }}>
-            Creá y gestioná las scorecards para cada cliente. Los recruiters las cargan automáticamente al seleccionar el cliente en el asistente de informes.
-          </p>
+          <p style={{ fontSize: '14px', color: '#888', maxWidth: '520px', lineHeight: 1.7 }}>Creá y gestioná scorecards específicas por cliente. Los recruiters las cargan automáticamente al seleccionar el cliente en el asistente.</p>
         </div>
 
         {successMsg && <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px', marginBottom: '24px' }}>✓ {successMsg}</div>}
@@ -285,10 +285,7 @@ export default function ScorecardAdminPage() {
         {view === 'list' && (
           <>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
-              <button onClick={() => { setEditing(null); setView('new') }}
-                style={{ padding: '12px 28px', border: 'none', background: `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
-                + Nueva scorecard
-              </button>
+              <button onClick={() => { setEditing(null); setView('new') }} style={{ padding: '12px 28px', border: 'none', background: `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>+ Nueva scorecard</button>
             </div>
             {loading ? (
               <div style={{ textAlign: 'center', padding: '60px', color: '#bbb', fontSize: '14px' }}>Cargando...</div>
@@ -311,12 +308,7 @@ export default function ScorecardAdminPage() {
         )}
 
         {(view === 'new' || view === 'edit') && (
-          <ScorecardForm
-            initial={view === 'edit' ? editing : null}
-            clients={allClients}
-            onSave={handleSave}
-            onCancel={() => { setView('list'); setEditing(null) }}
-          />
+          <ScorecardForm initial={view === 'edit' ? editing : null} existingClients={existingClients} onSave={handleSave} onCancel={() => { setView('list'); setEditing(null) }} />
         )}
       </div>
     </main>
