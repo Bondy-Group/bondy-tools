@@ -53,7 +53,7 @@ export default function InterviewTab() {
   const [positionId, setPositionId] = useState('')
   const [positionName, setPositionName] = useState('')
 
-  // Notas del entrevistador
+  // Notas del entrevistador (opcionales)
   const [interviewerNotes, setInterviewerNotes] = useState('')
 
   // Transcripción
@@ -71,7 +71,7 @@ export default function InterviewTab() {
   const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState(null)
 
-  // Cargar lista de clientes al montar
+  // Cargar clientes al montar
   useEffect(() => {
     fetch('/api/scorecards?clients=true')
       .then(r => r.json())
@@ -91,7 +91,6 @@ export default function InterviewTab() {
       .then(d => {
         const pos = d.positions || []
         setPositions(pos)
-        // Si solo hay una posición, seleccionarla automáticamente
         if (pos.length === 1) { setPositionId(pos[0].id); setPositionName(pos[0].scorecard_name) }
       })
       .catch(() => {})
@@ -111,7 +110,6 @@ export default function InterviewTab() {
       .finally(() => setScorecardLoading(false))
   }, [clientName, positionName])
 
-  // Leer CV como texto
   const handleCvFile = (file) => {
     if (!file) return
     setCvFile(file)
@@ -123,9 +121,12 @@ export default function InterviewTab() {
   const techSkills = scorecard?.scorecard_data?.skills?.filter(s => s.skill_type === 'technical') || []
   const softSkills = scorecard?.scorecard_data?.skills?.filter(s => s.skill_type === 'soft') || []
 
+  // Solo requiere nombre + transcripción (notas son opcionales)
+  const canGenerate = candidateName.trim().length > 0 && transcript.trim().length > 50
+
   const handleGenerate = async () => {
-    if (!transcript.trim() && !interviewerNotes.trim()) return setError('Pegá la transcripción o las notas de la entrevista')
     if (!candidateName.trim()) return setError('Ingresá el nombre del candidato')
+    if (!transcript.trim() || transcript.trim().length < 50) return setError('Pegá la transcripción de la entrevista (mínimo 50 caracteres)')
     setLoading(true); setError(null); setResults(null); setSaved(false)
     try {
       const res = await fetch('/api/generate', {
@@ -133,12 +134,12 @@ export default function InterviewTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           transcript: transcript.trim(),
-          interviewerNotes: interviewerNotes.trim(),
+          interviewerNotes: interviewerNotes.trim() || null,
           candidateName: candidateName.trim(),
-          linkedinUrl: linkedinUrl.trim(),
-          cvText: cvText.trim(),
-          clientName: clientName.trim(),
-          positionName: positionName.trim(),
+          linkedinUrl: linkedinUrl.trim() || null,
+          cvText: cvText.trim() || null,
+          clientName: clientName.trim() || null,
+          positionName: positionName.trim() || null,
           scorecardId: scorecard?.id || null,
           scorecardData: scorecard?.scorecard_data || null,
         }),
@@ -156,8 +157,6 @@ export default function InterviewTab() {
     setTimeout(() => setCopied(null), 2200)
   }
 
-  const canGenerate = candidateName.trim() && (transcript.trim().length > 50 || interviewerNotes.trim().length > 20)
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
 
@@ -174,7 +173,6 @@ export default function InterviewTab() {
             <input value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} placeholder="linkedin.com/in/usuario" style={inputStyle} />
           </div>
         </div>
-        {/* CV upload */}
         <div>
           <Label>CV (opcional)</Label>
           <div
@@ -228,7 +226,6 @@ export default function InterviewTab() {
           </div>
         </div>
 
-        {/* Scorecard indicator */}
         {clientName && (
           <div style={{ marginTop: '12px', padding: '12px 16px', borderRadius: '10px', background: scorecardLoading ? '#f9f9f9' : (scorecard ? (isDefaultScorecard ? '#fff7ed' : '#f0fdf4') : '#fafafa'), border: `1px solid ${scorecardLoading ? '#e5e7eb' : (scorecard ? (isDefaultScorecard ? '#fde68a' : '#86efac') : '#e5e7eb')}` }}>
             {scorecardLoading ? (
@@ -240,24 +237,21 @@ export default function InterviewTab() {
                 <span style={{ fontSize: '11px', color: '#888', marginLeft: 'auto' }}>🔧 {techSkills.length} técnicos · 💬 {softSkills.length} blandos</span>
               </div>
             ) : (
-              <span style={{ fontSize: '12px', color: '#888' }}>Sin scorecard cargada para este cliente — se usará evaluación genérica</span>
+              <span style={{ fontSize: '12px', color: '#888' }}>Sin scorecard para este cliente — evaluación genérica</span>
             )}
           </div>
         )}
       </section>
 
-      {/* ── NOTAS DEL ENTREVISTADOR ── */}
+      {/* ── NOTAS DEL ENTREVISTADOR (opcionales) ── */}
       <section>
         <SectionHeader label="Notas del entrevistador" />
         <textarea
           value={interviewerNotes}
           onChange={e => setInterviewerNotes(e.target.value)}
-          placeholder="Anotá tus observaciones: impresiones generales, señales que te llamaron la atención, dudas, contexto extra que no quedó en la transcripción..."
-          style={{ ...textareaStyle, minHeight: '130px' }}
+          placeholder="Opcional — impresiones, señales, contexto extra que no quedó en la transcripción..."
+          style={{ ...textareaStyle, minHeight: '120px' }}
         />
-        <p style={{ fontSize: '11px', color: '#aaa', marginTop: '6px', fontFamily: FONT_MONO }}>
-          Se incorpora al informe como contexto del evaluador
-        </p>
       </section>
 
       {/* ── TRANSCRIPCIÓN ── */}
@@ -270,7 +264,7 @@ export default function InterviewTab() {
           style={textareaStyle}
         />
         <p style={{ fontSize: '11px', color: '#aaa', marginTop: '6px', fontFamily: FONT_MONO }}>
-          {transcript.length > 0 ? `${transcript.length.toLocaleString()} caracteres` : 'Podés usar solo notas si no tenés transcripción'}
+          {transcript.length > 0 ? `${transcript.length.toLocaleString()} caracteres` : 'Mínimo recomendado: 2.000 caracteres'}
         </p>
       </section>
 
