@@ -6,48 +6,49 @@ import { calculateWeightedScore } from '@/lib/scorecards'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// Sonnet: límites mucho más altos, sin rate limit en uso normal
+const MODEL = 'claude-sonnet-4-5'
+
 export async function POST(request) {
   try {
     const body = await request.json()
 
-    // Soporte para campos nuevos y viejos
-    const candidateName     = body.candidateName || null
-    const linkedinUrl       = body.linkedinUrl || body.candidateLinkedin || null
-    const cvText            = body.cvText || null
-    const clientName        = body.clientName || body.client || null
-    const positionName      = body.positionName || null
-    const interviewerNotes  = body.interviewerNotes || null
-    const transcript        = body.transcript || body.notes || null   // nuevo: transcript, viejo: notes
-    const jobDescription    = body.jobDescription || null
-    const scorecardId       = body.scorecardId || null
-    const scorecardData     = body.scorecardData || null
+    const candidateName    = body.candidateName || null
+    const linkedinUrl      = body.linkedinUrl || body.candidateLinkedin || null
+    const cvText           = body.cvText || null
+    const clientName       = body.clientName || body.client || null
+    const positionName     = body.positionName || null
+    const interviewerNotes = body.interviewerNotes || null
+    const transcript       = body.transcript || body.notes || null
+    const jobDescription   = body.jobDescription || null
+    const scorecardId      = body.scorecardId || null
+    const scorecardData    = body.scorecardData || null
 
-    // La transcripción es el campo requerido
     if (!transcript) {
       return NextResponse.json({ error: 'Transcripción requerida' }, { status: 400 })
     }
 
-    // Construir contexto del candidato
+    // Construir contexto completo
     let userContent = ''
-    if (candidateName)     userContent += `CANDIDATO: ${candidateName}\n\n`
-    if (linkedinUrl)       userContent += `LINKEDIN: ${linkedinUrl}\n\n`
-    if (cvText)            userContent += `CV DEL CANDIDATO:\n${cvText}\n\n---\n\n`
-    if (clientName)        userContent += `CLIENTE: ${clientName}\n\n`
-    if (positionName)      userContent += `POSICIÓN: ${positionName}\n\n`
-    if (jobDescription)    userContent += `JOB DESCRIPTION:\n${jobDescription}\n\n---\n\n`
-    if (interviewerNotes)  userContent += `NOTAS DEL ENTREVISTADOR:\n${interviewerNotes}\n\n---\n\n`
+    if (candidateName)    userContent += `CANDIDATO: ${candidateName}\n\n`
+    if (linkedinUrl)      userContent += `LINKEDIN: ${linkedinUrl}\n\n`
+    if (cvText)           userContent += `CV DEL CANDIDATO:\n${cvText}\n\n---\n\n`
+    if (clientName)       userContent += `CLIENTE: ${clientName}\n\n`
+    if (positionName)     userContent += `POSICIÓN: ${positionName}\n\n`
+    if (jobDescription)   userContent += `JOB DESCRIPTION:\n${jobDescription}\n\n---\n\n`
+    if (interviewerNotes) userContent += `NOTAS DEL ENTREVISTADOR:\n${interviewerNotes}\n\n---\n\n`
     userContent += `TRANSCRIPCIÓN DE LA ENTREVISTA:\n${transcript}`
 
     const screeningPrompt = SCREENING_PROMPT({ language: 'es', clientName: clientName || null, jd: jobDescription || null })
 
     // Screening siempre
     const screeningPromise = anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: MODEL,
       max_tokens: 2500,
       messages: [{ role: 'user', content: `${screeningPrompt}\n\n---\n\n${userContent}` }]
     })
 
-    // Scorecard solo si hay skills
+    // Scorecard solo si hay skills cargadas
     let scorecardPromise = null
     if (scorecardData?.skills?.length > 0) {
       const scorecardToEval = {
@@ -57,7 +58,7 @@ export async function POST(request) {
       }
       const scPrompt = SCORECARD_PROMPT({ scorecard: scorecardToEval })
       scorecardPromise = anthropic.messages.create({
-        model: 'claude-opus-4-6',
+        model: MODEL,
         max_tokens: 2000,
         messages: [{ role: 'user', content: `${scPrompt}\n\n---\n\n${userContent}` }]
       })
@@ -70,19 +71,19 @@ export async function POST(request) {
 
     const screeningText = screeningResult.content[0]?.text || ''
 
-    // Parsear respuesta de scorecard
+    // Parsear scorecard JSON
     let parsedScorecard = null
     if (scorecardResult) {
       try {
         const rawText = scorecardResult.content[0]?.text || ''
-        const jsonMatch = rawText.match(/```json\n?([\\s\\S]*?)\n?```/) || rawText.match(/({[\\s\\S]*})/)
+        const jsonMatch = rawText.match(/```json\n?([\s\S]*?)\n?```/) || rawText.match(/({[\s\S]*})/)
         if (jsonMatch) parsedScorecard = JSON.parse(jsonMatch[1] || jsonMatch[0])
       } catch (e) {
         console.error('Error parsing scorecard JSON:', e)
       }
     }
 
-    // Calcular scores separados
+    // Calcular scores técnico / soft / overall
     let technicalScore = null
     let softScore = null
     let overallScore = null
@@ -100,8 +101,9 @@ export async function POST(request) {
       if (techSkills.length > 0) {
         const techTotal = techSkills.reduce((sum, s) => sum + s.weight, 0)
         if (techTotal > 0) {
-          const weightedSum = techSkills.reduce((sum, s) => sum + (allRatings[s.id] || 0) * s.weight, 0)
-          technicalScore = Math.round((weightedSum / techTotal) * 20)
+          technicalScore = Math.round(
+            techSkills.reduce((sum, s) => sum + (allRatings[s.id] || 0) * s.weight, 0) / techTotal * 20
+          )
         }
         technicalSkillsData = techSkills.map(s => ({
           id: s.id, name: s.name, weight: s.weight,
@@ -114,8 +116,9 @@ export async function POST(request) {
       if (softSkills.length > 0) {
         const softTotal = softSkills.reduce((sum, s) => sum + s.weight, 0)
         if (softTotal > 0) {
-          const weightedSum = softSkills.reduce((sum, s) => sum + (allRatings[s.id] || 0) * s.weight, 0)
-          softScore = Math.round((weightedSum / softTotal) * 20)
+          softScore = Math.round(
+            softSkills.reduce((sum, s) => sum + (allRatings[s.id] || 0) * s.weight, 0) / softTotal * 20
+          )
         }
         softSkillsData = softSkills.map(s => ({
           id: s.id, name: s.name, weight: s.weight,
@@ -125,8 +128,7 @@ export async function POST(request) {
         }))
       }
 
-      const fullScorecard = { skills: scorecardData.skills }
-      overallScore = calculateWeightedScore(allRatings, fullScorecard)
+      overallScore = calculateWeightedScore(allRatings, { skills: scorecardData.skills })
       if (overallScore !== null) overallScore = Math.round(overallScore * 20)
     }
 
