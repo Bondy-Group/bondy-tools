@@ -144,8 +144,9 @@ export async function POST(request) {
 
     // Guardar en Supabase
     let saved = false
+    let savedReportId = null
     try {
-      await saveInterviewToSupabase({
+      const savedReport = await saveInterviewToSupabase({
         candidateName, candidateLinkedin: linkedinUrl, jobDescription,
         notes: rawTranscript, client: clientName,
         screeningReport: screeningText,
@@ -155,13 +156,15 @@ export async function POST(request) {
         technicalScore, softScore, overallScore,
       })
       saved = true
+      savedReportId = savedReport?.id || null
     } catch (e) { console.error('Supabase save error:', e) }
 
     return NextResponse.json({
       screeningReport: screeningText,
-      scorecard: parsedScorecard,          // objeto estructurado para render
-      scorecardSkills: scorecardData?.skills || null,  // metadata con names/weights
+      scorecard: parsedScorecard,
+      scorecardSkills: scorecardData?.skills || null,
       candidateName, technicalScore, softScore, overallScore, saved,
+      reportId: savedReportId,
       truncated,
     })
   } catch (error) {
@@ -169,3 +172,4 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 })
   }
 }
+
