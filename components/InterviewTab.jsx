@@ -370,6 +370,8 @@ export default function InterviewTab() {
   const [positionId, setPositionId] = useState('')
   const [positionName, setPositionName] = useState('')
 
+  const [jobDescription, setJobDescription] = useState('')
+  const [language, setLanguage] = useState('es')
   const [interviewerNotes, setInterviewerNotes] = useState('')
   const [transcript, setTranscript] = useState('')
   const [originalTranscript, setOriginalTranscript] = useState(null)
@@ -516,6 +518,8 @@ export default function InterviewTab() {
           cvText: cvText.trim() || null,
           clientName: clientName === '__DEFAULT__' ? null : (clientName.trim() || null),
           positionName: positionName.trim() || null,
+          jobDescription: jobDescription.trim() || null,
+          language: language,
           scorecardId: scorecard?.id || null,
           scorecardData: scorecard?.scorecard_data || null,
         }),
@@ -638,6 +642,39 @@ export default function InterviewTab() {
                 : <span style={{ fontSize: '12px', color: '#888' }}>Sin scorecard para este cliente</span>}
           </div>
         )}
+      </section>
+
+      <section>
+        <SectionHeader label="Job Description" />
+        <textarea
+          className="input-field"
+          value={jobDescription}
+          onChange={e => setJobDescription(e.target.value)}
+          placeholder="Pegá la job description de la posición aquí..."
+          style={{ ...textareaStyle, minHeight: '140px' }}
+        />
+        {!jobDescription.trim() && (
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#f59e0b', fontFamily: FONT_MONO }}>
+            ⚠️ Sin JD el agente no puede evaluar el match con la posición
+          </p>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 600, color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>Idioma del informe</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setLanguage('es')}
+              style={{ padding: '6px 18px', borderRadius: '8px', border: `1.5px solid ${language === 'es' ? BONDY_ORANGE : '#e5e7eb'}`, background: language === 'es' ? BONDY_ORANGE : 'white', color: language === 'es' ? 'white' : '#555', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT_MONO, transition: 'all 0.15s' }}
+            >
+              ES
+            </button>
+            <button
+              onClick={() => setLanguage('en')}
+              style={{ padding: '6px 18px', borderRadius: '8px', border: `1.5px solid ${language === 'en' ? BONDY_ORANGE : '#e5e7eb'}`, background: language === 'en' ? BONDY_ORANGE : 'white', color: language === 'en' ? 'white' : '#555', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT_MONO, transition: 'all 0.15s' }}
+            >
+              EN
+            </button>
+          </div>
+        </div>
       </section>
 
       <section>
@@ -800,4 +837,5 @@ export default function InterviewTab() {
     </div>
   )
 }
+
 
