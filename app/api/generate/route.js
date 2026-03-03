@@ -8,43 +8,51 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request) {
   try {
-    const {
-      candidateName,
-      candidateLinkedin,
-      jobDescription,
-      notes,
-      client,
-      scorecardId,    // UUID from client_scorecards table
-      scorecardData,  // { skills: [...] } from active scorecard
-    } = await request.json()
+    const body = await request.json()
 
-    if (!notes) {
-      return NextResponse.json({ error: 'Notas de entrevista requeridas' }, { status: 400 })
+    // Soporte para campos nuevos y viejos
+    const candidateName     = body.candidateName || null
+    const linkedinUrl       = body.linkedinUrl || body.candidateLinkedin || null
+    const cvText            = body.cvText || null
+    const clientName        = body.clientName || body.client || null
+    const positionName      = body.positionName || null
+    const interviewerNotes  = body.interviewerNotes || null
+    const transcript        = body.transcript || body.notes || null   // nuevo: transcript, viejo: notes
+    const jobDescription    = body.jobDescription || null
+    const scorecardId       = body.scorecardId || null
+    const scorecardData     = body.scorecardData || null
+
+    // La transcripción es el campo requerido
+    if (!transcript) {
+      return NextResponse.json({ error: 'Transcripción requerida' }, { status: 400 })
     }
 
-    // Build user content for screening
+    // Construir contexto del candidato
     let userContent = ''
-    if (candidateName) userContent += `CANDIDATO: ${candidateName}\n\n`
-    if (candidateLinkedin) userContent += `LINKEDIN: ${candidateLinkedin}\n\n`
-    if (client) userContent += `CLIENTE: ${client}\n\n`
-    if (jobDescription) userContent += `JOB DESCRIPTION:\n${jobDescription}\n\n---\n\n`
-    userContent += `NOTAS DE ENTREVISTA:\n${notes}`
+    if (candidateName)     userContent += `CANDIDATO: ${candidateName}\n\n`
+    if (linkedinUrl)       userContent += `LINKEDIN: ${linkedinUrl}\n\n`
+    if (cvText)            userContent += `CV DEL CANDIDATO:\n${cvText}\n\n---\n\n`
+    if (clientName)        userContent += `CLIENTE: ${clientName}\n\n`
+    if (positionName)      userContent += `POSICIÓN: ${positionName}\n\n`
+    if (jobDescription)    userContent += `JOB DESCRIPTION:\n${jobDescription}\n\n---\n\n`
+    if (interviewerNotes)  userContent += `NOTAS DEL ENTREVISTADOR:\n${interviewerNotes}\n\n---\n\n`
+    userContent += `TRANSCRIPCIÓN DE LA ENTREVISTA:\n${transcript}`
 
-    const screeningPrompt = SCREENING_PROMPT({ language: 'es', clientName: client || null, jd: jobDescription || null })
+    const screeningPrompt = SCREENING_PROMPT({ language: 'es', clientName: clientName || null, jd: jobDescription || null })
 
-    // Run screening always
+    // Screening siempre
     const screeningPromise = anthropic.messages.create({
       model: 'claude-opus-4-6',
       max_tokens: 2500,
       messages: [{ role: 'user', content: `${screeningPrompt}\n\n---\n\n${userContent}` }]
     })
 
-    // Run scorecard evaluation only if skills are provided
+    // Scorecard solo si hay skills
     let scorecardPromise = null
     if (scorecardData?.skills?.length > 0) {
       const scorecardToEval = {
         id: scorecardId || 'dynamic',
-        name: client ? `Scorecard ${client}` : 'Scorecard',
+        name: positionName || (clientName ? `Scorecard ${clientName}` : 'Scorecard'),
         skills: scorecardData.skills,
       }
       const scPrompt = SCORECARD_PROMPT({ scorecard: scorecardToEval })
@@ -55,7 +63,6 @@ export async function POST(request) {
       })
     }
 
-    // Await in parallel
     const [screeningResult, scorecardResult] = await Promise.all([
       screeningPromise,
       scorecardPromise || Promise.resolve(null),
@@ -63,21 +70,19 @@ export async function POST(request) {
 
     const screeningText = screeningResult.content[0]?.text || ''
 
-    // Parse scorecard AI response
+    // Parsear respuesta de scorecard
     let parsedScorecard = null
     if (scorecardResult) {
       try {
         const rawText = scorecardResult.content[0]?.text || ''
-        const jsonMatch = rawText.match(/```json\n?([\s\S]*?)\n?```/) || rawText.match(/({[\s\S]*})/)
-        if (jsonMatch) {
-          parsedScorecard = JSON.parse(jsonMatch[1] || jsonMatch[0])
-        }
+        const jsonMatch = rawText.match(/```json\n?([\\s\\S]*?)\n?```/) || rawText.match(/({[\\s\\S]*})/)
+        if (jsonMatch) parsedScorecard = JSON.parse(jsonMatch[1] || jsonMatch[0])
       } catch (e) {
         console.error('Error parsing scorecard JSON:', e)
       }
     }
 
-    // Calculate separate scores
+    // Calcular scores separados
     let technicalScore = null
     let softScore = null
     let overallScore = null
@@ -92,13 +97,11 @@ export async function POST(request) {
         Object.entries(parsedScorecard.skillRatings).map(([id, data]) => [id, data.rating || 0])
       )
 
-      // Technical score
       if (techSkills.length > 0) {
-        const techRatings = Object.fromEntries(techSkills.map(s => [s.id, allRatings[s.id] || 0]))
         const techTotal = techSkills.reduce((sum, s) => sum + s.weight, 0)
         if (techTotal > 0) {
-          const weightedSum = techSkills.reduce((sum, s) => sum + (techRatings[s.id] || 0) * s.weight, 0)
-          technicalScore = Math.round((weightedSum / techTotal) * 20) // normalize to 0-100
+          const weightedSum = techSkills.reduce((sum, s) => sum + (allRatings[s.id] || 0) * s.weight, 0)
+          technicalScore = Math.round((weightedSum / techTotal) * 20)
         }
         technicalSkillsData = techSkills.map(s => ({
           id: s.id, name: s.name, weight: s.weight,
@@ -108,13 +111,11 @@ export async function POST(request) {
         }))
       }
 
-      // Soft score
       if (softSkills.length > 0) {
-        const softRatings = Object.fromEntries(softSkills.map(s => [s.id, allRatings[s.id] || 0]))
         const softTotal = softSkills.reduce((sum, s) => sum + s.weight, 0)
         if (softTotal > 0) {
-          const weightedSum = softSkills.reduce((sum, s) => sum + (softRatings[s.id] || 0) * s.weight, 0)
-          softScore = Math.round((weightedSum / softTotal) * 20) // normalize to 0-100
+          const weightedSum = softSkills.reduce((sum, s) => sum + (allRatings[s.id] || 0) * s.weight, 0)
+          softScore = Math.round((weightedSum / softTotal) * 20)
         }
         softSkillsData = softSkills.map(s => ({
           id: s.id, name: s.name, weight: s.weight,
@@ -124,32 +125,29 @@ export async function POST(request) {
         }))
       }
 
-      // Overall weighted score (0-100)
       const fullScorecard = { skills: scorecardData.skills }
       overallScore = calculateWeightedScore(allRatings, fullScorecard)
-      if (overallScore !== null) {
-        overallScore = Math.round(overallScore * 20) // 5-star to 0-100
-      }
+      if (overallScore !== null) overallScore = Math.round(overallScore * 20)
     }
 
-    // Save to Supabase
+    // Guardar en Supabase
     let saved = false
     try {
       await saveInterviewToSupabase({
-        candidateName: candidateName || null,
-        candidateLinkedin: candidateLinkedin || null,
-        jobDescription: jobDescription || null,
-        notes,
-        client: client || null,
+        candidateName,
+        candidateLinkedin: linkedinUrl,
+        jobDescription,
+        notes: transcript,
+        client: clientName,
         screeningReport: screeningText,
-        scorecardId: null, // legacy field
-        scorecardIdDb: scorecardId || null,
-        scorecardData: parsedScorecard || null,
-        technicalSkillsData: technicalSkillsData || null,
-        softSkillsData: softSkillsData || null,
-        technicalScore: technicalScore,
-        softScore: softScore,
-        overallScore: overallScore,
+        scorecardId: null,
+        scorecardIdDb: scorecardId,
+        scorecardData: parsedScorecard,
+        technicalSkillsData,
+        softSkillsData,
+        technicalScore,
+        softScore,
+        overallScore,
       })
       saved = true
     } catch (saveErr) {
@@ -157,9 +155,10 @@ export async function POST(request) {
     }
 
     return NextResponse.json({
-      screening: screeningText,
+      screeningReport: screeningText,
+      scorecardReport: parsedScorecard ? JSON.stringify(parsedScorecard, null, 2) : null,
       scorecard: parsedScorecard,
-      candidateName: candidateName || null,
+      candidateName,
       technicalScore,
       softScore,
       overallScore,
