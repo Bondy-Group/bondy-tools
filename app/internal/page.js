@@ -2,8 +2,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import InterviewTab from '@/components/InterviewTab'
 import CulturalFitTab from '@/components/CulturalFitTab'
+import ScorecardAdminPage from '@/app/internal/scorecard-admin/page'
+
+const ADMIN_EMAILS = ['mara@wearebondy.com', 'lucia@wearebondy.com']
 
 const BondyLogo = () => (
   <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
@@ -76,6 +80,8 @@ const resources = [
 
 export default function InternalPage() {
   const [activeResource, setActiveResource] = useState(null)
+  const { data: session } = useSession()
+  const isAdmin = ADMIN_EMAILS.includes(session?.user?.email)
 
   return (
     <main style={{ background: '#F9F8F6', minHeight: '100vh' }}>
@@ -106,12 +112,19 @@ export default function InternalPage() {
             Internal
           </span>
         </div>
-        <Link href="/" className="font-mono-bondy" style={{
-          fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase',
-          color: '#888885', textDecoration: 'none'
-        }}>
-          ← Bondy Tools
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          {session?.user?.email && (
+            <span className="font-mono-bondy" style={{ fontSize: '10px', color: '#bbb', letterSpacing: '0.08em' }}>
+              {session.user.email}
+            </span>
+          )}
+          <Link href="/" className="font-mono-bondy" style={{
+            fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase',
+            color: '#888885', textDecoration: 'none'
+          }}>
+            ← Bondy Tools
+          </Link>
+        </div>
       </nav>
 
       {/* Header */}
@@ -207,7 +220,7 @@ export default function InternalPage() {
             </button>
           </div>
           <div style={{ padding: '40px 64px' }}>
-            <AssistantTabs />
+            <AssistantTabs isAdmin={isAdmin} />
           </div>
         </section>
       )}
@@ -217,33 +230,33 @@ export default function InternalPage() {
         <span className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.1em', color: '#D8D6D2', textTransform: 'uppercase' }}>
           Uso exclusivo equipo Bondy
         </span>
-        <a href="/internal/admin" className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.1em', color: '#D8D6D2', textTransform: 'uppercase', textDecoration: 'none' }}>
-          ⚙️ admin · scorecards
-        </a>
       </div>
 
     </main>
   )
 }
 
-function AssistantTabs() {
+function AssistantTabs({ isAdmin }) {
   const [activeTab, setActiveTab] = useState('interview')
+
+  const tabs = [
+    { id: 'interview', label: 'Screening Report' },
+    { id: 'cultural', label: 'Cultural Fit' },
+    ...(isAdmin ? [{ id: 'scorecards', label: '⚙ Client Management', admin: true }] : []),
+  ]
 
   return (
     <div>
       <div style={{ display: 'flex', gap: '4px', marginBottom: '32px', borderBottom: '1px solid #EBEBEB', paddingBottom: '0' }}>
-        {[
-          { id: 'interview', label: 'Screening Report' },
-          { id: 'cultural', label: 'Cultural Fit' },
-        ].map(tab => (
+        {tabs.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className="font-mono-bondy"
             style={{
               padding: '10px 20px',
               fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase',
               background: 'none', border: 'none', cursor: 'pointer',
-              color: activeTab === tab.id ? '#111111' : '#888885',
-              borderBottom: activeTab === tab.id ? '2px solid #E05C00' : '2px solid transparent',
+              color: activeTab === tab.id ? (tab.admin ? '#E05C00' : '#111111') : '#888885',
+              borderBottom: activeTab === tab.id ? `2px solid ${tab.admin ? '#E05C00' : '#E05C00'}` : '2px solid transparent',
               transition: 'all 0.2s',
               marginBottom: '-1px',
             }}
@@ -252,7 +265,9 @@ function AssistantTabs() {
           </button>
         ))}
       </div>
-      {activeTab === 'interview' ? <InterviewTab /> : <CulturalFitTab />}
+      {activeTab === 'interview' && <InterviewTab />}
+      {activeTab === 'cultural' && <CulturalFitTab />}
+      {activeTab === 'scorecards' && isAdmin && <ScorecardAdminPage embedded />}
     </div>
   )
 }
