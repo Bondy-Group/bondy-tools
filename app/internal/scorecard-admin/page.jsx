@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import ImportScorecardTab from '@/components/ImportScorecardTab'
 
 const BONDY_ORANGE = '#E05C00'
 const FONT_MONO = 'DM Mono, monospace'
@@ -163,8 +164,6 @@ function ScorecardForm({ initial, onSave, onCancel, existingClients }) {
           </div>
         )}
       </div>
-
-      {/* Skills técnicos */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <span style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: BONDY_ORANGE, fontFamily: FONT_MONO }}>Skills Técnicos ({techSkills.length})</span>
@@ -175,8 +174,6 @@ function ScorecardForm({ initial, onSave, onCancel, existingClients }) {
           {skills.map((skill, i) => skill.skill_type === 'technical' && <SkillEditor key={skill.id || i} skill={skill} index={i} onChange={updateSkill} onDelete={deleteSkill} onMove={moveSkill} total={skills.length} />)}
         </div>
       </div>
-
-      {/* Skills blandos */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <span style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4A90D9', fontFamily: FONT_MONO }}>Skills Blandos ({softSkills.length})</span>
@@ -187,9 +184,7 @@ function ScorecardForm({ initial, onSave, onCancel, existingClients }) {
           {skills.map((skill, i) => skill.skill_type === 'soft' && <SkillEditor key={skill.id || i} skill={skill} index={i} onChange={updateSkill} onDelete={deleteSkill} onMove={moveSkill} total={skills.length} />)}
         </div>
       </div>
-
       {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 16px', color: '#dc2626', fontSize: '13px' }}>⚠️ {error}</div>}
-
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
         <button onClick={onCancel} style={{ padding: '10px 24px', border: '1.5px solid #e5e7eb', background: 'white', color: '#666', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Cancelar</button>
         <button onClick={save} disabled={saving} style={{ padding: '10px 32px', border: 'none', background: saving ? '#ccc' : `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '8px', cursor: saving ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: 700 }}>
@@ -230,7 +225,7 @@ function ScorecardRow({ sc, onEdit, onDeactivate, isDefault }) {
 function ScorecardContent({ embedded }) {
   const [scorecards, setScorecards] = useState([])
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState('list')
+  const [activeTab, setActiveTab] = useState('list') // list | new | edit | import
   const [editing, setEditing] = useState(null)
   const [successMsg, setSuccessMsg] = useState(null)
 
@@ -248,9 +243,15 @@ function ScorecardContent({ embedded }) {
   useEffect(() => { load() }, [])
 
   const handleSave = () => {
-    load(); setView('list'); setEditing(null)
+    load(); setActiveTab('list'); setEditing(null)
     setSuccessMsg('Scorecard guardada ✓')
     setTimeout(() => setSuccessMsg(null), 4000)
+  }
+
+  const handleImportSaved = () => {
+    load(); setActiveTab('list')
+    setSuccessMsg('Scorecard importada y guardada ✓')
+    setTimeout(() => setSuccessMsg(null), 5000)
   }
 
   const handleDeactivate = async (id) => {
@@ -259,65 +260,108 @@ function ScorecardContent({ embedded }) {
     load()
   }
 
+  const CONTENT_TABS = [
+    { id: 'list', label: 'Mis scorecards' },
+    { id: 'import', label: '📥 Importar Excel' },
+  ]
+
   return (
     <div style={embedded ? {} : { padding: '48px 64px' }}>
       {!embedded && (
-        <div style={{ marginBottom: '40px' }}>
+        <div style={{ marginBottom: '32px' }}>
           <div style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: BONDY_ORANGE, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: FONT_MONO }}>
             <span style={{ display: 'block', width: '20px', height: '1px', background: BONDY_ORANGE }} />
             Gestión de evaluaciones
           </div>
           <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '40px', fontWeight: 900, color: '#111', marginBottom: '12px', lineHeight: 1 }}>Scorecards<br /><em style={{ color: BONDY_ORANGE }}>por cliente.</em></h1>
-          <p style={{ fontSize: '14px', color: '#888', maxWidth: '520px', lineHeight: 1.7 }}>Creá y gestioná scorecards específicas por cliente. Los recruiters las cargan automáticamente al seleccionar el cliente en el asistente.</p>
+          <p style={{ fontSize: '14px', color: '#888', maxWidth: '520px', lineHeight: 1.7 }}>Creá y gestioná scorecards específicas por cliente.</p>
         </div>
       )}
 
       {embedded && (
-        <div style={{ marginBottom: '24px', padding: '16px 20px', background: 'rgba(224,92,0,0.04)', border: '1px solid rgba(224,92,0,0.12)', borderRadius: '10px' }}>
+        <div style={{ marginBottom: '20px', padding: '14px 18px', background: 'rgba(224,92,0,0.04)', border: '1px solid rgba(224,92,0,0.12)', borderRadius: '10px' }}>
           <p style={{ fontSize: '13px', color: '#555', margin: 0, lineHeight: 1.6 }}>
-            <strong style={{ color: BONDY_ORANGE }}>Client Management</strong> — Creá y gestioná scorecards por cliente. Se cargan automáticamente cuando el recruiter selecciona el cliente en el asistente.
+            <strong style={{ color: BONDY_ORANGE }}>Client Management</strong> — Creá y gestioná scorecards por cliente, o importalas directo desde Excel.
           </p>
         </div>
       )}
 
-      {successMsg && <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px', marginBottom: '24px' }}>✓ {successMsg}</div>}
+      {successMsg && (
+        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px', marginBottom: '20px' }}>
+          ✓ {successMsg}
+        </div>
+      )}
 
-      {view === 'list' && (
+      {/* Tab bar dentro de Client Management */}
+      {(activeTab === 'list' || activeTab === 'import') && (
+        <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #EBEBEB', marginBottom: '24px' }}>
+          {CONTENT_TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '10px 20px', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase',
+                background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT_MONO,
+                color: activeTab === tab.id ? '#111' : '#888',
+                borderBottom: activeTab === tab.id ? `2px solid ${BONDY_ORANGE}` : '2px solid transparent',
+                marginBottom: '-1px', transition: 'all 0.15s',
+              }}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* LIST */}
+      {activeTab === 'list' && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
-            <button onClick={() => { setEditing(null); setView('new') }} style={{ padding: '12px 28px', border: 'none', background: `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>+ Nueva scorecard</button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+            <button onClick={() => { setEditing(null); setActiveTab('new') }}
+              style={{ padding: '10px 24px', border: 'none', background: `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
+              + Nueva manual
+            </button>
           </div>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '60px', color: '#bbb', fontSize: '14px' }}>Cargando...</div>
           ) : scorecards.length === 0 ? (
             <div style={{ border: '1.5px dashed #e5e7eb', borderRadius: '14px', padding: '60px', textAlign: 'center' }}>
               <p style={{ color: '#bbb', fontSize: '15px', marginBottom: '20px' }}>No hay scorecards todavía.</p>
-              <button onClick={() => setView('new')} style={{ padding: '10px 24px', border: `1.5px solid ${BONDY_ORANGE}`, background: 'transparent', color: BONDY_ORANGE, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>Crear la primera</button>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button onClick={() => setActiveTab('new')} style={{ padding: '10px 24px', border: `1.5px solid ${BONDY_ORANGE}`, background: 'transparent', color: BONDY_ORANGE, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>Crear manual</button>
+                <button onClick={() => setActiveTab('import')} style={{ padding: '10px 24px', border: '1.5px solid #4A90D9', background: 'transparent', color: '#4A90D9', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>📥 Importar Excel</button>
+              </div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {scorecards.filter(s => s.client_name === '__DEFAULT__').map(sc => (
-                <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setView('edit') }} onDeactivate={() => handleDeactivate(sc.id)} isDefault />
+                <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setActiveTab('edit') }} onDeactivate={() => handleDeactivate(sc.id)} isDefault />
               ))}
               {scorecards.filter(s => s.client_name !== '__DEFAULT__').map(sc => (
-                <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setView('edit') }} onDeactivate={() => handleDeactivate(sc.id)} />
+                <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setActiveTab('edit') }} onDeactivate={() => handleDeactivate(sc.id)} />
               ))}
             </div>
           )}
         </>
       )}
 
-      {(view === 'new' || view === 'edit') && (
-        <ScorecardForm initial={view === 'edit' ? editing : null} existingClients={existingClients} onSave={handleSave} onCancel={() => { setView('list'); setEditing(null) }} />
+      {/* IMPORT */}
+      {activeTab === 'import' && (
+        <ImportScorecardTab onScorecardSaved={handleImportSaved} />
+      )}
+
+      {/* NEW / EDIT */}
+      {(activeTab === 'new' || activeTab === 'edit') && (
+        <ScorecardForm
+          initial={activeTab === 'edit' ? editing : null}
+          existingClients={existingClients}
+          onSave={handleSave}
+          onCancel={() => { setActiveTab('list'); setEditing(null) }}
+        />
       )}
     </div>
   )
 }
 
 export default function ScorecardAdminPage({ embedded = false }) {
-  if (embedded) {
-    return <ScorecardContent embedded />
-  }
+  if (embedded) return <ScorecardContent embedded />
 
   return (
     <main style={{ background: '#F9F8F6', minHeight: '100vh' }}>
