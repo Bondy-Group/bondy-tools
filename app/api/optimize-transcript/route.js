@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-// Haiku: más rápido y económico, perfecto para preprocesamiento
 const MODEL = 'claude-haiku-4-5-20251001'
 
 export async function POST(request) {
@@ -13,7 +12,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Transcripción muy corta' }, { status: 400 })
     }
 
-    // Si ya es corta, no hace falta limpiar
     if (transcript.length <= 2000) {
       return NextResponse.json({ optimized: transcript, savings: 0, alreadyShort: true })
     }
@@ -23,38 +21,38 @@ export async function POST(request) {
       clientName ? `Cliente: ${clientName}` : null,
     ].filter(Boolean).join(' | ')
 
-    const systemPrompt = `Sos un asistente de recruiting técnico. Tu única tarea es limpiar y condensar transcripciones de entrevistas técnicas.
+    const systemPrompt = `Sos un asistente especializado en transcripciones de entrevistas técnicas de recruiting.
+Tu única tarea es eliminar RUIDO TÉCNICO PURO de la transcripción — nada más.
 
-ELIMINÁ:
-- Saludos, despedidas, presentaciones ("hola", "¿cómo estás?", "bueno hasta luego")
-- Relleno verbal: "eh", "mmm", "bueno", "o sea", "¿me entendés?", pausas, muletillas
-- Repeticiones exactas o casi exactas de la misma idea
-- Comentarios off-topic que no aporten al perfil del candidato
-- Confirmaciones vacías ("sí, claro", "perfecto", "okay", "entiendo", "dale")
-- Preguntas del entrevistador (conservá solo las respuestas del candidato)
-- Aclaraciones administrativas (horarios, problemas técnicos de conexión)
+ELIMINÁ SOLO ESTO (ruido técnico puro, sin valor analítico):
+- Problemas de conexión/audio: "¿me escuchás?", "se cortó", "¿estás ahí?", "hay eco"
+- Saludos de apertura y cierre: "hola", "¿cómo estás?", "bueno hasta luego", "que te vaya bien"
+- Repeticiones EXACTAS de la misma oración (duplicados técnicos de transcripción automática)
+- Frases completamente vacías sin contexto: "sí", "ok", "dale" cuando aparecen solas como línea única
 
-CONSERVÁ TODO:
-- Experiencia laboral, empresas, roles, períodos de tiempo
-- Tecnologías, frameworks, herramientas, lenguajes de programación
-- Logros concretos, métricas, proyectos
-- Arquitecturas, decisiones técnicas, metodologías
-- Motivaciones para cambiar de trabajo
-- Pretensión salarial y disponibilidad
-- Idiomas y nivel
-- Cualquier cosa que un recruiter necesitaría para escribir un informe
+CONSERVÁ ABSOLUTAMENTE TODO LO DEMÁS — incluido:
+- Las preguntas del entrevistador (son contexto necesario para entender las respuestas)
+- Dudas, titubeos, correcciones del candidato ("o sea, no, en realidad..."): son señales de pensamiento
+- Pausas largas antes de responder (si están marcadas en el texto)
+- Muletillas habituales del candidato: revelan estilo de comunicación
+- Autocorrecciones: "usé React, bueno, en realidad era Vue"
+- Respuestas vagas o evasivas: son datos para el análisis
+- Emociones implícitas: entusiasmo, inseguridad, orgullo al hablar de proyectos
+- Todo el contenido técnico, experiencias, motivaciones, pretensiones
 
-FORMATO:
-- Texto fluido sin timestamps ni etiquetas "Entrevistador:" / "Candidato:"
-- Mantené las palabras exactas del candidato cuando dicen algo técnico o concreto
-- No inventes ni agregues nada que no esté en el original
-- Objetivo: quedarte con el 40-60% del largo original`
+CRITERIO DE ORO: si hay ALGUNA duda sobre si algo aporta al análisis del candidato, CONSERVALO.
+El objetivo es quitar solo el 10-20% del texto — el ruido puro. No comprimir, no resumir.
 
-    const userPrompt = `${context ? context + '\n\n' : ''}TRANSCRIPCIÓN A LIMPIAR:\n${transcript}`
+FORMATO DE SALIDA:
+- Mantené la estructura de diálogo (Entrevistador: / Candidato: si existe)
+- No reformulés nada, usá las palabras exactas del texto
+- No agregues ni inventes nada`
+
+    const userPrompt = `${context ? context + '\n\n' : ''}TRANSCRIPCIÓN:\n${transcript}`
 
     const res = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 2000,
+      max_tokens: 4000,
       messages: [{ role: 'user', content: `${systemPrompt}\n\n${userPrompt}` }]
     })
 
