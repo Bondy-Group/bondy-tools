@@ -227,7 +227,7 @@ function ScorecardRow({ sc, onEdit, onDeactivate, isDefault }) {
   )
 }
 
-export default function ScorecardAdminPage() {
+function ScorecardContent({ embedded }) {
   const [scorecards, setScorecards] = useState([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('list')
@@ -260,6 +260,66 @@ export default function ScorecardAdminPage() {
   }
 
   return (
+    <div style={embedded ? {} : { padding: '48px 64px' }}>
+      {!embedded && (
+        <div style={{ marginBottom: '40px' }}>
+          <div style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: BONDY_ORANGE, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: FONT_MONO }}>
+            <span style={{ display: 'block', width: '20px', height: '1px', background: BONDY_ORANGE }} />
+            Gestión de evaluaciones
+          </div>
+          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '40px', fontWeight: 900, color: '#111', marginBottom: '12px', lineHeight: 1 }}>Scorecards<br /><em style={{ color: BONDY_ORANGE }}>por cliente.</em></h1>
+          <p style={{ fontSize: '14px', color: '#888', maxWidth: '520px', lineHeight: 1.7 }}>Creá y gestioná scorecards específicas por cliente. Los recruiters las cargan automáticamente al seleccionar el cliente en el asistente.</p>
+        </div>
+      )}
+
+      {embedded && (
+        <div style={{ marginBottom: '24px', padding: '16px 20px', background: 'rgba(224,92,0,0.04)', border: '1px solid rgba(224,92,0,0.12)', borderRadius: '10px' }}>
+          <p style={{ fontSize: '13px', color: '#555', margin: 0, lineHeight: 1.6 }}>
+            <strong style={{ color: BONDY_ORANGE }}>Client Management</strong> — Creá y gestioná scorecards por cliente. Se cargan automáticamente cuando el recruiter selecciona el cliente en el asistente.
+          </p>
+        </div>
+      )}
+
+      {successMsg && <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px', marginBottom: '24px' }}>✓ {successMsg}</div>}
+
+      {view === 'list' && (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
+            <button onClick={() => { setEditing(null); setView('new') }} style={{ padding: '12px 28px', border: 'none', background: `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>+ Nueva scorecard</button>
+          </div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '60px', color: '#bbb', fontSize: '14px' }}>Cargando...</div>
+          ) : scorecards.length === 0 ? (
+            <div style={{ border: '1.5px dashed #e5e7eb', borderRadius: '14px', padding: '60px', textAlign: 'center' }}>
+              <p style={{ color: '#bbb', fontSize: '15px', marginBottom: '20px' }}>No hay scorecards todavía.</p>
+              <button onClick={() => setView('new')} style={{ padding: '10px 24px', border: `1.5px solid ${BONDY_ORANGE}`, background: 'transparent', color: BONDY_ORANGE, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>Crear la primera</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {scorecards.filter(s => s.client_name === '__DEFAULT__').map(sc => (
+                <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setView('edit') }} onDeactivate={() => handleDeactivate(sc.id)} isDefault />
+              ))}
+              {scorecards.filter(s => s.client_name !== '__DEFAULT__').map(sc => (
+                <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setView('edit') }} onDeactivate={() => handleDeactivate(sc.id)} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {(view === 'new' || view === 'edit') && (
+        <ScorecardForm initial={view === 'edit' ? editing : null} existingClients={existingClients} onSave={handleSave} onCancel={() => { setView('list'); setEditing(null) }} />
+      )}
+    </div>
+  )
+}
+
+export default function ScorecardAdminPage({ embedded = false }) {
+  if (embedded) {
+    return <ScorecardContent embedded />
+  }
+
+  return (
     <main style={{ background: '#F9F8F6', minHeight: '100vh' }}>
       <nav style={{ borderBottom: '1px solid #EBEBEB', padding: '20px 64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(249,248,246,0.95)', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(8px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -269,48 +329,7 @@ export default function ScorecardAdminPage() {
         </div>
         <Link href="/internal" style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', textDecoration: 'none', fontFamily: FONT_MONO }}>← Volver al hub</Link>
       </nav>
-
-      <div style={{ padding: '48px 64px' }}>
-        <div style={{ marginBottom: '40px' }}>
-          <div style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: BONDY_ORANGE, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: FONT_MONO }}>
-            <span style={{ display: 'block', width: '20px', height: '1px', background: BONDY_ORANGE }} />
-            Gestión de evaluaciones
-          </div>
-          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: '40px', fontWeight: 900, color: '#111', marginBottom: '12px', lineHeight: 1 }}>Scorecards<br /><em style={{ color: BONDY_ORANGE }}>por cliente.</em></h1>
-          <p style={{ fontSize: '14px', color: '#888', maxWidth: '520px', lineHeight: 1.7 }}>Creá y gestioná scorecards específicas por cliente. Los recruiters las cargan automáticamente al seleccionar el cliente en el asistente.</p>
-        </div>
-
-        {successMsg && <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px', marginBottom: '24px' }}>✓ {successMsg}</div>}
-
-        {view === 'list' && (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
-              <button onClick={() => { setEditing(null); setView('new') }} style={{ padding: '12px 28px', border: 'none', background: `linear-gradient(135deg, ${BONDY_ORANGE}, #F47C20)`, color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>+ Nueva scorecard</button>
-            </div>
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: '60px', color: '#bbb', fontSize: '14px' }}>Cargando...</div>
-            ) : scorecards.length === 0 ? (
-              <div style={{ border: '1.5px dashed #e5e7eb', borderRadius: '14px', padding: '60px', textAlign: 'center' }}>
-                <p style={{ color: '#bbb', fontSize: '15px', marginBottom: '20px' }}>No hay scorecards todavía.</p>
-                <button onClick={() => setView('new')} style={{ padding: '10px 24px', border: `1.5px solid ${BONDY_ORANGE}`, background: 'transparent', color: BONDY_ORANGE, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>Crear la primera</button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {scorecards.filter(s => s.client_name === '__DEFAULT__').map(sc => (
-                  <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setView('edit') }} onDeactivate={() => handleDeactivate(sc.id)} isDefault />
-                ))}
-                {scorecards.filter(s => s.client_name !== '__DEFAULT__').map(sc => (
-                  <ScorecardRow key={sc.id} sc={sc} onEdit={() => { setEditing(sc); setView('edit') }} onDeactivate={() => handleDeactivate(sc.id)} />
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {(view === 'new' || view === 'edit') && (
-          <ScorecardForm initial={view === 'edit' ? editing : null} existingClients={existingClients} onSave={handleSave} onCancel={() => { setView('list'); setEditing(null) }} />
-        )}
-      </div>
+      <ScorecardContent embedded={false} />
     </main>
   )
 }
