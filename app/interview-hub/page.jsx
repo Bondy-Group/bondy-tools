@@ -137,6 +137,68 @@ function InterviewCard({ interview }) {
   )
 }
 
+// ─── Calendar suggestion card ────────────────────────────────────────────────
+
+function CalendarEventCard({ event, onImport }) {
+  const time = formatTime(event.start)
+  const [importing, setImporting] = useState(false)
+
+  return (
+    <div style={{
+      background: '#FFFBF7',
+      border: '1.5px dashed #F4C090',
+      borderRadius: '14px',
+      padding: '16px 20px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '16px',
+    }}>
+      {/* Hora */}
+      <div style={{ minWidth: '52px', textAlign: 'center', flexShrink: 0 }}>
+        {time
+          ? <span style={{ fontSize: '18px', fontWeight: 800, color: '#999', fontFamily: MONO, letterSpacing: '-0.02em' }}>{time}</span>
+          : <span style={{ fontSize: '11px', color: '#ccc', fontFamily: MONO }}>todo el día</span>
+        }
+      </div>
+
+      {/* Separador */}
+      <div style={{ width: '1px', height: '40px', background: '#F4C090', flexShrink: 0 }} />
+
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '14px', fontWeight: 700, color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {event.title}
+        </div>
+        {event.attendees.length > 0 && (
+          <div style={{ fontSize: '11px', color: '#aaa', marginTop: '3px', fontFamily: MONO }}>
+            {event.attendees.slice(0, 3).join(' · ')}
+            {event.attendees.length > 3 && ` +${event.attendees.length - 3} más`}
+          </div>
+        )}
+      </div>
+
+      {/* Botón importar */}
+      <button
+        onClick={() => { setImporting(true); onImport(event) }}
+        disabled={importing}
+        style={{
+          padding: '7px 14px', border: '1.5px solid #F47C20',
+          borderRadius: '8px', background: importing ? '#f3f4f6' : 'white',
+          color: importing ? '#aaa' : ORANGE,
+          cursor: importing ? 'default' : 'pointer',
+          fontSize: '12px', fontWeight: 700, fontFamily: MONO,
+          whiteSpace: 'nowrap', flexShrink: 0,
+          transition: 'all 0.15s',
+        }}
+        onMouseEnter={e => { if (!importing) { e.currentTarget.style.background = ORANGE; e.currentTarget.style.color = 'white' }}}
+        onMouseLeave={e => { if (!importing) { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = ORANGE }}}
+      >
+        {importing ? 'Abriendo...' : '+ Registrar'}
+      </button>
+    </div>
+  )
+}
+
 function EmptyDay() {
   return (
     <div style={{
@@ -155,15 +217,15 @@ function EmptyDay() {
 
 // ─── Modal: nueva entrevista ─────────────────────────────────────────────────
 
-function NewInterviewModal({ onClose, onCreated, defaultDate, sessionUserName }) {
+function NewInterviewModal({ onClose, onCreated, defaultDate, sessionUserName, prefill }) {
   const [form, setForm] = useState({
     recruiter_name: sessionUserName || '',
-    candidate_name: '',
-    candidate_email: '',
+    candidate_name: prefill?.candidate_name || '',
+    candidate_email: prefill?.candidate_email || '',
     linkedin_url: '',
-    position: '',
+    position: prefill?.position || '',
     client_name: '',
-    scheduled_at: defaultDate ? `${defaultDate}T10:00` : '',
+    scheduled_at: prefill?.scheduled_at || (defaultDate ? `${defaultDate}T10:00` : ''),
   })
   const [positions, setPositions] = useState([])
   const [loading, setLoading] = useState(false)
@@ -244,7 +306,14 @@ function NewInterviewModal({ onClose, onCreated, defaultDate, sessionUserName })
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#111' }}>Nueva entrevista</h2>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#aaa', fontFamily: MONO }}>Agendá una entrevista al Hub</p>
+            {prefill?._calendarTitle && (
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#F47C20', fontFamily: MONO }}>
+                📆 {prefill._calendarTitle}
+              </p>
+            )}
+            {!prefill?._calendarTitle && (
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#aaa', fontFamily: MONO }}>Agendá una entrevista al Hub</p>
+            )}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '20px', padding: '4px' }}>✕</button>
         </div>
@@ -344,8 +413,10 @@ export default function InterviewHubPage() {
   const sessionUserName = session?.user?.name || ''
   const [selectedDate, setSelectedDate] = useState(today)
   const [interviews, setInterviews] = useState([])
+  const [calendarEvents, setCalendarEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [modalPrefill, setModalPrefill] = useState(null)
 
   const dateLabel = formatDateLabel(selectedDate)
 
@@ -362,8 +433,19 @@ export default function InterviewHubPage() {
     }
   }
 
+  const fetchCalendarEvents = async (date) => {
+    try {
+      const res = await fetch(`/api/calendar-events?date=${date}`)
+      const data = await res.json()
+      setCalendarEvents(data.events || [])
+    } catch (e) {
+      setCalendarEvents([])
+    }
+  }
+
   useEffect(() => {
     fetchInterviews(selectedDate)
+    fetchCalendarEvents(selectedDate)
   }, [selectedDate])
 
   const navigateDay = (delta) => {
@@ -374,7 +456,7 @@ export default function InterviewHubPage() {
 
   const handleCreated = (interview) => {
     setShowModal(false)
-    // Si la entrevista es del mismo día, actualizar lista
+    setModalPrefill(null)
     const interviewDate = interview.scheduled_at
       ? interview.scheduled_at.split('T')[0]
       : null
@@ -385,6 +467,32 @@ export default function InterviewHubPage() {
         return new Date(a.scheduled_at) - new Date(b.scheduled_at)
       }))
     }
+  }
+
+  // Filtrar eventos de Calendar que no están en el Hub (por hora)
+  const hubTimes = new Set(
+    interviews
+      .filter(i => i.scheduled_at)
+      .map(i => formatTime(i.scheduled_at))
+  )
+  const calendarSuggestions = calendarEvents.filter(e => {
+    if (e.allDay) return false
+    const t = formatTime(e.start)
+    return !hubTimes.has(t)
+  })
+
+  const handleImportCalendarEvent = (event) => {
+    const scheduledAt = event.start
+      ? new Date(event.start).toISOString().slice(0, 16)
+      : ''
+    setModalPrefill({
+      candidate_name: '',
+      candidate_email: '',
+      position: '',
+      scheduled_at: scheduledAt,
+      _calendarTitle: event.title,
+    })
+    setShowModal(true)
   }
 
   const byStatus = {
@@ -460,6 +568,27 @@ export default function InterviewHubPage() {
           </div>
         </div>
 
+        {/* Sugerencias desde Google Calendar */}
+        {calendarSuggestions.length > 0 && (
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#F47C20', fontFamily: MONO, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                📆 Desde tu calendario
+              </span>
+              <div style={{ flex: 1, height: '1px', background: '#F4E0CC' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {calendarSuggestions.map(event => (
+                <CalendarEventCard
+                  key={event.id}
+                  event={event}
+                  onImport={handleImportCalendarEvent}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Stats rápidas */}
         {interviews.length > 0 && (
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
@@ -493,7 +622,7 @@ export default function InterviewHubPage() {
 
         {/* Botón nueva entrevista */}
         <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'center' }}>
-          <button onClick={() => setShowModal(true)}
+          <button onClick={() => { setModalPrefill(null); setShowModal(true) }}
             style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               padding: '12px 28px', border: 'none',
@@ -515,10 +644,11 @@ export default function InterviewHubPage() {
 
       {showModal && (
         <NewInterviewModal
-          onClose={() => setShowModal(false)}
+          onClose={() => { setShowModal(false); setModalPrefill(null) }}
           onCreated={handleCreated}
           defaultDate={selectedDate}
           sessionUserName={sessionUserName}
+          prefill={modalPrefill}
         />
       )}
     </div>
