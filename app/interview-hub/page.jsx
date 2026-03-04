@@ -411,10 +411,11 @@ function NewInterviewModal({ onClose, onCreated, defaultDate, sessionUserName, p
 // ─── Página principal ────────────────────────────────────────────────────────
 
 export default function InterviewHubPage() {
-  const today = toDateInput(new Date())
   const { data: session } = useSession()
   const sessionUserName = session?.user?.name || ''
-  const [selectedDate, setSelectedDate] = useState(today)
+  // Lazy init evita hydration mismatch (server UTC vs client timezone)
+  const [selectedDate, setSelectedDate] = useState(() => toDateInput(new Date()))
+  const [today] = useState(() => toDateInput(new Date()))
   const [interviews, setInterviews] = useState([])
   const [calendarEvents, setCalendarEvents] = useState([])
   const [loading, setLoading] = useState(true)
