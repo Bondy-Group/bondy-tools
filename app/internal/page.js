@@ -45,6 +45,21 @@ const IconBook = () => (
   </svg>
 )
 
+const IconHub = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+    <circle cx="20" cy="20" r="4" fill="#E05C00"/>
+    <circle cx="20" cy="20" r="4" stroke="#E05C00" strokeWidth="1.5"/>
+    <rect x="6" y="8" width="10" height="7" rx="2" stroke="#E05C00" strokeWidth="1.5"/>
+    <rect x="24" y="8" width="10" height="7" rx="2" stroke="#E05C00" strokeWidth="1.5"/>
+    <rect x="6" y="25" width="10" height="7" rx="2" stroke="#E05C00" strokeWidth="1.5"/>
+    <rect x="24" y="25" width="10" height="7" rx="2" stroke="#E05C00" strokeWidth="1.5"/>
+    <line x1="16" y1="11.5" x2="20" y2="18" stroke="#E05C00" strokeWidth="1.5"/>
+    <line x1="24" y1="11.5" x2="20" y2="18" stroke="#E05C00" strokeWidth="1.5"/>
+    <line x1="16" y1="28.5" x2="20" y2="22" stroke="#E05C00" strokeWidth="1.5"/>
+    <line x1="24" y1="28.5" x2="20" y2="22" stroke="#E05C00" strokeWidth="1.5"/>
+  </svg>
+)
+
 const resources = [
   {
     id: 'assistant',
@@ -55,6 +70,7 @@ const resources = [
     cta: 'Abrir asistente',
     ctaColor: '#E05C00',
     available: true,
+    internal: true,
   },
   {
     id: 'chrome',
@@ -65,10 +81,22 @@ const resources = [
     cta: 'Descargar',
     ctaColor: '#4A90D9',
     available: true,
+    internal: true,
+  },
+  {
+    id: 'interview-hub',
+    number: '03',
+    icon: <IconHub />,
+    title: 'Interview Hub',
+    description: 'Agendá entrevistas, generá preguntas por competencia con IA y tomá notas estructuradas durante la sesión.',
+    cta: 'Abrir Hub',
+    ctaColor: '#E05C00',
+    available: true,
+    href: '/interview-hub',
   },
   {
     id: 'library',
-    number: '03',
+    number: '04',
     icon: <IconBook />,
     title: 'Biblioteca de Recursos',
     description: 'Libros, guías y materiales de referencia para el equipo. Descargables y organizados por categoría.',
@@ -165,12 +193,57 @@ export default function InternalPage() {
 
       {/* Resource cards or active tool */}
       {!activeResource ? (
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1px solid #EBEBEB' }}>
-          {resources.map((r, i) => (
-            r.available ? (
-              <button key={r.id} onClick={() => r.id === 'assistant' && setActiveResource(r.id)}
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1px solid #EBEBEB' }}>
+          {resources.map((r, i) => {
+            const borderRight = i < resources.length - 1 ? '1px solid #EBEBEB' : 'none'
+            
+            if (!r.available) {
+              return (
+                <div key={r.id} style={{
+                  borderRight,
+                  padding: '40px 36px', display: 'flex', flexDirection: 'column', opacity: 0.4,
+                }}>
+                  <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#D8D6D2', marginBottom: '28px' }}>{r.number}</div>
+                  <div style={{ marginBottom: '20px' }}>{r.icon}</div>
+                  <h2 className="font-display" style={{ fontSize: '22px', fontWeight: 700, color: '#111111', marginBottom: '12px', lineHeight: 1.2 }}>{r.title}</h2>
+                  <p style={{ fontSize: '13px', color: '#888885', fontWeight: 300, lineHeight: 1.7, flex: 1, marginBottom: '28px' }}>{r.description}</p>
+                  <div className="font-mono-bondy" style={{ fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#D8D6D2', border: '1px solid #EBEBEB', padding: '4px 10px', display: 'inline-block' }}>
+                    Próximamente
+                  </div>
+                </div>
+              )
+            }
+
+            // Cards con href navegan a página separada
+            if (r.href) {
+              return (
+                <Link key={r.id} href={r.href} style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    borderRight,
+                    padding: '40px 36px', display: 'flex', flexDirection: 'column',
+                    background: 'transparent', cursor: 'pointer',
+                    transition: 'background 0.2s', height: '100%',
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.6)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#D8D6D2', marginBottom: '28px' }}>{r.number}</div>
+                    <div style={{ marginBottom: '20px' }}>{r.icon}</div>
+                    <h2 className="font-display" style={{ fontSize: '22px', fontWeight: 700, color: '#111111', marginBottom: '12px', lineHeight: 1.2, letterSpacing: '-0.01em' }}>{r.title}</h2>
+                    <p style={{ fontSize: '13px', color: '#888885', fontWeight: 300, lineHeight: 1.7, flex: 1, marginBottom: '28px' }}>{r.description}</p>
+                    <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: r.ctaColor }}>
+                      {r.cta} →
+                    </div>
+                  </div>
+                </Link>
+              )
+            }
+
+            // Cards inline (assistant, chrome)
+            return (
+              <button key={r.id} onClick={() => setActiveResource(r.id)}
                 style={{
-                  borderRight: i < resources.length - 1 ? '1px solid #EBEBEB' : 'none',
+                  borderRight,
                   padding: '40px 36px', display: 'flex', flexDirection: 'column',
                   background: 'transparent', border: 'none', cursor: 'pointer',
                   textAlign: 'left', transition: 'background 0.2s',
@@ -186,21 +259,8 @@ export default function InternalPage() {
                   {r.cta} →
                 </div>
               </button>
-            ) : (
-              <div key={r.id} style={{
-                borderRight: i < resources.length - 1 ? '1px solid #EBEBEB' : 'none',
-                padding: '40px 36px', display: 'flex', flexDirection: 'column', opacity: 0.4,
-              }}>
-                <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#D8D6D2', marginBottom: '28px' }}>{r.number}</div>
-                <div style={{ marginBottom: '20px' }}>{r.icon}</div>
-                <h2 className="font-display" style={{ fontSize: '22px', fontWeight: 700, color: '#111111', marginBottom: '12px', lineHeight: 1.2 }}>{r.title}</h2>
-                <p style={{ fontSize: '13px', color: '#888885', fontWeight: 300, lineHeight: 1.7, flex: 1, marginBottom: '28px' }}>{r.description}</p>
-                <div className="font-mono-bondy" style={{ fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#D8D6D2', border: '1px solid #EBEBEB', padding: '4px 10px', display: 'inline-block' }}>
-                  Próximamente
-                </div>
-              </div>
             )
-          ))}
+          })}
         </section>
       ) : (
         /* Active tool view */
