@@ -518,6 +518,7 @@ export default function InterviewHubPage() {
           onClose={() => setShowModal(false)}
           onCreated={handleCreated}
           defaultDate={selectedDate}
+          sessionUserName={sessionUserName}
         />
       )}
     </div>
