@@ -1,17 +1,21 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getToken } from 'next-auth/jwt'
 import { NextResponse } from 'next/server'
 
 export async function GET(request) {
-  const session = await getServerSession(authOptions)
+  // getToken lee directamente el JWT de la cookie — funciona en App Router
+  const token = await getToken({ 
+    req: request, 
+    secret: process.env.NEXTAUTH_SECRET 
+  })
 
-  if (!session?.access_token) {
+  if (!token?.access_token) {
     return NextResponse.json({ events: [], debug: 'no_token' }, { status: 200 })
   }
 
   const { searchParams } = new URL(request.url)
   const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
 
+  // Argentina = UTC-3
   const timeMin = new Date(date + 'T00:00:00-03:00').toISOString()
   const timeMax = new Date(date + 'T23:59:59-03:00').toISOString()
 
@@ -24,7 +28,7 @@ export async function GET(request) {
     url.searchParams.set('maxResults', '20')
 
     const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${token.access_token}` },
       cache: 'no-store',
     })
 
