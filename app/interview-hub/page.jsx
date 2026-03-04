@@ -244,7 +244,10 @@ function NewInterviewModal({ onClose, onCreated, defaultDate, sessionUserName, p
       set('client_name', '')
     } else {
       const pos = positions.find(p => p.id === value)
-      if (pos) set('position', pos.name)
+      if (pos) {
+        set('position', pos.name)
+        if (pos.client_name) set('client_name', pos.client_name)
+      }
     }
   }
 
@@ -654,3 +657,4 @@ export default function InterviewHubPage() {
     </div>
   )
 }
+
