@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import InterviewTab from '@/components/InterviewTab'
 import CulturalFitTab from '@/components/CulturalFitTab'
 import ScorecardAdminPage from '@/app/internal/scorecard-admin/page'
@@ -146,6 +146,20 @@ export default function InternalPage() {
               {session.user.email}
             </span>
           )}
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className="font-mono-bondy"
+            style={{
+              fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase',
+              color: '#888885', background: 'none', border: '1px solid #EBEBEB',
+              padding: '5px 12px', cursor: 'pointer', borderRadius: '4px',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#E05C00'; e.currentTarget.style.color = '#E05C00' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#EBEBEB'; e.currentTarget.style.color = '#888885' }}
+          >
+            Cerrar sesión
+          </button>
           <Link href="/" className="font-mono-bondy" style={{
             fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase',
             color: '#888885', textDecoration: 'none'
