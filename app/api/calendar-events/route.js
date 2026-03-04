@@ -1,56 +1,17 @@
 import { getServerSession } from 'next-auth'
-import GoogleProvider from 'next-auth/providers/google'
+import { authOptions } from '@/lib/auth'
 import { NextResponse } from 'next/server'
-
-// Inline authOptions para que getServerSession pueda leer el token
-const authOptions = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      authorization: {
-        params: {
-          scope: 'openid email profile https://www.googleapis.com/auth/calendar.readonly',
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, account }) {
-      if (account) {
-        token.access_token = account.access_token
-        token.refresh_token = account.refresh_token
-        token.expires_at = account.expires_at
-      }
-      return token
-    },
-    async session({ session, token }) {
-      if (session?.user) {
-        session.access_token = token.access_token
-      }
-      return session
-    },
-  },
-  pages: {
-    signIn: '/login',
-    error: '/login',
-  },
-}
 
 export async function GET(request) {
   const session = await getServerSession(authOptions)
 
   if (!session?.access_token) {
-    console.log('No access_token in session:', JSON.stringify(session))
     return NextResponse.json({ events: [], debug: 'no_token' }, { status: 200 })
   }
 
   const { searchParams } = new URL(request.url)
   const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
 
-  // Rango del día completo en UTC-3 (Argentina)
   const timeMin = new Date(date + 'T00:00:00-03:00').toISOString()
   const timeMax = new Date(date + 'T23:59:59-03:00').toISOString()
 
