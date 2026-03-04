@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 
 const ORANGE = '#E05C00'
@@ -154,9 +155,9 @@ function EmptyDay() {
 
 // ─── Modal: nueva entrevista ─────────────────────────────────────────────────
 
-function NewInterviewModal({ onClose, onCreated, defaultDate }) {
+function NewInterviewModal({ onClose, onCreated, defaultDate, sessionUserName }) {
   const [form, setForm] = useState({
-    recruiter_name: '',
+    recruiter_name: sessionUserName || '',
     candidate_name: '',
     candidate_email: '',
     linkedin_url: '',
@@ -164,24 +165,34 @@ function NewInterviewModal({ onClose, onCreated, defaultDate }) {
     client_name: '',
     scheduled_at: defaultDate ? `${defaultDate}T10:00` : '',
   })
-  const [clients, setClients] = useState([])
+  const [positions, setPositions] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetch('/api/scorecards?clients=true')
+    fetch('/api/positions')
       .then(r => r.json())
-      .then(d => setClients(d.clients || []))
+      .then(d => setPositions(d.positions || []))
       .catch(() => {})
   }, [])
+
+  const handlePositionChange = (value) => {
+    if (value === '__exploratory__') {
+      set('position', 'Call exploratoria')
+      set('client_name', '')
+    } else {
+      const pos = positions.find(p => p.id === value)
+      if (pos) set('position', pos.name)
+    }
+  }
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
   const handleCreate = async () => {
-    if (!form.recruiter_name.trim()) return setError('Ingresá el nombre del recruiter')
     if (!form.candidate_name.trim()) return setError('Ingresá el nombre del candidato')
-    if (!form.position.trim()) return setError('Ingresá la posición')
-    if (!form.client_name.trim()) return setError('Seleccioná un cliente')
+    if (!form.position.trim()) return setError('Seleccioná una posición')
+    if (!form.candidate_email.trim() && !form.linkedin_url.trim())
+      return setError('Ingresá al menos el email o el LinkedIn del candidato')
 
     setLoading(true)
     setError(null)
@@ -242,11 +253,16 @@ function NewInterviewModal({ onClose, onCreated, defaultDate }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Recruiter <span style={{ color: '#ef4444' }}>*</span></label>
-              <input value={form.recruiter_name} onChange={e => set('recruiter_name', e.target.value)} placeholder="Tu nombre" style={inputStyle} />
+              <label style={labelStyle}>Recruiter</label>
+              <input
+                value={form.recruiter_name}
+                onChange={e => set('recruiter_name', e.target.value)}
+                placeholder={sessionUserName || 'Tu nombre'}
+                style={{ ...inputStyle, color: form.recruiter_name === sessionUserName ? '#888' : '#111' }}
+              />
             </div>
             <div>
-              <label style={labelStyle}>Fecha y hora <span style={{ color: '#ef4444' }}>*</span></label>
+              <label style={labelStyle}>Fecha y hora</label>
               <input type="datetime-local" value={form.scheduled_at} onChange={e => set('scheduled_at', e.target.value)} style={inputStyle} />
             </div>
           </div>
@@ -258,7 +274,7 @@ function NewInterviewModal({ onClose, onCreated, defaultDate }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Email</label>
+              <label style={labelStyle}>Email del candidato</label>
               <input type="email" value={form.candidate_email} onChange={e => set('candidate_email', e.target.value)} placeholder="email@candidato.com" style={inputStyle} />
             </div>
             <div>
@@ -266,20 +282,37 @@ function NewInterviewModal({ onClose, onCreated, defaultDate }) {
               <input value={form.linkedin_url} onChange={e => set('linkedin_url', e.target.value)} placeholder="linkedin.com/in/..." style={inputStyle} />
             </div>
           </div>
+          <p style={{ margin: '-8px 0 0', fontSize: '11px', color: '#aaa', fontFamily: MONO }}>
+            * Al menos email o LinkedIn es requerido
+          </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label style={labelStyle}>Cliente <span style={{ color: '#ef4444' }}>*</span></label>
-              <select value={form.client_name} onChange={e => set('client_name', e.target.value)}
-                style={{ ...inputStyle, appearance: 'none', cursor: 'pointer', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '32px' }}>
-                <option value="">— Cliente —</option>
-                {clients.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Posición <span style={{ color: '#ef4444' }}>*</span></label>
-              <input value={form.position} onChange={e => set('position', e.target.value)} placeholder="ej. Backend Python" style={inputStyle} />
-            </div>
+          <div>
+            <label style={labelStyle}>Posición <span style={{ color: '#ef4444' }}>*</span></label>
+            <select
+              defaultValue=""
+              onChange={e => handlePositionChange(e.target.value)}
+              style={{ ...inputStyle, appearance: 'none', cursor: 'pointer', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '32px' }}
+            >
+              <option value="" disabled>— Seleccioná una posición —</option>
+              <option value="__exploratory__">📞 Sin posición (call exploratoria)</option>
+              {positions.filter(p => p.status.includes('On Going')).length > 0 && (
+                <option disabled>── 🚀 On Going ──</option>
+              )}
+              {positions.filter(p => p.status.includes('On Going')).map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+              {positions.filter(p => p.status.includes('Potencial')).length > 0 && (
+                <option disabled>── 💼 Potencial ──</option>
+              )}
+              {positions.filter(p => p.status.includes('Potencial')).map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Cliente</label>
+            <input value={form.client_name} onChange={e => set('client_name', e.target.value)} placeholder="Nombre del cliente (opcional)" style={inputStyle} />
           </div>
 
           {error && (
@@ -307,6 +340,8 @@ function NewInterviewModal({ onClose, onCreated, defaultDate }) {
 
 export default function InterviewHubPage() {
   const today = toDateInput(new Date())
+  const { data: session } = useSession()
+  const sessionUserName = session?.user?.name || ''
   const [selectedDate, setSelectedDate] = useState(today)
   const [interviews, setInterviews] = useState([])
   const [loading, setLoading] = useState(true)
