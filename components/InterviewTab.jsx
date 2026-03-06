@@ -505,7 +505,7 @@ export default function InterviewTab() {
   const handleGenerate = async () => {
     if (!candidateName.trim()) return setError('Ingresá el nombre del candidato')
     if (!transcript.trim() || transcript.trim().length < 50) return setError('Pegá la transcripción de la entrevista')
-    setLoading(true); setError(null); setResults(null); setSaved(false)
+    setLoading(true); setError(null); setResults(null); setSaved(false); setReportId(null); setBondyScorecard(null); setBondyScorecardSaved(false); setShowDisonanciaModal(false)
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
