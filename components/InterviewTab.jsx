@@ -550,7 +550,13 @@ export default function InterviewTab() {
           clientName: clientName === '__DEFAULT__' ? null : (clientName.trim() || null),
         }),
       })
-      const data = await res.json()
+      let data
+      try {
+        data = await res.json()
+      } catch {
+        const text = await res.text().catch(() => 'Sin respuesta')
+        throw new Error('Error del servidor: ' + text.slice(0, 200))
+      }
       if (!res.ok) throw new Error(data.error || 'Error creando documento')
       setDocUrl(data.docUrl)
       window.open(data.docUrl, '_blank')
