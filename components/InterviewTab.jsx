@@ -415,6 +415,9 @@ export default function InterviewTab() {
   const [bondyScorecardSaved, setBondyScorecardSaved] = useState(false)
   const [reportId, setReportId] = useState(null)
   const [bondyScorecardLoading, setBondyScorecardLoading] = useState(false)
+  const [docUrl, setDocUrl] = useState(null)
+  const [docLoading, setDocLoading] = useState(false)
+  const [docError, setDocError] = useState(null)
 
   useEffect(() => {
     fetch('/api/scorecards?clients=true').then(r => r.json()).then(d => {
@@ -498,7 +501,7 @@ export default function InterviewTab() {
     if (!candidateName.trim()) return setError('Ingresá el nombre del candidato')
     if (!transcript.trim() || transcript.trim().length < 50) return setError('Pegá la transcripción de la entrevista')
     setLoading(true); setError(null); setResults(null); setSaved(false); setReportId(null);
-    setBondyScorecard(null); setBondyScorecardSaved(false); setShowDisonanciaModal(false)
+    setBondyScorecard(null); setBondyScorecardSaved(false); setShowDisonanciaModal(false); setDocUrl(null); setDocError(null)
     try {
       const res = await fetch('/api/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -532,7 +535,33 @@ export default function InterviewTab() {
     finally { setLoading(false) }
   }
 
-  const copy = (text, key) => {
+  const handleCreateDoc = async () => {
+    if (!results?.screeningReport) return
+    setDocLoading(true)
+    setDocError(null)
+    try {
+      const res = await fetch('/api/create-doc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reportText: results.screeningReport,
+          candidateName: candidateName.trim() || null,
+          positionName: positionName.trim() || null,
+          clientName: clientName === '__DEFAULT__' ? null : (clientName.trim() || null),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error creando documento')
+      setDocUrl(data.docUrl)
+      window.open(data.docUrl, '_blank')
+    } catch (e) {
+      setDocError(e.message)
+    } finally {
+      setDocLoading(false)
+    }
+  }
+
+    const copy = (text, key) => {
     navigator.clipboard.writeText(text)
     setCopied(key)
     setTimeout(() => setCopied(null), 2200)
@@ -738,8 +767,46 @@ export default function InterviewTab() {
             <Card>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <CardLabel>Informe de Screening</CardLabel>
-                <CopyBtn text={results.screeningReport} id="screening" copied={copied} onCopy={copy} />
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <CopyBtn text={results.screeningReport} id="screening" copied={copied} onCopy={copy} />
+                  <button
+                    onClick={handleCreateDoc}
+                    disabled={docLoading}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '7px',
+                      padding: '6px 16px',
+                      background: docUrl ? '#f0fdf4' : SIE,
+                      color: docUrl ? '#16a34a' : WHT,
+                      border: docUrl ? '1px solid #86efac' : 'none',
+                      borderRadius: '6px', cursor: docLoading ? 'wait' : 'pointer',
+                      fontSize: '11px', fontWeight: 700, fontFamily: MONO,
+                      letterSpacing: '0.05em', transition: 'all 0.2s',
+                      opacity: docLoading ? 0.7 : 1,
+                    }}
+                  >
+                    {docLoading
+                      ? <><span style={{ display: 'inline-block', width: '10px', height: '10px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Creando...</>
+                      : docUrl
+                        ? <>✓ Abierto en Docs</>
+                        : <><span>📄</span> Abrir en Google Docs</>
+                    }
+                  </button>
+                </div>
               </div>
+              {docError && (
+                <div style={{ marginBottom: '14px', padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '12px', color: '#dc2626', fontFamily: MONO }}>
+                  ⚠️ {docError}
+                </div>
+              )}
+              {docUrl && (
+                <div style={{ marginBottom: '14px', padding: '10px 14px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', fontSize: '12px', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>✓</span>
+                  <span>Documento creado en Google Drive.</span>
+                  <a href={docUrl} target="_blank" rel="noopener noreferrer" style={{ color: SIE, fontWeight: 700, marginLeft: '4px', textDecoration: 'none', fontFamily: MONO }}>
+                    Abrir de nuevo ↗
+                  </a>
+                </div>
+              )}
               <div style={{ fontSize: '14px', lineHeight: '1.85', color: INK, whiteSpace: 'pre-wrap' }}>{results.screeningReport}</div>
             </Card>
           )}
