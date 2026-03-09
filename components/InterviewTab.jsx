@@ -2,17 +2,29 @@
 
 import { useState, useEffect, useRef } from 'react'
 
-const BONDY_ORANGE = '#C06A2D'
-const FONT_MONO = 'DM Mono, monospace'
+const SIE = '#C06A2D'
+const SIE_LIGHT = 'rgba(192,106,45,0.08)'
+const SIE_BORDER = 'rgba(192,106,45,0.2)'
+const INK = '#1A1A1A'
+const MID = '#7A7874'
+const LGT = '#C8C5C0'
+const RUL = '#E8E4DE'
+const STN = '#F0EBE3'
+const WHT = '#FFFFFF'
+const OFF = '#F9F8F6'
+const MONO = "'DM Mono', monospace"
+const SERIF = "'Playfair Display', Georgia, serif"
+const SANS = "'DM Sans', system-ui, sans-serif"
+
 const BONDY_DIMS_A = [
-  { id: 'claridad_motivacional', label: 'Claridad motivacional', description: '¿El candidato sabe por qué busca cambio y qué quiere?' },
-  { id: 'consistencia_discurso', label: 'Consistencia del discurso', description: '¿Lo que dice se sostiene a lo largo de la entrevista?' },
-  { id: 'alineacion_cultural', label: 'Alineación cultural', description: '¿Encaja con el tipo de empresa y equipo al que va?' },
-  { id: 'motivacion_pertenencia', label: 'Motivación de pertenencia', description: '¿Quiere estar en esta empresa o la usa de puente?' },
+  { id: 'claridad_motivacional', label: 'Claridad motivacional', description: '¿Sabe por qué busca cambio?' },
+  { id: 'consistencia_discurso', label: 'Consistencia del discurso', description: '¿Lo que dice se sostiene?' },
+  { id: 'alineacion_cultural', label: 'Alineación cultural', description: '¿Encaja con el tipo de empresa?' },
+  { id: 'motivacion_pertenencia', label: 'Motivación de pertenencia', description: '¿Quiere estar aquí o es un puente?' },
 ]
 
 const BONDY_POSITIONAL = [
-  { id: 'preferencia_entorno', label: 'Preferencia de entorno', leftLabel: 'Muy estructurado', rightLabel: 'Muy dinámico' },
+  { id: 'preferencia_entorno', label: 'Preferencia de entorno', leftLabel: 'Estructurado', rightLabel: 'Dinámico' },
 ]
 
 const SCORE_LABELS = {
@@ -22,35 +34,59 @@ const SCORE_LABELS = {
   4: { label: 'Sólido', color: '#22c55e' },
 }
 
-const Label = ({ children, required }) => (
-  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#444', marginBottom: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>
-    {children}{required && <span style={{ color: '#ef4444', marginLeft: '3px' }}>*</span>}
-  </label>
+// ─── Primitives ────────────────────────────────────────────
+
+const Field = ({ label, required, hint, children }) => (
+  <div style={{ marginBottom: '0' }}>
+    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 500, color: MID, marginBottom: '8px', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: MONO }}>
+      {label}
+      {required && <span style={{ color: '#ef4444', fontSize: '10px' }}>*</span>}
+    </label>
+    {children}
+    {hint && <p style={{ margin: '5px 0 0', fontSize: '12px', color: LGT, fontFamily: MONO }}>{hint}</p>}
+  </div>
 )
 
-const inputStyle = {
-  width: '100%', border: '1.5px solid #EBEBEB', borderRadius: '10px',
-  padding: '14px 18px', fontSize: '15px', outline: 'none',
-  fontFamily: 'inherit', background: 'white', color: '#111',
+const inputBase = {
+  width: '100%', border: `1px solid ${RUL}`, borderRadius: '8px',
+  padding: '11px 14px', fontSize: '14px', outline: 'none',
+  fontFamily: SANS, background: WHT, color: INK,
   boxSizing: 'border-box', transition: 'border-color 0.15s',
+  lineHeight: '1.5',
 }
-const selectStyle = { ...inputStyle, cursor: 'pointer', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: '36px' }
-const textareaStyle = { ...inputStyle, resize: 'vertical', lineHeight: '1.7' }
+const selectBase = {
+  ...inputBase, cursor: 'pointer', appearance: 'none',
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23C8C5C0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '32px',
+}
+const textareaBase = { ...inputBase, resize: 'vertical', lineHeight: '1.65' }
 
-function SectionHeader({ label }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-      <span style={{ display: 'block', width: '16px', height: '1px', background: BONDY_ORANGE }} />
-      <span style={{ fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase', color: BONDY_ORANGE, fontFamily: FONT_MONO }}>{label}</span>
-    </div>
-  )
-}
+// Card container
+const Card = ({ children, style = {} }) => (
+  <div style={{ background: WHT, border: `1px solid ${RUL}`, borderRadius: '12px', padding: '24px', ...style }}>
+    {children}
+  </div>
+)
+
+const CardLabel = ({ children }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+    <span style={{ display: 'block', width: '14px', height: '1px', background: SIE, flexShrink: 0 }} />
+    <span style={{ fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: SIE, fontFamily: MONO, fontWeight: 500 }}>{children}</span>
+  </div>
+)
 
 function CopyBtn({ text, id, copied, onCopy }) {
+  const isActive = copied === id
   return (
-    <button onClick={() => onCopy(text, id)}
-      style={{ padding: '8px 18px', border: `1px solid ${copied === id ? '#86efac' : '#e5e7eb'}`, background: copied === id ? '#f0fdf4' : 'white', color: copied === id ? '#16a34a' : '#666', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: FONT_MONO, transition: 'all 0.2s' }}>
-      {copied === id ? '✓ Copiado' : 'Copiar'}
+    <button onClick={() => onCopy(text, id)} style={{
+      display: 'flex', alignItems: 'center', gap: '5px',
+      padding: '6px 14px', border: `1px solid ${isActive ? '#86efac' : RUL}`,
+      background: isActive ? '#f0fdf4' : OFF,
+      color: isActive ? '#16a34a' : MID,
+      borderRadius: '6px', cursor: 'pointer', fontSize: '11px',
+      fontFamily: MONO, transition: 'all 0.2s', letterSpacing: '0.05em',
+    }}>
+      {isActive ? '✓ Copiado' : 'Copiar'}
     </button>
   )
 }
@@ -60,17 +96,107 @@ function RatingBar({ rating, max = 5 }) {
   const color = pct >= 75 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <div style={{ flex: 1, height: '6px', background: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' }}>
-        <div style={{ width: `${Math.max(pct, rating > 0 ? 4 : 0)}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 0.4s ease' }} />
+      <div style={{ flex: 1, height: '4px', background: '#f0f0f0', borderRadius: '2px', overflow: 'hidden' }}>
+        <div style={{ width: `${Math.max(pct, rating > 0 ? 3 : 0)}%`, height: '100%', background: color, borderRadius: '2px', transition: 'width 0.4s ease' }} />
       </div>
-      <span style={{ fontSize: '12px', fontWeight: 700, color: rating > 0 ? color : '#ccc', fontFamily: FONT_MONO, minWidth: '16px' }}>{rating > 0 ? rating : '—'}</span>
+      <span style={{ fontSize: '12px', fontWeight: 700, color: rating > 0 ? color : LGT, fontFamily: MONO, minWidth: '14px' }}>{rating > 0 ? rating : '—'}</span>
     </div>
   )
 }
 
+// ─── Recruiter Evaluation Panel ─────────────────────────────
+
+function EvalPanel({ recruiterScores, recruiterPositional, onChange, onPositionalChange }) {
+  const allScored = BONDY_DIMS_A.every(d => recruiterScores[d.id])
+  const scoredCount = BONDY_DIMS_A.filter(d => recruiterScores[d.id]).length
+
+  return (
+    <Card style={{ position: 'sticky', top: '80px', borderLeft: `3px solid ${SIE}` }}>
+      <CardLabel>Tu evaluación</CardLabel>
+      <p style={{ fontSize: '12px', color: MID, margin: '-10px 0 18px', lineHeight: 1.6 }}>
+        Puntuá antes de generar. El modelo evaluará las mismas dimensiones.
+      </p>
+
+      {/* Progress */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <span style={{ fontSize: '11px', color: MID, fontFamily: MONO }}>{scoredCount}/{BONDY_DIMS_A.length} dimensiones</span>
+          {allScored && <span style={{ fontSize: '11px', color: '#22c55e', fontFamily: MONO }}>✓ Completo</span>}
+        </div>
+        <div style={{ height: '3px', background: RUL, borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ width: `${(scoredCount / BONDY_DIMS_A.length) * 100}%`, height: '100%', background: allScored ? '#22c55e' : SIE, transition: 'width 0.3s' }} />
+        </div>
+      </div>
+
+      {/* Dimensions */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '18px' }}>
+        {BONDY_DIMS_A.map(dim => {
+          const val = recruiterScores[dim.id]
+          const info = val ? SCORE_LABELS[val] : null
+          return (
+            <div key={dim.id}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 500, color: INK }}>{dim.label}</p>
+                  <p style={{ margin: 0, fontSize: '11px', color: LGT }}>{dim.description}</p>
+                </div>
+                {info && (
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: info.color, background: `${info.color}15`, padding: '2px 7px', borderRadius: '4px', fontFamily: MONO, whiteSpace: 'nowrap', marginLeft: '8px', flexShrink: 0 }}>
+                    {val} · {info.label}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '10px', color: LGT, fontFamily: MONO }}>1</span>
+                <input type="range" min="1" max="4" step="1" value={val || 1}
+                  onChange={e => onChange(dim.id, parseInt(e.target.value))}
+                  style={{ flex: 1, accentColor: SIE, cursor: 'pointer', height: '3px' }}
+                />
+                <span style={{ fontSize: '10px', color: LGT, fontFamily: MONO }}>4</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
+                {[1,2,3,4].map(n => (
+                  <span key={n} style={{ fontSize: '9px', color: val === n ? SCORE_LABELS[n].color : LGT, fontFamily: MONO, transition: 'color 0.15s' }}>
+                    {SCORE_LABELS[n].label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Positional */}
+      <div style={{ borderTop: `1px solid ${RUL}`, paddingTop: '16px' }}>
+        {BONDY_POSITIONAL.map(dim => {
+          const val = recruiterPositional[dim.id] || 3
+          const positions = ['Muy estructurado', 'Estructurado', 'Centro', 'Dinámico', 'Muy dinámico']
+          return (
+            <div key={dim.id}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 500, color: INK }}>{dim.label}</p>
+                <span style={{ fontSize: '10px', color: MID, fontFamily: MONO }}>{positions[val-1]}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '10px', color: LGT, fontFamily: MONO, whiteSpace: 'nowrap' }}>{dim.leftLabel}</span>
+                <input type="range" min="1" max="5" step="1" value={val}
+                  onChange={e => onPositionalChange(dim.id, parseInt(e.target.value))}
+                  style={{ flex: 1, accentColor: SIE, cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '10px', color: LGT, fontFamily: MONO, whiteSpace: 'nowrap' }}>{dim.rightLabel}</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
+
+// ─── Scorecard Result ────────────────────────────────────────
+
 function ScorecardResultPanel({ scorecard, scorecardSkills, technicalScore, softScore, overallScore, copied, onCopy }) {
   if (!scorecard?.skillRatings) return null
-
   const skills = scorecardSkills || []
   const techSkills = skills.filter(s => s.skill_type === 'technical')
   const softSkills = skills.filter(s => s.skill_type === 'soft')
@@ -83,7 +209,6 @@ function ScorecardResultPanel({ scorecard, scorecardSkills, technicalScore, soft
     const d = scorecard.skillRatings[skillId]
     return typeof d === 'object' ? (d?.analysis || d?.evidence || '') : ''
   }
-
   const scoreLabel = (score) => {
     if (score === null || score === undefined) return null
     if (score >= 85) return { label: 'Excelente', color: '#22c55e' }
@@ -91,7 +216,6 @@ function ScorecardResultPanel({ scorecard, scorecardSkills, technicalScore, soft
     if (score >= 55) return { label: 'Con potencial', color: '#f59e0b' }
     return { label: 'No recomendado', color: '#ef4444' }
   }
-
   const overallLabel = scoreLabel(overallScore)
 
   const buildCopyText = () => {
@@ -102,41 +226,31 @@ function ScorecardResultPanel({ scorecard, scorecardSkills, technicalScore, soft
     txt += '\n'
     if (techSkills.length > 0) {
       txt += 'HABILIDADES TÉCNICAS\n'
-      techSkills.forEach(s => {
-        txt += `\n${s.name} (${s.weight}%) — ${getRating(s.id)}/5\n`
-        const analysis = getAnalysis(s.id)
-        if (analysis) txt += `${analysis}\n`
-      })
+      techSkills.forEach(s => { txt += `\n${s.name} (${s.weight}%) — ${getRating(s.id)}/5\n`; const a = getAnalysis(s.id); if (a) txt += `${a}\n` })
     }
     if (softSkills.length > 0) {
       txt += '\nHABILIDADES BLANDAS\n'
-      softSkills.forEach(s => {
-        txt += `\n${s.name} (${s.weight}%) — ${getRating(s.id)}/5\n`
-        const analysis = getAnalysis(s.id)
-        if (analysis) txt += `${analysis}\n`
-      })
+      softSkills.forEach(s => { txt += `\n${s.name} (${s.weight}%) — ${getRating(s.id)}/5\n`; const a = getAnalysis(s.id); if (a) txt += `${a}\n` })
     }
     if (scorecard.generalAnalysis) txt += `\nANÁLISIS GENERAL\n${scorecard.generalAnalysis}\n`
     if (scorecard.recommendation) txt += `\nRECOMENDACIÓN\n${scorecard.recommendation}\n`
     return txt
   }
 
-  const renderSkillGroup = (skillList, groupLabel, groupColor) => (
-    <div style={{ marginBottom: '24px' }}>
-      <p style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: groupColor, margin: '0 0 14px', fontFamily: FONT_MONO }}>{groupLabel}</p>
-      {skillList.map((s) => {
+  const renderGroup = (list, label, color) => (
+    <div style={{ marginBottom: '20px' }}>
+      <p style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color, margin: '0 0 12px', fontFamily: MONO }}>{label}</p>
+      {list.map(s => {
         const rating = getRating(s.id)
         const analysis = getAnalysis(s.id)
         return (
-          <div key={s.id} style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f5f5f5' }}>
+          <div key={s.id} style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: `1px solid ${RUL}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontSize: '15px', fontWeight: 600, color: '#222' }}>{s.name}</span>
-              <span style={{ fontSize: '11px', color: '#aaa', fontFamily: FONT_MONO }}>{s.weight}%</span>
+              <span style={{ fontSize: '14px', fontWeight: 500, color: INK }}>{s.name}</span>
+              <span style={{ fontSize: '11px', color: LGT, fontFamily: MONO }}>{s.weight}%</span>
             </div>
             <RatingBar rating={rating} />
-            {analysis && (
-              <p style={{ margin: '8px 0 0', fontSize: '14px', color: '#555', lineHeight: '1.7' }}>{analysis}</p>
-            )}
+            {analysis && <p style={{ margin: '6px 0 0', fontSize: '13px', color: MID, lineHeight: 1.65 }}>{analysis}</p>}
           </div>
         )
       })}
@@ -144,210 +258,115 @@ function ScorecardResultPanel({ scorecard, scorecardSkills, technicalScore, soft
   )
 
   return (
-    <div style={{ background: 'white', border: '1.5px solid #e5e7eb', borderRadius: '14px', padding: '28px' }}>
+    <Card>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <SectionHeader label="Evaluación por Scorecard" />
+        <CardLabel>Evaluación por Scorecard</CardLabel>
         <CopyBtn text={buildCopyText()} id="scorecard" copied={copied} onCopy={onCopy} />
       </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '28px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '24px' }}>
         {technicalScore !== null && (
-          <div style={{ textAlign: 'center', padding: '16px', background: '#FFF3EC', borderRadius: '10px' }}>
-            <div style={{ fontSize: '30px', fontWeight: 900, color: BONDY_ORANGE, fontFamily: FONT_MONO }}>{technicalScore}</div>
-            <div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '3px' }}>Técnico</div>
+          <div style={{ textAlign: 'center', padding: '14px', background: `${SIE_LIGHT}`, borderRadius: '8px', border: `1px solid ${SIE_BORDER}` }}>
+            <div style={{ fontSize: '28px', fontWeight: 900, color: SIE, fontFamily: MONO }}>{technicalScore}</div>
+            <div style={{ fontSize: '10px', color: MID, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '2px', fontFamily: MONO }}>Técnico</div>
           </div>
         )}
         {softScore !== null && (
-          <div style={{ textAlign: 'center', padding: '16px', background: '#EFF6FF', borderRadius: '10px' }}>
-            <div style={{ fontSize: '30px', fontWeight: 900, color: '#4A90D9', fontFamily: FONT_MONO }}>{softScore}</div>
-            <div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '3px' }}>Blando</div>
+          <div style={{ textAlign: 'center', padding: '14px', background: '#EFF6FF', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+            <div style={{ fontSize: '28px', fontWeight: 900, color: '#4A90D9', fontFamily: MONO }}>{softScore}</div>
+            <div style={{ fontSize: '10px', color: MID, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '2px', fontFamily: MONO }}>Blando</div>
           </div>
         )}
         {overallScore !== null && (
-          <div style={{ textAlign: 'center', padding: '16px', background: overallLabel ? `${overallLabel.color}15` : '#F9F8F6', borderRadius: '10px', border: `1.5px solid ${overallLabel ? overallLabel.color + '40' : '#e5e7eb'}` }}>
-            <div style={{ fontSize: '30px', fontWeight: 900, color: overallLabel?.color || '#111', fontFamily: FONT_MONO }}>{overallScore}</div>
-            <div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '3px' }}>Overall</div>
-            {overallLabel && <div style={{ fontSize: '10px', color: overallLabel.color, fontWeight: 700, marginTop: '3px' }}>{overallLabel.label}</div>}
+          <div style={{ textAlign: 'center', padding: '14px', background: overallLabel ? `${overallLabel.color}12` : OFF, borderRadius: '8px', border: `1px solid ${overallLabel ? overallLabel.color + '35' : RUL}` }}>
+            <div style={{ fontSize: '28px', fontWeight: 900, color: overallLabel?.color || INK, fontFamily: MONO }}>{overallScore}</div>
+            <div style={{ fontSize: '10px', color: MID, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '2px', fontFamily: MONO }}>Overall</div>
+            {overallLabel && <div style={{ fontSize: '10px', color: overallLabel.color, fontWeight: 700, marginTop: '2px', fontFamily: MONO }}>{overallLabel.label}</div>}
           </div>
         )}
       </div>
-
-      {techSkills.length > 0 && renderSkillGroup(techSkills, 'Habilidades Técnicas', BONDY_ORANGE)}
-      {softSkills.length > 0 && renderSkillGroup(softSkills, 'Habilidades Blandas', '#4A90D9')}
-
+      {techSkills.length > 0 && renderGroup(techSkills, 'Habilidades Técnicas', SIE)}
+      {softSkills.length > 0 && renderGroup(softSkills, 'Habilidades Blandas', '#4A90D9')}
       {scorecard.generalAnalysis && (
-        <div style={{ marginBottom: '16px' }}>
-          <p style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', margin: '0 0 10px', fontFamily: FONT_MONO }}>Análisis General</p>
-          <p style={{ fontSize: '15px', color: '#333', lineHeight: '1.7', margin: 0 }}>{scorecard.generalAnalysis}</p>
+        <div style={{ marginBottom: '14px' }}>
+          <p style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: MID, margin: '0 0 8px', fontFamily: MONO }}>Análisis General</p>
+          <p style={{ fontSize: '14px', color: INK, lineHeight: 1.7, margin: 0 }}>{scorecard.generalAnalysis}</p>
         </div>
       )}
-
       {scorecard.recommendation && (
-        <div style={{ padding: '16px 18px', background: '#f9f9f9', borderRadius: '10px', border: '1px solid #ebebeb' }}>
-          <p style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', margin: '0 0 8px', fontFamily: FONT_MONO }}>Recomendación</p>
-          <p style={{ fontSize: '15px', color: '#222', lineHeight: '1.7', margin: 0, fontWeight: 500 }}>{scorecard.recommendation}</p>
+        <div style={{ padding: '14px 16px', background: OFF, borderRadius: '8px', border: `1px solid ${RUL}` }}>
+          <p style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: MID, margin: '0 0 6px', fontFamily: MONO }}>Recomendación</p>
+          <p style={{ fontSize: '14px', color: INK, lineHeight: 1.65, margin: 0, fontWeight: 500 }}>{scorecard.recommendation}</p>
         </div>
       )}
-    </div>
+    </Card>
   )
 }
 
-
-function SliderDimension({ dim, value, onChange }) {
-  const scoreInfo = value ? SCORE_LABELS[value] : null
-  return (
-    <div style={{ marginBottom: '20px', padding: '18px', background: '#fafafa', borderRadius: '10px', border: '1px solid #f0f0f0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-        <div>
-          <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#222' }}>{dim.label}</p>
-          <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#888' }}>{dim.description}</p>
-        </div>
-        {scoreInfo && (
-          <span style={{ fontSize: '12px', fontWeight: 700, color: scoreInfo.color, background: `${scoreInfo.color}15`, padding: '4px 10px', borderRadius: '4px', fontFamily: FONT_MONO, whiteSpace: 'nowrap', marginLeft: '12px' }}>
-            {value} — {scoreInfo.label}
-          </span>
-        )}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '11px', color: '#aaa', fontFamily: FONT_MONO }}>1</span>
-        <input
-          type="range" min="1" max="4" step="1"
-          value={value || 1}
-          onChange={e => onChange(dim.id, parseInt(e.target.value))}
-          style={{ flex: 1, accentColor: BONDY_ORANGE, cursor: 'pointer' }}
-        />
-        <span style={{ fontSize: '11px', color: '#aaa', fontFamily: FONT_MONO }}>4</span>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-        {[1,2,3,4].map(n => (
-          <span key={n} style={{ fontSize: '10px', color: value === n ? SCORE_LABELS[n].color : '#ccc', fontFamily: FONT_MONO, fontWeight: value === n ? 700 : 400 }}>
-            {SCORE_LABELS[n].label}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function PositionalSlider({ dim, value, onChange }) {
-  const positions = [
-    { v: 1, label: 'Muy estructurado' },
-    { v: 2, label: 'Estructurado' },
-    { v: 3, label: 'Centro' },
-    { v: 4, label: 'Dinámico' },
-    { v: 5, label: 'Muy dinámico' },
-  ]
-  const current = positions.find(p => p.v === value)
-  return (
-    <div style={{ marginBottom: '20px', padding: '18px', background: '#fafafa', borderRadius: '10px', border: '1px solid #f0f0f0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#222' }}>{dim.label}</p>
-        {current && (
-          <span style={{ fontSize: '12px', fontWeight: 700, color: '#555', background: '#f0f0f0', padding: '4px 10px', borderRadius: '4px', fontFamily: FONT_MONO }}>
-            {current.label}
-          </span>
-        )}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '11px', color: '#888', fontFamily: FONT_MONO, whiteSpace: 'nowrap' }}>{dim.leftLabel}</span>
-        <input
-          type="range" min="1" max="5" step="1"
-          value={value || 3}
-          onChange={e => onChange(dim.id, parseInt(e.target.value))}
-          style={{ flex: 1, accentColor: BONDY_ORANGE, cursor: 'pointer' }}
-        />
-        <span style={{ fontSize: '11px', color: '#888', fontFamily: FONT_MONO, whiteSpace: 'nowrap' }}>{dim.rightLabel}</span>
-      </div>
-    </div>
-  )
-}
+// ─── Disonancia Modal ─────────────────────────────────────────
 
 function DisonanciaModal({ modelScores, recruiterScores, onSave, onClose }) {
   const [nota, setNota] = useState('')
   const [visibleCliente, setVisibleCliente] = useState(false)
-
   const LABELS = {
     claridad_motivacional: 'Claridad motivacional',
     consistencia_discurso: 'Consistencia del discurso',
     alineacion_cultural: 'Alineación cultural',
     motivacion_pertenencia: 'Motivación de pertenencia',
   }
-
   const disonancia = Object.entries(LABELS).map(([id, label]) => {
     const modelVal = modelScores?.block_a?.[id]?.score
     const recVal = recruiterScores?.[id]
     const diff = modelVal && recVal ? Math.abs(modelVal - recVal) : null
     return { id, label, modelVal, recVal, diff }
   })
-
   const hasDisonancia = disonancia.some(d => d.diff !== null && d.diff >= 2)
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: 'white', borderRadius: '16px', padding: '36px', maxWidth: '580px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-        <h2 style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 800, color: '#111' }}>Confirmar scorecard</h2>
-        <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#888' }}>Revisá la comparación antes de guardar</p>
-
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,26,26,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(4px)' }}>
+      <div style={{ background: WHT, borderRadius: '16px', padding: '36px', maxWidth: '540px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.15)' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: 800, color: INK, fontFamily: SERIF }}>Confirmar scorecard</h2>
+        <p style={{ margin: '0 0 24px', fontSize: '13px', color: MID }}>Revisá la comparación antes de guardar</p>
         <div style={{ marginBottom: '24px' }}>
-          <p style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: BONDY_ORANGE, margin: '0 0 14px', fontFamily: FONT_MONO }}>Comparación recruiter vs. modelo</p>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+          <p style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: SIE, margin: '0 0 12px', fontFamily: MONO }}>Recruiter vs. Modelo</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
-              <tr style={{ borderBottom: '1.5px solid #e5e7eb' }}>
-                <th style={{ textAlign: 'left', padding: '8px', color: '#888', fontWeight: 600, fontFamily: FONT_MONO, fontSize: '11px' }}>Dimensión</th>
-                <th style={{ textAlign: 'center', padding: '8px', color: '#888', fontWeight: 600, fontFamily: FONT_MONO, fontSize: '11px' }}>Recruiter</th>
-                <th style={{ textAlign: 'center', padding: '8px', color: '#888', fontWeight: 600, fontFamily: FONT_MONO, fontSize: '11px' }}>Modelo</th>
-                <th style={{ textAlign: 'center', padding: '8px', color: '#888', fontWeight: 600, fontFamily: FONT_MONO, fontSize: '11px' }}></th>
+              <tr style={{ borderBottom: `1.5px solid ${RUL}` }}>
+                <th style={{ textAlign: 'left', padding: '6px 8px', color: MID, fontWeight: 500, fontFamily: MONO, fontSize: '10px', letterSpacing: '0.08em' }}>Dimensión</th>
+                <th style={{ textAlign: 'center', padding: '6px 8px', color: MID, fontWeight: 500, fontFamily: MONO, fontSize: '10px' }}>Recruiter</th>
+                <th style={{ textAlign: 'center', padding: '6px 8px', color: MID, fontWeight: 500, fontFamily: MONO, fontSize: '10px' }}>Modelo</th>
+                <th style={{ width: '32px' }}></th>
               </tr>
             </thead>
             <tbody>
               {disonancia.map(({ id, label, modelVal, recVal, diff }) => (
-                <tr key={id} style={{ borderBottom: '1px solid #f5f5f5', background: diff >= 2 ? '#fff7ed' : 'white' }}>
-                  <td style={{ padding: '10px 8px', color: '#333', fontSize: '14px' }}>{label}</td>
-                  <td style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 700, color: recVal ? SCORE_LABELS[recVal]?.color : '#ccc', fontFamily: FONT_MONO }}>{recVal || '—'}</td>
-                  <td style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 700, color: modelVal ? SCORE_LABELS[modelVal]?.color : '#ccc', fontFamily: FONT_MONO }}>{modelVal || '—'}</td>
-                  <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                    {diff >= 2 ? <span title="Disonancia alta">⚠️</span> : diff === 1 ? <span style={{ color: '#aaa' }}>~</span> : <span style={{ color: '#86efac' }}>✓</span>}
+                <tr key={id} style={{ borderBottom: `1px solid ${RUL}`, background: diff >= 2 ? '#fff7ed' : 'transparent' }}>
+                  <td style={{ padding: '9px 8px', color: INK }}>{label}</td>
+                  <td style={{ padding: '9px 8px', textAlign: 'center', fontWeight: 700, color: recVal ? SCORE_LABELS[recVal]?.color : LGT, fontFamily: MONO }}>{recVal || '—'}</td>
+                  <td style={{ padding: '9px 8px', textAlign: 'center', fontWeight: 700, color: modelVal ? SCORE_LABELS[modelVal]?.color : LGT, fontFamily: MONO }}>{modelVal || '—'}</td>
+                  <td style={{ padding: '9px 8px', textAlign: 'center', fontSize: '13px' }}>
+                    {diff >= 2 ? '⚠️' : diff === 1 ? <span style={{ color: LGT }}>~</span> : <span style={{ color: '#86efac' }}>✓</span>}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {hasDisonancia && (
-            <p style={{ margin: '10px 0 0', fontSize: '13px', color: '#d97706', fontFamily: FONT_MONO }}>⚠️ Diferencias de 2+ puntos detectadas. ¿Hubo algo en la entrevista que no quedó en el transcript?</p>
-          )}
+          {hasDisonancia && <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#d97706', fontFamily: MONO }}>⚠️ Diferencias de 2+ puntos — ¿algo de la entrevista no quedó en el transcript?</p>}
         </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#555', marginBottom: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>
-            Nota interna (opcional)
-          </label>
-          <textarea
-            value={nota}
-            onChange={e => setNota(e.target.value)}
-            placeholder="¿Algo que observaste en vivo que no quedó en el transcript? Esta nota es solo interna."
-            style={{ width: '100%', border: '1.5px solid #EBEBEB', borderRadius: '10px', padding: '14px 16px', fontSize: '14px', outline: 'none', fontFamily: 'inherit', background: 'white', color: '#111', boxSizing: 'border-box', resize: 'vertical', minHeight: '80px', lineHeight: '1.7' }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px', padding: '16px', background: '#f9f9f9', borderRadius: '10px' }}>
-          <input
-            type="checkbox"
-            id="visible-cliente"
-            checked={visibleCliente}
-            onChange={e => setVisibleCliente(e.target.checked)}
-            style={{ width: '16px', height: '16px', accentColor: BONDY_ORANGE, cursor: 'pointer' }}
-          />
-          <label htmlFor="visible-cliente" style={{ fontSize: '14px', color: '#333', cursor: 'pointer' }}>
-            <strong>Incluir scorecard en el reporte para el cliente</strong>
-            <span style={{ display: 'block', fontSize: '12px', color: '#888', marginTop: '2px' }}>Si no lo activás, la scorecard queda solo en la base interna de Bondy</span>
+        <Field label="Nota interna (opcional)">
+          <textarea value={nota} onChange={e => setNota(e.target.value)} placeholder="¿Algo que observaste en vivo que no quedó en el transcript?" style={{ ...textareaBase, minHeight: '80px' }} />
+        </Field>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', margin: '16px 0 28px', padding: '14px 16px', background: OFF, borderRadius: '10px', border: `1px solid ${RUL}` }}>
+          <input type="checkbox" id="visible-cliente" checked={visibleCliente} onChange={e => setVisibleCliente(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: SIE, cursor: 'pointer', marginTop: '2px', flexShrink: 0 }} />
+          <label htmlFor="visible-cliente" style={{ fontSize: '13px', color: INK, cursor: 'pointer', lineHeight: 1.5 }}>
+            <strong>Incluir scorecard en el reporte del cliente</strong>
+            <span style={{ display: 'block', fontSize: '12px', color: MID, marginTop: '2px' }}>Si no lo activás, queda solo en la base interna</span>
           </label>
         </div>
-
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '14px', border: '1.5px solid #e5e7eb', background: 'white', color: '#555', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '12px', border: `1px solid ${RUL}`, background: WHT, color: MID, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
             Cancelar
           </button>
-          <button onClick={() => onSave({ nota, visibleCliente })} style={{ flex: 2, padding: '14px', border: 'none', background: `linear-gradient(135deg, ${BONDY_ORANGE}, #D86830)`, color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: 800, boxShadow: '0 4px 16px rgba(192,106,45,0.3)' }}>
+          <button onClick={() => onSave({ nota, visibleCliente })} style={{ flex: 2, padding: '12px', border: 'none', background: SIE, color: WHT, borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700, boxShadow: `0 4px 14px ${SIE_BORDER}` }}>
             Guardar scorecard
           </button>
         </div>
@@ -355,6 +374,8 @@ function DisonanciaModal({ modelScores, recruiterScores, onSave, onClose }) {
     </div>
   )
 }
+
+// ─── Main Component ──────────────────────────────────────────
 
 export default function InterviewTab() {
   const [candidateName, setCandidateName] = useState('')
@@ -396,26 +417,20 @@ export default function InterviewTab() {
   const [bondyScorecardLoading, setBondyScorecardLoading] = useState(false)
 
   useEffect(() => {
-    fetch('/api/scorecards?clients=true')
-      .then(r => r.json())
-      .then(d => {
-        setClients(d.clients || [])
-        setHasDefaultScorecard(d.hasDefault || false)
-      })
-      .catch(() => {})
+    fetch('/api/scorecards?clients=true').then(r => r.json()).then(d => {
+      setClients(d.clients || [])
+      setHasDefaultScorecard(d.hasDefault || false)
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {
     setPositions([]); setPositionId(''); setPositionName(''); setScorecard(null)
     if (!clientName) return
-    fetch(`/api/scorecards?positions=${encodeURIComponent(clientName)}`)
-      .then(r => r.json())
-      .then(d => {
-        const pos = d.positions || []
-        setPositions(pos)
-        if (pos.length === 1) { setPositionId(pos[0].id); setPositionName(pos[0].scorecard_name) }
-      })
-      .catch(() => {})
+    fetch(`/api/scorecards?positions=${encodeURIComponent(clientName)}`).then(r => r.json()).then(d => {
+      const pos = d.positions || []
+      setPositions(pos)
+      if (pos.length === 1) { setPositionId(pos[0].id); setPositionName(pos[0].scorecard_name) }
+    }).catch(() => {})
   }, [clientName])
 
   useEffect(() => {
@@ -424,26 +439,19 @@ export default function InterviewTab() {
     const url = positionName
       ? `/api/scorecards?client=${encodeURIComponent(clientName)}&position=${encodeURIComponent(positionName)}`
       : `/api/scorecards?client=${encodeURIComponent(clientName)}`
-    fetch(url)
-      .then(r => r.json())
-      .then(d => { setScorecard(d.scorecard); setIsDefaultScorecard(d.isDefault || false) })
-      .catch(() => setScorecard(null))
-      .finally(() => setScorecardLoading(false))
+    fetch(url).then(r => r.json()).then(d => { setScorecard(d.scorecard); setIsDefaultScorecard(d.isDefault || false) })
+      .catch(() => setScorecard(null)).finally(() => setScorecardLoading(false))
   }, [clientName, positionName])
-
-  const handleRecruiterScore = (id, val) => setRecruiterScores(prev => ({ ...prev, [id]: val }))
-  const handleRecruiterPositional = (id, val) => setRecruiterPositional(prev => ({ ...prev, [id]: val }))
 
   const handleSaveBondyScorecard = async ({ nota, visibleCliente }) => {
     if (!reportId || !bondyScorecard) { setShowDisonanciaModal(false); return }
     try {
       await fetch('/api/bondy-scorecard', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reportId, bondyScorecard, recruiterScores, recruiterPositional, nota, visibleCliente }),
       })
       setBondyScorecardSaved(true)
-    } catch (e) { console.error('Error saving bondy scorecard:', e) }
+    } catch (e) { console.error(e) }
     setShowDisonanciaModal(false)
   }
 
@@ -454,36 +462,20 @@ export default function InterviewTab() {
 
   const handleOptimize = async () => {
     if (!transcript.trim() || transcript.length < 200) return
-    setOptimizing(true)
-    setError(null)
+    setOptimizing(true); setError(null)
     try {
       const res = await fetch('/api/optimize-transcript', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript, positionName: positionName || null, clientName: clientName || null })
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript, positionName: positionName || null, clientName: clientName || null }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error optimizando')
-      if (data.alreadyShort) {
-        setOptimizeResult({ alreadyShort: true })
-        return
-      }
+      if (data.alreadyShort) { setOptimizeResult({ alreadyShort: true }); return }
       setOriginalTranscript(transcript)
       setTranscript(data.optimized)
       setOptimizeResult({ savings: data.savings, originalLength: data.originalLength, optimizedLength: data.optimizedLength })
-    } catch (e) {
-      setError('Error al limpiar: ' + e.message)
-    } finally {
-      setOptimizing(false)
-    }
-  }
-
-  const handleRestoreTranscript = () => {
-    if (originalTranscript) {
-      setTranscript(originalTranscript)
-      setOriginalTranscript(null)
-      setOptimizeResult(null)
-    }
+    } catch (e) { setError('Error al limpiar: ' + e.message) }
+    finally { setOptimizing(false) }
   }
 
   const handleCvFile = (file) => {
@@ -498,29 +490,25 @@ export default function InterviewTab() {
   const softSkills = scorecard?.scorecard_data?.skills?.filter(s => s.skill_type === 'soft') || []
   const canGenerate = candidateName.trim().length > 0 && transcript.trim().length > 50
   const showOptimizeBtn = transcript.length > 1500 && !optimizeResult
-
   const displayClientName = clientName === '__DEFAULT__' ? 'Bondy (Default)' : clientName
+  const charCount = transcript.length
+  const charColor = charCount > 4000 ? '#ef4444' : charCount > 2500 ? '#f59e0b' : LGT
 
   const handleGenerate = async () => {
     if (!candidateName.trim()) return setError('Ingresá el nombre del candidato')
     if (!transcript.trim() || transcript.trim().length < 50) return setError('Pegá la transcripción de la entrevista')
-    setLoading(true); setError(null); setResults(null); setSaved(false); setReportId(null); setBondyScorecard(null); setBondyScorecardSaved(false); setShowDisonanciaModal(false)
+    setLoading(true); setError(null); setResults(null); setSaved(false); setReportId(null);
+    setBondyScorecard(null); setBondyScorecardSaved(false); setShowDisonanciaModal(false)
     try {
       const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transcript: transcript.trim(),
-          interviewerNotes: interviewerNotes.trim() || null,
-          candidateName: candidateName.trim(),
-          linkedinUrl: linkedinUrl.trim() || null,
+          transcript: transcript.trim(), interviewerNotes: interviewerNotes.trim() || null,
+          candidateName: candidateName.trim(), linkedinUrl: linkedinUrl.trim() || null,
           cvText: cvText.trim() || null,
           clientName: clientName === '__DEFAULT__' ? null : (clientName.trim() || null),
-          positionName: positionName.trim() || null,
-          jobDescription: jobDescription.trim() || null,
-          language: language,
-          scorecardId: scorecard?.id || null,
-          scorecardData: scorecard?.scorecard_data || null,
+          positionName: positionName.trim() || null, jobDescription: jobDescription.trim() || null,
+          language, scorecardId: scorecard?.id || null, scorecardData: scorecard?.scorecard_data || null,
         }),
       })
       const data = await res.json()
@@ -532,26 +520,16 @@ export default function InterviewTab() {
         setBondyScorecardLoading(true)
         try {
           const scRes = await fetch('/api/bondy-scorecard', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              transcript: transcript.trim(),
-              candidateName: candidateName.trim(),
-              clientName: clientName === '__DEFAULT__' ? null : (clientName.trim() || null),
-              positionName: positionName.trim() || null,
-              recruiterScores,
-              recruiterPositional,
-            }),
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transcript: transcript.trim(), candidateName: candidateName.trim(), clientName: clientName === '__DEFAULT__' ? null : (clientName.trim() || null), positionName: positionName.trim() || null, recruiterScores, recruiterPositional }),
           })
           const scData = await scRes.json()
-          if (scData.bondyScorecard) {
-            setBondyScorecard(scData.bondyScorecard)
-            setShowDisonanciaModal(true)
-          }
-        } catch (e) { console.error('Bondy scorecard error:', e) }
+          if (scData.bondyScorecard) { setBondyScorecard(scData.bondyScorecard); setShowDisonanciaModal(true) }
+        } catch (e) { console.error(e) }
         finally { setBondyScorecardLoading(false) }
       }
-    } catch (e) { setError(e.message) } finally { setLoading(false) }
+    } catch (e) { setError(e.message) }
+    finally { setLoading(false) }
   }
 
   const copy = (text, key) => {
@@ -560,277 +538,224 @@ export default function InterviewTab() {
     setTimeout(() => setCopied(null), 2200)
   }
 
-  const charCount = transcript.length
-  const charColor = charCount > 4000 ? '#ef4444' : charCount > 2500 ? '#f59e0b' : '#aaa'
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+    <div style={{ fontFamily: SANS }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-        .optimize-btn:hover:not(:disabled) { background: ${BONDY_ORANGE} !important; color: white !important; }
-        .input-field:focus { border-color: ${BONDY_ORANGE} !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .ib-input:focus { border-color: ${SIE} !important; box-shadow: 0 0 0 3px ${SIE_LIGHT}; }
+        .opt-btn:hover:not(:disabled) { background: ${SIE} !important; color: white !important; }
+        .gen-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
       `}</style>
 
-      <section>
-        <SectionHeader label="Candidato" />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px', marginBottom: '18px' }}>
-          <div>
-            <Label required>Nombre completo</Label>
-            <input className="input-field" value={candidateName} onChange={e => setCandidateName(e.target.value)} placeholder="Nombre del candidato" style={inputStyle} />
-          </div>
-          <div>
-            <Label>LinkedIn</Label>
-            <input className="input-field" value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} placeholder="linkedin.com/in/usuario" style={inputStyle} />
-          </div>
-        </div>
-        <div>
-          <Label>CV (opcional)</Label>
-          <div onClick={() => fileRef.current.click()} style={{ border: `1.5px dashed ${cvFile ? '#86efac' : '#EBEBEB'}`, borderRadius: '10px', padding: '16px 20px', cursor: 'pointer', background: cvFile ? '#f0fdf4' : 'white', display: 'flex', alignItems: 'center', gap: '12px', transition: 'all 0.2s' }}>
-            <span style={{ fontSize: '22px' }}>{cvFile ? '📄' : '📎'}</span>
-            <div>
-              <p style={{ margin: 0, fontSize: '15px', color: cvFile ? '#16a34a' : '#555', fontWeight: cvFile ? 600 : 400 }}>{cvFile ? cvFile.name : 'Subir CV del candidato'}</p>
-              {!cvFile && <p style={{ margin: 0, fontSize: '12px', color: '#aaa', fontFamily: FONT_MONO }}>PDF · DOCX · TXT</p>}
+      {/* ── Two-column layout ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px', alignItems: 'start' }}>
+
+        {/* LEFT COLUMN — main form */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Card 1: Candidato */}
+          <Card>
+            <CardLabel>Candidato</CardLabel>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+              <Field label="Nombre" required>
+                <input className="ib-input" value={candidateName} onChange={e => setCandidateName(e.target.value)} placeholder="Nombre del candidato" style={inputBase} />
+              </Field>
+              <Field label="LinkedIn">
+                <input className="ib-input" value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} placeholder="linkedin.com/in/usuario" style={inputBase} />
+              </Field>
             </div>
-            {cvFile && <button onClick={e => { e.stopPropagation(); setCvFile(null); setCvText('') }} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: '16px' }}>✕</button>}
-          </div>
-          <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt" style={{ display: 'none' }} onChange={e => handleCvFile(e.target.files[0])} />
-        </div>
-      </section>
+            <Field label="CV (opcional)">
+              <div onClick={() => fileRef.current.click()} style={{ border: `1px dashed ${cvFile ? '#86efac' : RUL}`, borderRadius: '8px', padding: '12px 16px', cursor: 'pointer', background: cvFile ? '#f0fdf4' : OFF, display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }}>
+                <span style={{ fontSize: '18px' }}>{cvFile ? '📄' : '📎'}</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: '13px', color: cvFile ? '#16a34a' : MID, fontWeight: cvFile ? 500 : 400 }}>{cvFile ? cvFile.name : 'Subir CV del candidato'}</p>
+                  {!cvFile && <p style={{ margin: 0, fontSize: '11px', color: LGT, fontFamily: MONO }}>PDF · DOCX · TXT</p>}
+                </div>
+                {cvFile && <button onClick={e => { e.stopPropagation(); setCvFile(null); setCvText('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: LGT, fontSize: '14px', padding: '2px' }}>✕</button>}
+              </div>
+              <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt" style={{ display: 'none' }} onChange={e => handleCvFile(e.target.files[0])} />
+            </Field>
+          </Card>
 
-      <section>
-        <SectionHeader label="Cliente y posición" />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px' }}>
-          <div>
-            <Label>Cliente</Label>
-            <select value={clientName} onChange={e => setClientName(e.target.value)} style={selectStyle}>
-              <option value="">— Selección cliente —</option>
-              {hasDefaultScorecard && (
-                <option value="__DEFAULT__">⭐ Bondy (Default)</option>
+          {/* Card 2: Cliente + Posición */}
+          <Card>
+            <CardLabel>Cliente y posición</CardLabel>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <Field label="Cliente">
+                <select className="ib-input" value={clientName} onChange={e => setClientName(e.target.value)} style={selectBase}>
+                  <option value="">— Selección cliente —</option>
+                  {hasDefaultScorecard && <option value="__DEFAULT__">⭐ Bondy (Default)</option>}
+                  {clients.length > 0 && hasDefaultScorecard && <option disabled>──────────</option>}
+                  {clients.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </Field>
+              <Field label="Posición">
+                <select className="ib-input"
+                  value={positionId}
+                  onChange={e => { const sel = positions.find(p => p.id === e.target.value); setPositionId(e.target.value); setPositionName(sel?.scorecard_name || '') }}
+                  disabled={!clientName || positions.length === 0}
+                  style={{ ...selectBase, opacity: (!clientName || positions.length === 0) ? 0.5 : 1 }}>
+                  <option value="">{!clientName ? '— Elegí cliente primero —' : positions.length === 0 ? '— Sin posiciones —' : '— Seleccioná —'}</option>
+                  {positions.map(p => <option key={p.id} value={p.id}>{p.scorecard_name}</option>)}
+                </select>
+              </Field>
+            </div>
+            {clientName && (
+              <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '8px', background: scorecardLoading ? OFF : (scorecard ? (isDefaultScorecard ? '#fff7ed' : '#f0fdf4') : OFF), border: `1px solid ${scorecardLoading ? RUL : (scorecard ? (isDefaultScorecard ? '#fde68a' : '#86efac') : RUL)}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {scorecardLoading
+                  ? <span style={{ fontSize: '12px', color: LGT, fontFamily: MONO }}>Buscando scorecard...</span>
+                  : scorecard
+                    ? <>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: INK }}>{scorecard.scorecard_name}</span>
+                        {isDefaultScorecard && <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#d97706', background: '#fef9c3', padding: '2px 6px', borderRadius: '4px', fontFamily: MONO }}>Default</span>}
+                        <span style={{ fontSize: '12px', color: MID, marginLeft: 'auto', fontFamily: MONO }}>🔧 {techSkills.length} · 💬 {softSkills.length}</span>
+                      </>
+                    : <span style={{ fontSize: '12px', color: MID }}>Sin scorecard para este cliente</span>}
+              </div>
+            )}
+          </Card>
+
+          {/* Card 3: JD + Idioma */}
+          <Card>
+            <CardLabel>Job description</CardLabel>
+            <textarea className="ib-input" value={jobDescription} onChange={e => setJobDescription(e.target.value)} placeholder="Pegá la job description aquí..." style={{ ...textareaBase, minHeight: '120px', marginBottom: '14px' }} />
+            {!jobDescription.trim() && (
+              <p style={{ margin: '-6px 0 12px', fontSize: '12px', color: '#f59e0b', fontFamily: MONO }}>⚠️ Sin JD el modelo no puede evaluar el match con la posición</p>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '11px', color: MID, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: MONO, fontWeight: 500 }}>Idioma</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {['es', 'en'].map(lang => (
+                  <button key={lang} onClick={() => setLanguage(lang)} style={{ padding: '6px 18px', borderRadius: '6px', border: `1px solid ${language === lang ? SIE : RUL}`, background: language === lang ? SIE : WHT, color: language === lang ? WHT : MID, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: MONO, transition: 'all 0.15s', letterSpacing: '0.05em' }}>
+                    {lang.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Card>
+
+          {/* Card 4: Notas + Transcript */}
+          <Card>
+            <CardLabel>Entrevista</CardLabel>
+            <Field label="Notas del entrevistador">
+              <textarea className="ib-input" value={interviewerNotes} onChange={e => setInterviewerNotes(e.target.value)} placeholder="Impresiones, señales o contexto que no quedó en la transcripción..." style={{ ...textareaBase, minHeight: '80px', marginBottom: '16px' }} />
+            </Field>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 500, color: MID, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: MONO, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                Transcripción <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              {showOptimizeBtn && (
+                <button className="opt-btn" onClick={handleOptimize} disabled={optimizing} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', border: `1px solid ${SIE}`, background: WHT, color: SIE, borderRadius: '6px', cursor: optimizing ? 'wait' : 'pointer', fontSize: '11px', fontWeight: 600, fontFamily: MONO, transition: 'all 0.18s', opacity: optimizing ? 0.7 : 1 }}>
+                  {optimizing
+                    ? <><span style={{ display: 'inline-block', width: '10px', height: '10px', border: `2px solid ${SIE}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Limpiando...</>
+                    : <>✂️ Limpiar transcript</>}
+                </button>
               )}
-              {clients.length > 0 && hasDefaultScorecard && (
-                <option disabled>──────────</option>
-              )}
-              {clients.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <Label>Posición</Label>
-            <select
-              value={positionId}
-              onChange={e => { const sel = positions.find(p => p.id === e.target.value); setPositionId(e.target.value); setPositionName(sel?.scorecard_name || '') }}
-              disabled={!clientName || positions.length === 0}
-              style={{ ...selectStyle, opacity: (!clientName || positions.length === 0) ? 0.5 : 1 }}
-            >
-              <option value="">{!clientName ? '— Primero elegí cliente —' : positions.length === 0 ? '— Sin posiciones cargadas —' : '— Selección posición —'}</option>
-              {positions.map(p => <option key={p.id} value={p.id}>{p.scorecard_name}</option>)}
-            </select>
-          </div>
-        </div>
-        {clientName && (
-          <div style={{ marginTop: '14px', padding: '14px 18px', borderRadius: '10px', background: scorecardLoading ? '#f9f9f9' : (scorecard ? (isDefaultScorecard ? '#fff7ed' : '#f0fdf4') : '#fafafa'), border: `1px solid ${scorecardLoading ? '#e5e7eb' : (scorecard ? (isDefaultScorecard ? '#fde68a' : '#86efac') : '#e5e7eb')}` }}>
-            {scorecardLoading
-              ? <span style={{ fontSize: '14px', color: '#aaa', fontFamily: FONT_MONO }}>Buscando scorecard...</span>
-              : scorecard
-                ? <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#111' }}>{scorecard.scorecard_name}</span>
-                    {isDefaultScorecard && <span style={{ fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#d97706', background: '#fef9c3', padding: '2px 8px', borderRadius: '4px', fontFamily: FONT_MONO }}>Default</span>}
-                    <span style={{ fontSize: '13px', color: '#888', marginLeft: 'auto' }}>🔧 {techSkills.length} técnicos · 💬 {softSkills.length} blandos</span>
+            </div>
+
+            {optimizeResult && (
+              <div style={{ marginBottom: '10px', padding: '10px 14px', borderRadius: '8px', animation: 'fadeIn 0.25s ease', background: optimizeResult.alreadyShort ? '#f0f9ff' : '#f0fdf4', border: `1px solid ${optimizeResult.alreadyShort ? '#bae6fd' : '#86efac'}`, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '14px' }}>{optimizeResult.alreadyShort ? 'ℹ️' : '✅'}</span>
+                <div style={{ flex: 1 }}>
+                  {optimizeResult.alreadyShort
+                    ? <span style={{ fontSize: '13px', color: '#0369a1' }}>Ya es corto, no necesita limpieza</span>
+                    : <><span style={{ fontSize: '13px', fontWeight: 600, color: '#16a34a' }}>Transcript limpiado — {optimizeResult.savings}% más corto</span><span style={{ fontSize: '11px', color: MID, marginLeft: '8px', fontFamily: MONO }}>{(optimizeResult.originalLength/1000).toFixed(1)}k → {(optimizeResult.optimizedLength/1000).toFixed(1)}k</span></>}
+                </div>
+                {!optimizeResult.alreadyShort && originalTranscript && (
+                  <button onClick={() => { setTranscript(originalTranscript); setOriginalTranscript(null); setOptimizeResult(null) }} style={{ fontSize: '11px', color: MID, background: 'none', border: `1px solid ${RUL}`, borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontFamily: MONO }}>↩ Restaurar</button>
+                )}
+              </div>
+            )}
+
+            <textarea className="ib-input" value={transcript} onChange={e => handleTranscriptChange(e.target.value)} placeholder="Pegá la transcripción completa de la entrevista..." style={{ ...textareaBase, minHeight: charCount > 2000 ? '260px' : '180px' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+              <span style={{ fontSize: '11px', color: charColor, fontFamily: MONO }}>{charCount > 0 ? `${charCount.toLocaleString()} caracteres` : 'Mínimo recomendado: 1.000 caracteres'}</span>
+              {charCount > 2500 && !optimizeResult && <span style={{ fontSize: '11px', color: '#f59e0b', fontFamily: MONO }}>⚠️ Largo — recomendamos limpiar primero</span>}
+            </div>
+          </Card>
+
+          {/* Skills preview (si hay scorecard) */}
+          {scorecard && (techSkills.length > 0 || softSkills.length > 0) && (
+            <Card style={{ background: OFF }}>
+              <CardLabel>Skills a evaluar</CardLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: techSkills.length > 0 && softSkills.length > 0 ? '1fr 1fr' : '1fr', gap: '14px' }}>
+                {techSkills.length > 0 && (
+                  <div>
+                    <p style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: SIE, margin: '0 0 10px', fontFamily: MONO }}>Técnicos</p>
+                    {techSkills.map((s, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${RUL}`, fontSize: '13px' }}>
+                        <span style={{ color: INK }}>{s.name}</span>
+                        <span style={{ color: LGT, fontFamily: MONO }}>{s.weight}%</span>
+                      </div>
+                    ))}
                   </div>
-                : <span style={{ fontSize: '14px', color: '#888' }}>Sin scorecard para este cliente</span>}
-          </div>
-        )}
-      </section>
+                )}
+                {softSkills.length > 0 && (
+                  <div>
+                    <p style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4A90D9', margin: '0 0 10px', fontFamily: MONO }}>Blandos</p>
+                    {softSkills.map((s, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${RUL}`, fontSize: '13px' }}>
+                        <span style={{ color: INK }}>{s.name}</span>
+                        <span style={{ color: LGT, fontFamily: MONO }}>{s.weight}%</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
 
-      <section>
-        <SectionHeader label="Job Description" />
-        <textarea
-          className="input-field"
-          value={jobDescription}
-          onChange={e => setJobDescription(e.target.value)}
-          placeholder="Pegá la job description de la posición aquí..."
-          style={{ ...textareaStyle, minHeight: '140px' }}
+          {/* Generate button */}
+          <button onClick={handleGenerate} disabled={loading || !canGenerate} className="gen-btn" style={{ width: '100%', padding: '15px', border: 'none', background: (!canGenerate || loading) ? LGT : SIE, color: WHT, borderRadius: '10px', cursor: (!canGenerate || loading) ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: 700, letterSpacing: '0.04em', boxShadow: (!canGenerate || loading) ? 'none' : `0 4px 18px ${SIE_BORDER}`, transition: 'all 0.2s', fontFamily: MONO, textTransform: 'uppercase' }}>
+            {loading ? '⟳ Generando informe...' : bondyScorecardLoading ? '⟳ Analizando perfil...' : scorecard ? `Generar informe + scorecard` : 'Generar informe de entrevista'}
+          </button>
+
+          {error && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '14px 16px', color: '#dc2626', fontSize: '14px' }}>⚠️ {error}</div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN — sticky evaluación */}
+        <EvalPanel
+          recruiterScores={recruiterScores}
+          recruiterPositional={recruiterPositional}
+          onChange={(id, val) => setRecruiterScores(prev => ({ ...prev, [id]: val }))}
+          onPositionalChange={(id, val) => setRecruiterPositional(prev => ({ ...prev, [id]: val }))}
         />
-        {!jobDescription.trim() && (
-          <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#f59e0b', fontFamily: FONT_MONO }}>
-            ⚠️ Sin JD el agente no puede evaluar el match con la posición
-          </p>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '18px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>Idioma del informe</span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => setLanguage('es')}
-              style={{ padding: '8px 22px', borderRadius: '8px', border: `1.5px solid ${language === 'es' ? BONDY_ORANGE : '#e5e7eb'}`, background: language === 'es' ? BONDY_ORANGE : 'white', color: language === 'es' ? 'white' : '#555', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT_MONO, transition: 'all 0.15s' }}
-            >
-              ES
-            </button>
-            <button
-              onClick={() => setLanguage('en')}
-              style={{ padding: '8px 22px', borderRadius: '8px', border: `1.5px solid ${language === 'en' ? BONDY_ORANGE : '#e5e7eb'}`, background: language === 'en' ? BONDY_ORANGE : 'white', color: language === 'en' ? 'white' : '#555', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT_MONO, transition: 'all 0.15s' }}
-            >
-              EN
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <SectionHeader label="Notas del entrevistador" />
-        <textarea className="input-field" value={interviewerNotes} onChange={e => setInterviewerNotes(e.target.value)} placeholder="Opcional — impresiones, señales, contexto extra que no quedó en la transcripción..." style={{ ...textareaStyle, minHeight: '100px' }} />
-      </section>
-
-      <section>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ display: 'block', width: '16px', height: '1px', background: BONDY_ORANGE }} />
-            <span style={{ fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase', color: BONDY_ORANGE, fontFamily: FONT_MONO }}>
-              Transcripción <span style={{ color: '#ef4444' }}>*</span>
-            </span>
-          </div>
-          {showOptimizeBtn && (
-            <button className="optimize-btn" onClick={handleOptimize} disabled={optimizing}
-              style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 18px', border: `1.5px solid ${BONDY_ORANGE}`, background: 'white', color: BONDY_ORANGE, borderRadius: '8px', cursor: optimizing ? 'wait' : 'pointer', fontSize: '13px', fontWeight: 700, fontFamily: FONT_MONO, letterSpacing: '0.03em', transition: 'all 0.18s', opacity: optimizing ? 0.7 : 1 }}>
-              {optimizing
-                ? <><span style={{ display: 'inline-block', width: '12px', height: '12px', border: `2px solid ${BONDY_ORANGE}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Limpiando...</>
-                : <><span>✂️</span> Limpiar transcript</>}
-            </button>
-          )}
-        </div>
-
-        {optimizeResult && (
-          <div style={{ marginBottom: '14px', padding: '14px 18px', borderRadius: '10px', animation: 'fadeIn 0.25s ease', background: optimizeResult.alreadyShort ? '#f0f9ff' : '#f0fdf4', border: `1px solid ${optimizeResult.alreadyShort ? '#bae6fd' : '#86efac'}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '18px' }}>{optimizeResult.alreadyShort ? '✓' : '✅'}</span>
-            <div style={{ flex: 1 }}>
-              {optimizeResult.alreadyShort
-                ? <span style={{ fontSize: '14px', color: '#0369a1' }}>El transcript ya es corto — no necesita limpieza</span>
-                : <>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#16a34a' }}>Transcript limpiado — {optimizeResult.savings}% más corto</span>
-                    <span style={{ fontSize: '12px', color: '#666', marginLeft: '10px', fontFamily: FONT_MONO }}>{(optimizeResult.originalLength / 1000).toFixed(1)}k → {(optimizeResult.optimizedLength / 1000).toFixed(1)}k chars</span>
-                  </>}
-            </div>
-            {!optimizeResult.alreadyShort && originalTranscript && (
-              <button onClick={handleRestoreTranscript} style={{ fontSize: '12px', color: '#666', background: 'none', border: '1px solid #d1d5db', borderRadius: '6px', padding: '6px 14px', cursor: 'pointer', fontFamily: FONT_MONO, whiteSpace: 'nowrap' }}>↩ Restaurar original</button>
-            )}
-          </div>
-        )}
-
-        <textarea className="input-field" value={transcript} onChange={e => handleTranscriptChange(e.target.value)} placeholder="Pegá aquí la transcripción completa de la entrevista..." style={{ ...textareaStyle, minHeight: charCount > 2000 ? '280px' : '200px' }} />
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-          <span style={{ fontSize: '12px', color: charColor, fontFamily: FONT_MONO, transition: 'color 0.2s' }}>
-            {charCount > 0 ? `${charCount.toLocaleString()} caracteres` : 'Mínimo recomendado: 1.000 caracteres'}
-          </span>
-          {charCount > 2500 && !optimizeResult && (
-            <span style={{ fontSize: '12px', color: '#f59e0b', fontFamily: FONT_MONO }}>⚠️ Transcript largo — recomendamos limpiar antes de generar</span>
-          )}
-        </div>
-      </section>
-
-      {scorecard && (techSkills.length > 0 || softSkills.length > 0) && (
-        <section>
-          <SectionHeader label="Skills a evaluar" />
-          <div style={{ display: 'grid', gridTemplateColumns: techSkills.length > 0 && softSkills.length > 0 ? '1fr 1fr' : '1fr', gap: '18px' }}>
-            {techSkills.length > 0 && (
-              <div style={{ background: 'white', border: '1px solid #f0f0f0', borderRadius: '10px', padding: '18px' }}>
-                <p style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: BONDY_ORANGE, margin: '0 0 12px', fontFamily: FONT_MONO }}>Técnicos</p>
-                {techSkills.map((s, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f8f8f8', fontSize: '14px' }}>
-                    <span style={{ color: '#333' }}>{s.name}</span>
-                    <span style={{ color: '#aaa', fontFamily: FONT_MONO }}>{s.weight}%</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {softSkills.length > 0 && (
-              <div style={{ background: 'white', border: '1px solid #f0f0f0', borderRadius: '10px', padding: '18px' }}>
-                <p style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4A90D9', margin: '0 0 12px', fontFamily: FONT_MONO }}>Blandos</p>
-                {softSkills.map((s, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f8f8f8', fontSize: '14px' }}>
-                    <span style={{ color: '#333' }}>{s.name}</span>
-                    <span style={{ color: '#aaa', fontFamily: FONT_MONO }}>{s.weight}%</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      <section>
-        <SectionHeader label="Tu evaluación — Perfil motivacional y cultural" />
-        <p style={{ fontSize: '14px', color: '#888', margin: '-8px 0 20px' }}>
-          Puntuá lo que observaste en la entrevista. El modelo evaluará las mismas dimensiones y verás la comparación al generar.
-        </p>
-        {BONDY_DIMS_A.map(dim => (
-          <SliderDimension
-            key={dim.id}
-            dim={dim}
-            value={recruiterScores[dim.id] || null}
-            onChange={handleRecruiterScore}
-          />
-        ))}
-        {BONDY_POSITIONAL.map(dim => (
-          <PositionalSlider
-            key={dim.id}
-            dim={dim}
-            value={recruiterPositional[dim.id] || 3}
-            onChange={handleRecruiterPositional}
-          />
-        ))}
-      </section>
-
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <button onClick={handleGenerate} disabled={loading || !canGenerate}
-          style={{ padding: '18px 56px', border: 'none', background: (!canGenerate || loading) ? '#ccc' : `linear-gradient(135deg, ${BONDY_ORANGE}, #D86830)`, color: 'white', borderRadius: '12px', cursor: (!canGenerate || loading) ? 'not-allowed' : 'pointer', fontSize: '16px', fontWeight: 800, letterSpacing: '0.02em', boxShadow: (!canGenerate || loading) ? 'none' : '0 4px 20px rgba(192,106,45,0.35)', transition: 'all 0.2s' }}>
-          {loading ? 'Generando informe...' : bondyScorecardLoading ? 'Analizando perfil...' : scorecard ? `Generar informe + scorecard ${positionName || displayClientName}` : 'Generar informe de entrevista'}
-        </button>
       </div>
 
-      {error && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '18px', color: '#dc2626', fontSize: '15px' }}>⚠️ {error}</div>
-      )}
-
+      {/* ── Results — full width below ── */}
       {results && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.3s ease' }}>
-          {saved && <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '14px 18px', color: '#16a34a', fontSize: '14px' }}>✓ Guardado en Supabase</div>}
-
-          {results.screeningReport && (
-            <div style={{ background: 'white', border: '1.5px solid #e5e7eb', borderRadius: '14px', padding: '28px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <SectionHeader label="Informe de Screening" />
-                <CopyBtn text={results.screeningReport} id="screening" copied={copied} onCopy={copy} />
-              </div>
-              <div style={{ fontSize: '15px', lineHeight: '1.85', color: '#333', whiteSpace: 'pre-wrap' }}>{results.screeningReport}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '28px', animation: 'fadeIn 0.3s ease' }}>
+          {saved && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>✓</span> Guardado en Supabase
             </div>
           )}
-
+          {results.screeningReport && (
+            <Card>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <CardLabel>Informe de Screening</CardLabel>
+                <CopyBtn text={results.screeningReport} id="screening" copied={copied} onCopy={copy} />
+              </div>
+              <div style={{ fontSize: '14px', lineHeight: '1.85', color: INK, whiteSpace: 'pre-wrap' }}>{results.screeningReport}</div>
+            </Card>
+          )}
           {results.scorecard && (
-            <ScorecardResultPanel
-              scorecard={results.scorecard}
-              scorecardSkills={results.scorecardSkills}
-              technicalScore={results.technicalScore}
-              softScore={results.softScore}
-              overallScore={results.overallScore}
-              copied={copied}
-              onCopy={copy}
-            />
+            <ScorecardResultPanel scorecard={results.scorecard} scorecardSkills={results.scorecardSkills} technicalScore={results.technicalScore} softScore={results.softScore} overallScore={results.overallScore} copied={copied} onCopy={copy} />
+          )}
+          {bondyScorecardSaved && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '12px 16px', color: '#16a34a', fontSize: '13px' }}>
+              ✓ Scorecard Bondy guardada en base de datos
+            </div>
           )}
         </div>
       )}
-      {showDisonanciaModal && bondyScorecard && (
-        <DisonanciaModal
-          modelScores={bondyScorecard}
-          recruiterScores={recruiterScores}
-          onSave={handleSaveBondyScorecard}
-          onClose={() => setShowDisonanciaModal(false)}
-        />
-      )}
 
-      {bondyScorecardSaved && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '14px 18px', color: '#16a34a', fontSize: '14px' }}>
-          ✓ Scorecard Bondy guardada en base de datos
-        </div>
+      {showDisonanciaModal && bondyScorecard && (
+        <DisonanciaModal modelScores={bondyScorecard} recruiterScores={recruiterScores} onSave={handleSaveBondyScorecard} onClose={() => setShowDisonanciaModal(false)} />
       )}
     </div>
   )
