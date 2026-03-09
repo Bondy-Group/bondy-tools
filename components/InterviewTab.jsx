@@ -43,7 +43,7 @@ const Field = ({ label, required, hint, children }) => (
       {required && <span style={{ color: '#ef4444', fontSize: '10px' }}>*</span>}
     </label>
     {children}
-    {hint && <p style={{ margin: '5px 0 0', fontSize: '12px', color: LGT, fontFamily: MONO }}>{hint}</p>}
+    {hint && <p style={{ margin: '5px 0 0', fontSize: '12px', color: '#555555', fontFamily: MONO }}>{hint}</p>}
   </div>
 )
 
@@ -113,14 +113,14 @@ function EvalPanel({ recruiterScores, recruiterPositional, onChange, onPositiona
   return (
     <Card style={{ position: 'sticky', top: '80px', borderLeft: `3px solid ${SIE}` }}>
       <CardLabel>Tu evaluación</CardLabel>
-      <p style={{ fontSize: '12px', color: MID, margin: '-10px 0 18px', lineHeight: 1.6 }}>
+      <p style={{ fontSize: '13px', color: INK, margin: '-10px 0 18px', lineHeight: 1.6 }}>
         Puntuá antes de generar. El modelo evaluará las mismas dimensiones.
       </p>
 
       {/* Progress */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-          <span style={{ fontSize: '11px', color: MID, fontFamily: MONO }}>{scoredCount}/{BONDY_DIMS_A.length} dimensiones</span>
+          <span style={{ fontSize: '11px', color: INK, fontFamily: MONO }}>{scoredCount}/{BONDY_DIMS_A.length} dimensiones</span>
           {allScored && <span style={{ fontSize: '11px', color: '#22c55e', fontFamily: MONO }}>✓ Completo</span>}
         </div>
         <div style={{ height: '3px', background: RUL, borderRadius: '2px', overflow: 'hidden' }}>
@@ -138,7 +138,7 @@ function EvalPanel({ recruiterScores, recruiterPositional, onChange, onPositiona
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                 <div>
                   <p style={{ margin: 0, fontSize: '13px', fontWeight: 500, color: INK }}>{dim.label}</p>
-                  <p style={{ margin: 0, fontSize: '11px', color: LGT }}>{dim.description}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: INK }}>{dim.description}</p>
                 </div>
                 {info && (
                   <span style={{ fontSize: '10px', fontWeight: 700, color: info.color, background: `${info.color}15`, padding: '2px 7px', borderRadius: '4px', fontFamily: MONO, whiteSpace: 'nowrap', marginLeft: '8px', flexShrink: 0 }}>
@@ -147,16 +147,16 @@ function EvalPanel({ recruiterScores, recruiterPositional, onChange, onPositiona
                 )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '10px', color: LGT, fontFamily: MONO }}>1</span>
+                <span style={{ fontSize: '10px', color: '#555555', fontFamily: MONO }}>1</span>
                 <input type="range" min="1" max="4" step="1" value={val || 1}
                   onChange={e => onChange(dim.id, parseInt(e.target.value))}
                   style={{ flex: 1, accentColor: SIE, cursor: 'pointer', height: '3px' }}
                 />
-                <span style={{ fontSize: '10px', color: LGT, fontFamily: MONO }}>4</span>
+                <span style={{ fontSize: '10px', color: '#555555', fontFamily: MONO }}>4</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
                 {[1,2,3,4].map(n => (
-                  <span key={n} style={{ fontSize: '9px', color: val === n ? SCORE_LABELS[n].color : LGT, fontFamily: MONO, transition: 'color 0.15s' }}>
+                  <span key={n} style={{ fontSize: '9px', color: val === n ? SCORE_LABELS[n].color : '#999999', fontFamily: MONO, transition: 'color 0.15s' }}>
                     {SCORE_LABELS[n].label}
                   </span>
                 ))}
@@ -247,7 +247,7 @@ function ScorecardResultPanel({ scorecard, scorecardSkills, technicalScore, soft
           <div key={s.id} style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: `1px solid ${RUL}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
               <span style={{ fontSize: '14px', fontWeight: 500, color: INK }}>{s.name}</span>
-              <span style={{ fontSize: '11px', color: LGT, fontFamily: MONO }}>{s.weight}%</span>
+              <span style={{ fontSize: '11px', color: '#555555', fontFamily: MONO }}>{s.weight}%</span>
             </div>
             <RatingBar rating={rating} />
             {analysis && <p style={{ margin: '6px 0 0', fontSize: '13px', color: MID, lineHeight: 1.65 }}>{analysis}</p>}
@@ -492,7 +492,7 @@ export default function InterviewTab() {
   const showOptimizeBtn = transcript.length > 1500 && !optimizeResult
   const displayClientName = clientName === '__DEFAULT__' ? 'Bondy (Default)' : clientName
   const charCount = transcript.length
-  const charColor = charCount > 4000 ? '#ef4444' : charCount > 2500 ? '#f59e0b' : LGT
+  const charColor = charCount > 4000 ? '#ef4444' : charCount > 2500 ? '#f59e0b' : '#888888'
 
   const handleGenerate = async () => {
     if (!candidateName.trim()) return setError('Ingresá el nombre del candidato')
@@ -570,7 +570,7 @@ export default function InterviewTab() {
                 <span style={{ fontSize: '18px' }}>{cvFile ? '📄' : '📎'}</span>
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontSize: '13px', color: cvFile ? '#16a34a' : MID, fontWeight: cvFile ? 500 : 400 }}>{cvFile ? cvFile.name : 'Subir CV del candidato'}</p>
-                  {!cvFile && <p style={{ margin: 0, fontSize: '11px', color: LGT, fontFamily: MONO }}>PDF · DOCX · TXT</p>}
+                  {!cvFile && <p style={{ margin: 0, fontSize: '11px', color: '#555555', fontFamily: MONO }}>PDF · DOCX · TXT</p>}
                 </div>
                 {cvFile && <button onClick={e => { e.stopPropagation(); setCvFile(null); setCvText('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: LGT, fontSize: '14px', padding: '2px' }}>✕</button>}
               </div>
@@ -604,14 +604,14 @@ export default function InterviewTab() {
             {clientName && (
               <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '8px', background: scorecardLoading ? OFF : (scorecard ? (isDefaultScorecard ? '#fff7ed' : '#f0fdf4') : OFF), border: `1px solid ${scorecardLoading ? RUL : (scorecard ? (isDefaultScorecard ? '#fde68a' : '#86efac') : RUL)}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {scorecardLoading
-                  ? <span style={{ fontSize: '12px', color: LGT, fontFamily: MONO }}>Buscando scorecard...</span>
+                  ? <span style={{ fontSize: '12px', color: '#555555', fontFamily: MONO }}>Buscando scorecard...</span>
                   : scorecard
                     ? <>
                         <span style={{ fontSize: '13px', fontWeight: 600, color: INK }}>{scorecard.scorecard_name}</span>
                         {isDefaultScorecard && <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#d97706', background: '#fef9c3', padding: '2px 6px', borderRadius: '4px', fontFamily: MONO }}>Default</span>}
                         <span style={{ fontSize: '12px', color: MID, marginLeft: 'auto', fontFamily: MONO }}>🔧 {techSkills.length} · 💬 {softSkills.length}</span>
                       </>
-                    : <span style={{ fontSize: '12px', color: MID }}>Sin scorecard para este cliente</span>}
+                    : <span style={{ fontSize: '12px', color: INK }}>Sin scorecard para este cliente</span>}
               </div>
             )}
           </Card>
@@ -687,7 +687,7 @@ export default function InterviewTab() {
                     {techSkills.map((s, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${RUL}`, fontSize: '13px' }}>
                         <span style={{ color: INK }}>{s.name}</span>
-                        <span style={{ color: LGT, fontFamily: MONO }}>{s.weight}%</span>
+                        <span style={{ color: '#555555', fontFamily: MONO }}>{s.weight}%</span>
                       </div>
                     ))}
                   </div>
@@ -698,7 +698,7 @@ export default function InterviewTab() {
                     {softSkills.map((s, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${RUL}`, fontSize: '13px' }}>
                         <span style={{ color: INK }}>{s.name}</span>
-                        <span style={{ color: LGT, fontFamily: MONO }}>{s.weight}%</span>
+                        <span style={{ color: '#555555', fontFamily: MONO }}>{s.weight}%</span>
                       </div>
                     ))}
                   </div>
