@@ -3,11 +3,11 @@
 import Link from 'next/link'
 
 const BondyLogo = () => (
-  <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-    <rect width="7" height="26" rx="1" fill="#111111"/>
-    <rect x="7" y="1" width="16" height="11" rx="5.5" fill="#111111"/>
-    <rect x="7" y="14" width="17" height="11" rx="5.5" fill="#111111"/>
-    <circle cx="27" cy="29" r="3" fill="#E05C00"/>
+  <svg width="28" height="28" viewBox="0 0 80 80" fill="none">
+    <path d="M40 6 A34 34 0 0 1 69.4 23" stroke="#1A1A1A" strokeWidth="9" strokeLinecap="round" fill="none"/>
+    <path d="M69.4 57 A34 34 0 0 1 10.6 57" stroke="#1A1A1A" strokeWidth="5.5" strokeLinecap="round" fill="none"/>
+    <path d="M10.6 23 A34 34 0 0 1 40 6" stroke="#C06A2D" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+    <circle cx="40" cy="40" r="6" fill="#C06A2D"/>
   </svg>
 )
 
@@ -58,7 +58,7 @@ export default function HomePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <BondyLogo />
           <span className="font-display" style={{ fontSize: '18px', fontWeight: 900, color: '#111111', letterSpacing: '-0.02em' }}>
-            Bond<em style={{ color: '#E05C00', fontStyle: 'italic' }}>y</em>.
+            Bond<em style={{ color: '#C06A2D', fontStyle: 'italic' }}>y</em>.
           </span>
         </div>
         <span className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#D8D6D2' }}>
@@ -70,9 +70,9 @@ export default function HomePage() {
       <section style={{ padding: '56px 64px 48px', borderBottom: '1px solid #EBEBEB' }}>
         <div className="font-mono-bondy" style={{
           fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
-          color: '#E05C00', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px'
+          color: '#C06A2D', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px'
         }}>
-          <span style={{ display: 'block', width: '20px', height: '1px', background: '#E05C00' }} />
+          <span style={{ display: 'block', width: '20px', height: '1px', background: '#C06A2D' }} />
           Bondy Tools
         </div>
         <h1 className="font-display" style={{
@@ -80,7 +80,7 @@ export default function HomePage() {
           letterSpacing: '-0.02em', color: '#111111', marginBottom: '16px'
         }}>
           Todo en un<br />
-          <em style={{ color: '#E05C00', fontStyle: 'italic' }}>solo lugar.</em>
+          <em style={{ color: '#C06A2D', fontStyle: 'italic' }}>solo lugar.</em>
         </h1>
         <p style={{ fontSize: '15px', color: '#888885', fontWeight: 300, maxWidth: '480px', lineHeight: 1.7 }}>
           Plataforma de recursos para el equipo Bondy, recruiters y equipos de hiring en LATAM.
@@ -103,10 +103,10 @@ export default function HomePage() {
             >
               <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#D8D6D2', marginBottom: '32px' }}>{s.number}</div>
               <h2 className="font-display" style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.01em', color: '#111111', marginBottom: '12px', lineHeight: 1.2 }}>
-                {s.title}<br /><em style={{ color: '#E05C00', fontStyle: 'italic' }}>{s.titleItalic}</em>
+                {s.title}<br /><em style={{ color: '#C06A2D', fontStyle: 'italic' }}>{s.titleItalic}</em>
               </h2>
               <p style={{ fontSize: '13px', color: '#888885', fontWeight: 300, lineHeight: 1.7, marginBottom: '32px', flex: 1 }}>{s.description}</p>
-              <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#E05C00' }}>
+              <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C06A2D' }}>
                 Entrar →
               </div>
             </Link>
@@ -119,7 +119,7 @@ export default function HomePage() {
             }}>
               <div className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#D8D6D2', marginBottom: '32px' }}>{s.number}</div>
               <h2 className="font-display" style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.01em', color: '#111111', marginBottom: '12px', lineHeight: 1.2 }}>
-                {s.title}<br /><em style={{ color: '#E05C00', fontStyle: 'italic' }}>{s.titleItalic}</em>
+                {s.title}<br /><em style={{ color: '#C06A2D', fontStyle: 'italic' }}>{s.titleItalic}</em>
               </h2>
               <p style={{ fontSize: '13px', color: '#888885', fontWeight: 300, lineHeight: 1.7, marginBottom: '32px', flex: 1 }}>{s.description}</p>
               <div className="font-mono-bondy" style={{ fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#D8D6D2', border: '1px solid #EBEBEB', padding: '4px 10px', display: 'inline-block' }}>
