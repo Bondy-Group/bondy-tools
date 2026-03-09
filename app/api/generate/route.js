@@ -7,7 +7,7 @@ import { calculateWeightedScore } from '@/lib/scorecards'
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const MODEL = 'claude-sonnet-4-5'
 
-const MAX_TRANSCRIPT_CHARS = 4000
+const MAX_TRANSCRIPT_CHARS = 80000
 
 function truncateTranscript(text) {
   if (!text || text.length <= MAX_TRANSCRIPT_CHARS) return { text, truncated: false }
@@ -59,7 +59,7 @@ export async function POST(request) {
 
     const screeningPromise = anthropic.messages.create({
       model: MODEL,
-      max_tokens: 2000,
+      max_tokens: 3000,
       messages: [{ role: 'user', content: `${screeningPrompt}\n\n---\n\n${userContent}` }]
     })
 
