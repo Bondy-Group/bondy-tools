@@ -10,22 +10,22 @@ import ScorecardAdminPage from '@/app/internal/scorecard-admin/page'
 const ADMIN_EMAILS = ['mara@wearebondy.com', 'lucia@wearebondy.com']
 
 const BondyLogo = () => (
-  <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-    <rect width="7" height="26" rx="1" fill="#111111"/>
-    <rect x="7" y="1" width="16" height="11" rx="5.5" fill="#111111"/>
-    <rect x="7" y="14" width="17" height="11" rx="5.5" fill="#111111"/>
-    <circle cx="27" cy="29" r="3" fill="#E05C00"/>
+  <svg width="28" height="28" viewBox="0 0 80 80" fill="none">
+    <path d="M40 6 A34 34 0 0 1 69.4 23" stroke="#1A1A1A" strokeWidth="9" strokeLinecap="round" fill="none"/>
+    <path d="M69.4 57 A34 34 0 0 1 10.6 57" stroke="#1A1A1A" strokeWidth="5.5" strokeLinecap="round" fill="none"/>
+    <path d="M10.6 23 A34 34 0 0 1 40 6" stroke="#C06A2D" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+    <circle cx="40" cy="40" r="6" fill="#C06A2D"/>
   </svg>
 )
 
 const IconReport = () => (
   <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-    <rect x="4" y="6" width="24" height="28" rx="2" stroke="#E05C00" strokeWidth="1.5"/>
-    <line x1="10" y1="14" x2="22" y2="14" stroke="#E05C00" strokeWidth="1.5"/>
-    <line x1="10" y1="19" x2="22" y2="19" stroke="#E05C00" strokeWidth="1.5"/>
-    <line x1="10" y1="24" x2="17" y2="24" stroke="#E05C00" strokeWidth="1.5"/>
-    <circle cx="31" cy="31" r="7" fill="#F9F8F6" stroke="#E05C00" strokeWidth="1.5"/>
-    <path d="M28 31l2 2 4-4" stroke="#E05C00" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="4" y="6" width="24" height="28" rx="2" stroke="#C06A2D" strokeWidth="1.5"/>
+    <line x1="10" y1="14" x2="22" y2="14" stroke="#C06A2D" strokeWidth="1.5"/>
+    <line x1="10" y1="19" x2="22" y2="19" stroke="#C06A2D" strokeWidth="1.5"/>
+    <line x1="10" y1="24" x2="17" y2="24" stroke="#C06A2D" strokeWidth="1.5"/>
+    <circle cx="31" cy="31" r="7" fill="#F9F8F6" stroke="#C06A2D" strokeWidth="1.5"/>
+    <path d="M28 31l2 2 4-4" stroke="#C06A2D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 )
 
@@ -47,16 +47,16 @@ const IconBook = () => (
 
 const IconHub = () => (
   <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-    <circle cx="20" cy="20" r="4" fill="#E05C00"/>
-    <circle cx="20" cy="20" r="4" stroke="#E05C00" strokeWidth="1.5"/>
-    <rect x="6" y="8" width="10" height="7" rx="2" stroke="#E05C00" strokeWidth="1.5"/>
-    <rect x="24" y="8" width="10" height="7" rx="2" stroke="#E05C00" strokeWidth="1.5"/>
-    <rect x="6" y="25" width="10" height="7" rx="2" stroke="#E05C00" strokeWidth="1.5"/>
-    <rect x="24" y="25" width="10" height="7" rx="2" stroke="#E05C00" strokeWidth="1.5"/>
-    <line x1="16" y1="11.5" x2="20" y2="18" stroke="#E05C00" strokeWidth="1.5"/>
-    <line x1="24" y1="11.5" x2="20" y2="18" stroke="#E05C00" strokeWidth="1.5"/>
-    <line x1="16" y1="28.5" x2="20" y2="22" stroke="#E05C00" strokeWidth="1.5"/>
-    <line x1="24" y1="28.5" x2="20" y2="22" stroke="#E05C00" strokeWidth="1.5"/>
+    <circle cx="20" cy="20" r="4" fill="#C06A2D"/>
+    <circle cx="20" cy="20" r="4" stroke="#C06A2D" strokeWidth="1.5"/>
+    <rect x="6" y="8" width="10" height="7" rx="2" stroke="#C06A2D" strokeWidth="1.5"/>
+    <rect x="24" y="8" width="10" height="7" rx="2" stroke="#C06A2D" strokeWidth="1.5"/>
+    <rect x="6" y="25" width="10" height="7" rx="2" stroke="#C06A2D" strokeWidth="1.5"/>
+    <rect x="24" y="25" width="10" height="7" rx="2" stroke="#C06A2D" strokeWidth="1.5"/>
+    <line x1="16" y1="11.5" x2="20" y2="18" stroke="#C06A2D" strokeWidth="1.5"/>
+    <line x1="24" y1="11.5" x2="20" y2="18" stroke="#C06A2D" strokeWidth="1.5"/>
+    <line x1="16" y1="28.5" x2="20" y2="22" stroke="#C06A2D" strokeWidth="1.5"/>
+    <line x1="24" y1="28.5" x2="20" y2="22" stroke="#C06A2D" strokeWidth="1.5"/>
   </svg>
 )
 
@@ -68,7 +68,7 @@ const resources = [
     title: 'Asistente de Informes',
     description: 'Generá screening reports y evaluaciones de cultural fit con IA. Incluye scorecard ponderado por posición.',
     cta: 'Abrir asistente',
-    ctaColor: '#E05C00',
+    ctaColor: '#C06A2D',
     available: true,
     internal: true,
   },
@@ -90,7 +90,7 @@ const resources = [
     title: 'Interview Hub',
     description: 'Agendá entrevistas, generá preguntas por competencia con IA y tomá notas estructuradas durante la sesión.',
     cta: 'Abrir Hub',
-    ctaColor: '#E05C00',
+    ctaColor: '#C06A2D',
     available: true,
     href: '/interview-hub',
   },
@@ -130,12 +130,12 @@ export default function InternalPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <BondyLogo />
           <span className="font-display" style={{ fontSize: '18px', fontWeight: 900, color: '#111111', letterSpacing: '-0.02em' }}>
-            Bond<em style={{ color: '#E05C00', fontStyle: 'italic' }}>y</em>.
+            Bond<em style={{ color: '#C06A2D', fontStyle: 'italic' }}>y</em>.
           </span>
           <span className="font-mono-bondy" style={{
             fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase',
-            color: '#E05C00', background: 'rgba(224,92,0,0.08)',
-            padding: '3px 8px', border: '1px solid rgba(224,92,0,0.2)'
+            color: '#C06A2D', background: 'rgba(192,106,45,0.08)',
+            padding: '3px 8px', border: '1px solid rgba(192,106,45,0.2)'
           }}>
             Internal
           </span>
@@ -155,7 +155,7 @@ export default function InternalPage() {
               padding: '5px 12px', cursor: 'pointer', borderRadius: '4px',
               transition: 'all 0.15s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#E05C00'; e.currentTarget.style.color = '#E05C00' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#C06A2D'; e.currentTarget.style.color = '#C06A2D' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#EBEBEB'; e.currentTarget.style.color = '#888885' }}
           >
             Cerrar sesión
@@ -173,9 +173,9 @@ export default function InternalPage() {
       <section style={{ padding: '56px 64px 48px', borderBottom: '1px solid #EBEBEB' }}>
         <div className="font-mono-bondy" style={{
           fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
-          color: '#E05C00', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px'
+          color: '#C06A2D', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px'
         }}>
-          <span style={{ display: 'block', width: '20px', height: '1px', background: '#E05C00' }} />
+          <span style={{ display: 'block', width: '20px', height: '1px', background: '#C06A2D' }} />
           Equipo Bondy
         </div>
         <h1 className="font-display" style={{
@@ -183,7 +183,7 @@ export default function InternalPage() {
           letterSpacing: '-0.02em', color: '#111111', marginBottom: '16px'
         }}>
           Tu centro de<br />
-          <em style={{ color: '#E05C00', fontStyle: 'italic' }}>recursos.</em>
+          <em style={{ color: '#C06A2D', fontStyle: 'italic' }}>recursos.</em>
         </h1>
         <p style={{ fontSize: '15px', color: '#888885', fontWeight: 300, maxWidth: '480px', lineHeight: 1.7 }}>
           Todo lo que necesitás para hacer tu trabajo. Herramientas, extensiones y materiales del equipo.
@@ -196,9 +196,9 @@ export default function InternalPage() {
           padding: '16px 64px', borderBottom: '1px solid #EBEBEB',
           display: 'flex', alignItems: 'center', gap: '10px'
         }}>
-          <span style={{ display: 'block', width: '16px', height: '1px', background: '#E05C00' }} />
+          <span style={{ display: 'block', width: '16px', height: '1px', background: '#C06A2D' }} />
           <span className="font-mono-bondy" style={{
-            fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E05C00'
+            fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: '#C06A2D'
           }}>
             Herramientas activas
           </span>
@@ -281,8 +281,8 @@ export default function InternalPage() {
         <section>
           <div style={{ padding: '16px 64px', borderBottom: '1px solid #EBEBEB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ display: 'block', width: '16px', height: '1px', background: '#E05C00' }} />
-              <span className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E05C00' }}>
+              <span style={{ display: 'block', width: '16px', height: '1px', background: '#C06A2D' }} />
+              <span className="font-mono-bondy" style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: '#C06A2D' }}>
                 Asistente de Informes
               </span>
             </div>
@@ -329,8 +329,8 @@ function AssistantTabs({ isAdmin }) {
               padding: '10px 20px',
               fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase',
               background: 'none', border: 'none', cursor: 'pointer',
-              color: activeTab === tab.id ? (tab.admin ? '#E05C00' : '#111111') : '#888885',
-              borderBottom: activeTab === tab.id ? `2px solid ${tab.admin ? '#E05C00' : '#E05C00'}` : '2px solid transparent',
+              color: activeTab === tab.id ? (tab.admin ? '#C06A2D' : '#111111') : '#888885',
+              borderBottom: activeTab === tab.id ? `2px solid ${tab.admin ? '#C06A2D' : '#C06A2D'}` : '2px solid transparent',
               transition: 'all 0.2s',
               marginBottom: '-1px',
             }}
