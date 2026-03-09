@@ -5,26 +5,23 @@ export const maxDuration = 30
 
 export async function POST(request) {
   try {
-    // Read as text first to debug potential JSON issues
-    const rawBody = await request.text()
-    
     let body
     try {
-      body = JSON.parse(rawBody)
-    } catch (parseErr) {
-      console.error('JSON parse error:', parseErr.message)
-      console.error('Raw body length:', rawBody.length)
-      console.error('Raw body preview:', rawBody.slice(0, 500))
-      return NextResponse.json(
-        { error: `JSON parse error: ${parseErr.message}` },
-        { status: 400 }
-      )
+      const raw = await request.text()
+      body = JSON.parse(raw)
+    } catch (e) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
     const { reportText, candidateName, recruiterName, positionName, clientName } = body
 
     if (!reportText) {
       return NextResponse.json({ error: 'reportText requerido' }, { status: 400 })
+    }
+
+    // Check env vars upfront
+    if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+      return NextResponse.json({ error: 'GOOGLE_SERVICE_ACCOUNT_JSON no configurado' }, { status: 500 })
     }
 
     const result = await createBondyDoc({
@@ -37,9 +34,10 @@ export async function POST(request) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('create-doc error:', error)
+    console.error('create-doc error:', error?.message, error?.stack)
+    // Always return valid JSON
     return NextResponse.json(
-      { error: error.message || 'Error creando documento' },
+      { error: String(error?.message || 'Error desconocido').slice(0, 500) },
       { status: 500 }
     )
   }
