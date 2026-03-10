@@ -7,7 +7,7 @@ const supabase = createClient(
 )
 
 // GET /api/interviews
-// ?date=2024-03-01   → entrevistas del día
+// ?date=2024-03-01   → entrevistas del día (en timezone Argentina UTC-3)
 // ?id=uuid           → una entrevista específica
 export async function GET(request) {
   try {
@@ -25,10 +25,11 @@ export async function GET(request) {
       return NextResponse.json({ interview: data })
     }
 
-    // Listar por fecha (default: hoy)
-    const targetDate = date || new Date().toISOString().split('T')[0]
-    const startOfDay = `${targetDate}T00:00:00.000Z`
-    const endOfDay = `${targetDate}T23:59:59.999Z`
+    // Listar por fecha — usando timezone Argentina (UTC-3) para evitar desfase
+    const targetDate = date || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+    // Rango del día completo en Argentina (UTC-3)
+    const startOfDay = `${targetDate}T00:00:00-03:00`
+    const endOfDay   = `${targetDate}T23:59:59-03:00`
 
     const { data, error } = await supabase
       .from('interviews')
@@ -108,7 +109,6 @@ export async function PATCH(request) {
       return NextResponse.json({ error: 'id requerido' }, { status: 400 })
     }
 
-    // Solo permitir campos seguros
     const allowed = [
       'status',
       'session_notes',
