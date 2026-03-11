@@ -60,6 +60,17 @@ const IconHub = () => (
   </svg>
 )
 
+const IconSignals = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+    <rect x="6" y="26" width="5" height="8" rx="1" stroke="#C06A2D" strokeWidth="1.5"/>
+    <rect x="14" y="18" width="5" height="16" rx="1" stroke="#C06A2D" strokeWidth="1.5"/>
+    <rect x="22" y="12" width="5" height="22" rx="1" stroke="#C06A2D" strokeWidth="1.5"/>
+    <rect x="30" y="6" width="5" height="28" rx="1" stroke="#C06A2D" strokeWidth="1.5"/>
+    <path d="M8 18 L16 12 L24 8 L32 4" stroke="#C06A2D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="32" cy="4" r="2.5" fill="#C06A2D"/>
+  </svg>
+)
+
 const resources = [
   {
     id: 'assistant',
@@ -95,8 +106,20 @@ const resources = [
     href: '/interview-hub',
   },
   {
-    id: 'library',
+    id: 'market-signals',
     number: '04',
+    icon: <IconSignals />,
+    title: 'Market',
+    titleItalic: 'Signals',
+    description: 'Señales del mercado tech: qué tecnologías y perfiles están contratando las empresas en LATAM.',
+    cta: 'Ver señales',
+    ctaColor: '#C06A2D',
+    available: true,
+    href: '/internal/market-signals',
+  },
+  {
+    id: 'library',
+    number: '05',
     icon: <IconBook />,
     title: 'Biblioteca de Recursos',
     description: 'Libros, guías y materiales de referencia para el equipo. Descargables y organizados por categoría.',
