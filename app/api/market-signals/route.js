@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+// market_signals vive en el proyecto CRM (tchppyxhapxtjemxrbqm)
+// Usar SUPABASE_CRM_URL si existe, sino fallback a la URL del CRM hardcodeada
+const supabaseCrmUrl = process.env.SUPABASE_CRM_URL || 'https://tchppyxhapxtjemxrbqm.supabase.co'
+const supabaseCrmKey = process.env.SUPABASE_CRM_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+
+const supabase = createClient(supabaseCrmUrl, supabaseCrmKey)
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
