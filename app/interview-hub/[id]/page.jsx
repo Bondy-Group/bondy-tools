@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
 const ORANGE = '#E05C00'
@@ -236,7 +236,6 @@ function SessionSkillCard({ skillName, skillType, questions, whatToLookFor, note
 
 export default function InterviewDetailPage() {
   const { id } = useParams()
-  const router = useRouter()
 
   const [interview, setInterview] = useState(null)
   const [scorecard, setScorecard] = useState(null)
@@ -343,26 +342,45 @@ export default function InterviewDetailPage() {
     }
   }
 
-  // Ir al generador de reporte con datos pre-cargados
+  // Ir al generador de reporte (Interview-Report-Gen1 de Lucía Palomeque)
   const handleGoToReport = () => {
-    // Construir params para pre-llenar el form de reporte
-    const params = new URLSearchParams({
-      candidate_name: interview.candidate_name || '',
-      client_name: interview.client_name || '',
-      position: interview.position || '',
-      linkedin_url: interview.linkedin_url || '',
-      scorecard_id: interview.scorecard_id || '',
-      interview_id: interview.id,
-    })
-    // Notas de sesión → las enviamos como interviewerNotes condensadas
+    const REPORT_URL = 'https://interview-report-gen1.vercel.app'
+
+    // Construir JD sintético a partir de los datos disponibles
+    const jdParts = []
+    if (interview.position) jdParts.push(`Posición: ${interview.position}`)
+    if (interview.client_name) jdParts.push(`Empresa: ${interview.client_name}`)
+    if (scorecard?.scorecard_data?.skills?.length) {
+      const techSkillsText = scorecard.scorecard_data.skills
+        .filter(s => s.skill_type === 'technical')
+        .map(s => s.name).join(', ')
+      const softSkillsText = scorecard.scorecard_data.skills
+        .filter(s => s.skill_type === 'soft')
+        .map(s => s.name).join(', ')
+      if (techSkillsText) jdParts.push(`Skills técnicos requeridos: ${techSkillsText}`)
+      if (softSkillsText) jdParts.push(`Soft skills requeridos: ${softSkillsText}`)
+    }
+    const jdText = jdParts.join('\n')
+
+    // Notas de sesión condensadas
     const notesText = Object.entries(notes)
       .filter(([, v]) => v.trim())
       .map(([k, v]) => `[${k}]: ${v}`)
       .join('\n\n')
-    if (notesText) {
-      params.set('interviewer_notes', notesText)
-    }
-    router.push(`/?tab=interview&${params.toString()}`)
+
+    // Datos del candidato
+    const candidateInfo = [
+      interview.candidate_name && `Candidato: ${interview.candidate_name}`,
+      interview.linkedin_url && `LinkedIn: ${interview.linkedin_url}`,
+    ].filter(Boolean).join('\n')
+
+    // Armar URL con params para pre-carga
+    const params = new URLSearchParams()
+    if (jdText) params.set('jd', jdText)
+    if (notesText) params.set('notes', notesText)
+    if (candidateInfo) params.set('candidate', candidateInfo)
+
+    window.open(`${REPORT_URL}?${params.toString()}`, '_blank', 'noopener,noreferrer')
   }
 
   // ─── Loading ─────────────────────────────────────────────────────────────
@@ -652,9 +670,11 @@ export default function InterviewDetailPage() {
                     color: 'white', borderRadius: '10px', cursor: 'pointer',
                     fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap',
                     boxShadow: '0 4px 16px rgba(224,92,0,0.3)',
+                    display: 'flex', alignItems: 'center', gap: '8px',
                   }}
                 >
-                  Generar reporte →
+                  <span>Generar reporte</span>
+                  <span style={{ fontSize: '10px', opacity: 0.85, fontFamily: MONO }}>↗ Lucía</span>
                 </button>
               </div>
             </Card>
@@ -664,3 +684,4 @@ export default function InterviewDetailPage() {
     </div>
   )
 }
+
