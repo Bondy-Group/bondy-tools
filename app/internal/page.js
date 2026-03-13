@@ -78,10 +78,11 @@ const resources = [
     icon: <IconReport />,
     title: 'Asistente de Informes',
     description: 'Generá screening reports y evaluaciones de cultural fit con IA. Incluye scorecard ponderado por posición.',
-    cta: 'Abrir asistente',
+    cta: 'Abrir asistente ↗',
     ctaColor: '#C06A2D',
     available: true,
-    internal: true,
+    href: 'https://interview-report-gen1.vercel.app',
+    external: true,
   },
   {
     id: 'chrome',
@@ -253,8 +254,11 @@ export default function InternalPage() {
 
             // Cards con href navegan a página separada
             if (r.href) {
+              const linkProps = r.external
+                ? { href: r.href, target: '_blank', rel: 'noopener noreferrer' }
+                : { href: r.href }
               return (
-                <Link key={r.id} href={r.href} style={{ textDecoration: 'none' }}>
+                <Link key={r.id} {...linkProps} style={{ textDecoration: 'none' }}>
                   <div style={{
                     borderRight,
                     padding: '40px 36px', display: 'flex', flexDirection: 'column',
