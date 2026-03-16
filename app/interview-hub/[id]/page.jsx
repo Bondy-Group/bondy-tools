@@ -379,6 +379,7 @@ export default function InterviewDetailPage() {
     if (jdText) params.set('jd', jdText)
     if (notesText) params.set('notes', notesText)
     if (candidateInfo) params.set('candidate', candidateInfo)
+    if (interview.recruiter_name) params.set('interviewer', interview.recruiter_name)
 
     window.open(`${REPORT_URL}?${params.toString()}`, '_blank', 'noopener,noreferrer')
   }
