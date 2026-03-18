@@ -44,21 +44,37 @@ function verifySlackSignature(req, body) {
 // ─────────────────────────────────────────────
 // CONTEXTO: pipeline activo del recruiter
 // ─────────────────────────────────────────────
+// Emails con acceso al pipeline completo (Mara ve todo)
+const FULL_ACCESS_EMAILS = ['mara@schmitman.com', 'mara@wearebondy.com']
+
 async function getActiveSearchContext(recruiterEmail) {
-  const { data, error } = await supabase
+  const isFullAccess = FULL_ACCESS_EMAILS.includes(recruiterEmail?.toLowerCase())
+
+  let query = supabase
     .from('sourcing_pipeline')
     .select(
-      'full_name, current_title, current_company, tier, status, job_title, client_name, tech_stack, years_exp, linkedin_url, email, updated_at, rejection_reason'
+      'full_name, current_title, current_company, tier, status, job_title, client_name, tech_stack, years_exp, linkedin_url, email, updated_at, rejection_reason, recruiter_email'
     )
-    .eq('recruiter_email', recruiterEmail)
     .in('status', [
       'sourced', 'contacted', 'follow_up_1', 'follow_up_2',
       'replied_positive', 'shortlisted', 'interview_scheduled',
     ])
     .order('updated_at', { ascending: false })
 
-  if (error || !data || data.length === 0) {
-    return 'No hay candidatos activos en el pipeline para este recruiter.'
+  if (!isFullAccess) {
+    query = query.eq('recruiter_email', recruiterEmail)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    return `Error al consultar Supabase: ${error.message}`
+  }
+
+  if (!data || data.length === 0) {
+    return isFullAccess
+      ? 'El pipeline está vacío — no hay candidatos activos en este momento.'
+      : `No hay candidatos activos asignados a ${recruiterEmail} en este momento.`
   }
 
   // Agrupar por búsqueda
