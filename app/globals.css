@@ -1,29 +1,40 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --b-black: #111111;
-  --b-off: #F9F8F6;
-  --b-orange: #E05C00;
-  --b-mid: #888885;
-  --b-light: #D8D6D2;
-  --b-rule: #EBEBEB;
-  --b-white: #FFFFFF;
+  --tw-bg:        #FEFCF9;
+  --tw-ink:       #1A1A1A;
+  --tw-ink-mid:   #3A3530;
+  --tw-ink-sub:   #5A5550;
+  --tw-ink-faint: #7A7874;
+  --tw-rule:      #E8E4DE;
+  --tw-white:     #FFFFFF;
+  --tw-green:     #4A8C40;
 }
 
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-weight: 300;
-  background: var(--b-off);
-  color: var(--b-black);
+  font-family: 'Courier Prime', Courier, monospace;
+  font-weight: 400;
+  background: var(--tw-bg);
+  color: var(--tw-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.font-display { font-family: 'Playfair Display', Georgia, serif; }
-.font-mono-bondy { font-family: 'DM Mono', monospace; }
+.font-display     { font-family: 'Special Elite', Georgia, serif; }
+.font-mono-bondy  { font-family: 'Courier Prime', Courier, monospace; }
+
+.tw-ink       { opacity: 0.88; text-shadow: 0.3px 0.3px 0 rgba(0,0,0,0.15); }
+.tw-ink-heavy { opacity: 0.95; text-shadow: 0.5px 0.5px 0 rgba(0,0,0,0.25); }
+
+.notebook-bg {
+  background-color: var(--tw-bg);
+  background-image:
+    linear-gradient(90deg, transparent 68px, rgba(210,100,80,0.10) 68px, rgba(210,100,80,0.10) 69.5px, transparent 69.5px),
+    repeating-linear-gradient(180deg, transparent 0px, transparent 31px, rgba(100,140,200,0.09) 31px, rgba(100,140,200,0.09) 32px);
+}

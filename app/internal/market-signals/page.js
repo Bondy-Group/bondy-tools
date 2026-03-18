@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 
 const BondyLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 80 80" fill="none">
-    <path d="M40 6 A34 34 0 0 1 69.4 23" stroke="#1A1A1A" strokeWidth="9" strokeLinecap="round" fill="none"/>
-    <path d="M69.4 57 A34 34 0 0 1 10.6 57" stroke="#1A1A1A" strokeWidth="5.5" strokeLinecap="round" fill="none"/>
-    <path d="M10.6 23 A34 34 0 0 1 40 6" stroke="#C06A2D" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-    <circle cx="40" cy="40" r="6" fill="#C06A2D"/>
+  <svg width="22" height="22" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <rect x="4"  y="5"  width="14" height="12" rx="2.5" fill="#1A1A1A" />
+    <rect x="22" y="5"  width="14" height="12" rx="2.5" fill="#1A1A1A" opacity=".18" />
+    <rect x="4"  y="22" width="14" height="12" rx="2.5" fill="#1A1A1A" opacity=".42" />
+    <rect x="22" y="22" width="14" height="12" rx="2.5" fill="#4A8C40" />
   </svg>
 )
 
@@ -178,7 +178,7 @@ export default function MarketSignalsPage() {
             <select value={editValue} onChange={e => setEditValue(e.target.value)}
               onBlur={() => saveEdit(row.id, col)}
               autoFocus
-              style={{ fontSize: '12px', border: 'none', background: 'transparent', width: '100%', outline: 'none', color: '#C06A2D', fontFamily: 'inherit' }}>
+              style={{ fontSize: '12px', border: 'none', background: 'transparent', width: '100%', outline: 'none', color: '#4A8C40', fontFamily: 'inherit' }}>
               {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
             </select>
           </td>
@@ -221,7 +221,7 @@ export default function MarketSignalsPage() {
             autoFocus
             style={{ fontSize: '12px', border: 'none', background: 'transparent', width: '100%', outline: 'none', fontFamily: 'inherit' }}
           />
-          {isSavingThis && <span style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: '#C06A2D' }}>...</span>}
+          {isSavingThis && <span style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: '#4A8C40' }}>...</span>}
         </td>
       )
     }
@@ -231,7 +231,7 @@ export default function MarketSignalsPage() {
       display = (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
           {val.map(t => (
-            <span key={t} style={{ background: '#F4EDE6', color: '#C06A2D', fontSize: 10, padding: '1px 6px', borderRadius: 3, fontFamily: 'DM Mono, monospace' }}>{t}</span>
+            <span key={t} style={{ background: '#F0F5EF', color: '#4A8C40', fontSize: 10, padding: '1px 6px', borderRadius: 3, fontFamily: 'Courier Prime, Courier, monospace' }}>{t}</span>
           ))}
         </div>
       )
@@ -257,11 +257,11 @@ export default function MarketSignalsPage() {
     letterSpacing: '0.14em',
     textTransform: 'uppercase',
     color: '#888885',
-    fontFamily: 'DM Mono, monospace',
+    fontFamily: 'Courier Prime, Courier, monospace',
     fontWeight: 400,
     borderRight: '1px solid #EBEBEB',
     borderBottom: '2px solid #EBEBEB',
-    background: '#F9F8F6',
+    background: '#FEFCF9',
     whiteSpace: 'nowrap',
     position: 'sticky',
     top: 0,
@@ -271,20 +271,20 @@ export default function MarketSignalsPage() {
   const selStyle = {
     fontSize: '11px', padding: '6px 10px',
     border: '1px solid #EBEBEB', background: '#fff',
-    color: '#333', fontFamily: 'DM Mono, monospace',
+    color: '#333', fontFamily: 'Courier Prime, Courier, monospace',
     cursor: 'pointer', outline: 'none', borderRadius: 4,
   }
 
   return (
-    <main style={{ background: '#F9F8F6', minHeight: '100vh' }}>
+    <main style={{ background: '#FEFCF9', minHeight: '100vh' }}>
       {/* Toast */}
       {toast && (
         <div style={{
           position: 'fixed', top: 20, right: 24, zIndex: 999,
-          background: toast.type === 'err' ? '#fee2e2' : '#F4EDE6',
-          border: `1px solid ${toast.type === 'err' ? '#fca5a5' : '#C06A2D'}`,
-          color: toast.type === 'err' ? '#b91c1c' : '#C06A2D',
-          padding: '10px 18px', fontSize: 12, fontFamily: 'DM Mono, monospace',
+          background: toast.type === 'err' ? '#fee2e2' : '#F0F5EF',
+          border: `1px solid ${toast.type === 'err' ? '#fca5a5' : '#4A8C40'}`,
+          color: toast.type === 'err' ? '#b91c1c' : '#4A8C40',
+          padding: '10px 18px', fontSize: 12, fontFamily: 'Courier Prime, Courier, monospace',
           letterSpacing: '0.08em', borderRadius: 4,
           boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
         }}>
@@ -296,18 +296,16 @@ export default function MarketSignalsPage() {
       <nav style={{
         borderBottom: '1px solid #EBEBEB', padding: '16px 40px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(249,248,246,0.97)', position: 'sticky', top: 0, zIndex: 50,
+        background: 'rgba(254,252,249,0.97)', position: 'sticky', top: 0, zIndex: 50,
         backdropFilter: 'blur(8px)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <BondyLogo />
-          <span className="font-display" style={{ fontSize: 18, fontWeight: 900, color: '#111', letterSpacing: '-0.02em' }}>
-            Bond<em style={{ color: '#C06A2D', fontStyle: 'italic' }}>y</em>.
-          </span>
+          <span style={{ fontFamily: "'Special Elite', Georgia, serif", fontSize: '17px', color: '#1A1A1A', letterSpacing: '0.04em' }}>BONDY</span>
           <span className="font-mono-bondy" style={{
             fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase',
-            color: '#C06A2D', background: 'rgba(192,106,45,0.08)',
-            padding: '3px 8px', border: '1px solid rgba(192,106,45,0.2)'
+            color: '#4A8C40', background: 'rgba(74,140,64,0.08)',
+            padding: '3px 8px', border: '1px solid rgba(74,140,64,0.2)'
           }}>
             Market Signals
           </span>
@@ -324,15 +322,15 @@ export default function MarketSignalsPage() {
       <div style={{ padding: '36px 40px 24px', borderBottom: '1px solid #EBEBEB' }}>
         <div className="font-mono-bondy" style={{
           fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase',
-          color: '#C06A2D', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10
+          color: '#4A8C40', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10
         }}>
-          <span style={{ display: 'block', width: 20, height: 1, background: '#C06A2D' }} />
+          <span style={{ display: 'block', width: 20, height: 1, background: '#FEFCF9' }} />
           Inteligencia de mercado
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <div>
-            <h1 className="font-display" style={{ fontSize: 36, fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em', color: '#111', marginBottom: 8 }}>
-              Market <em style={{ color: '#C06A2D', fontStyle: 'italic' }}>Signals</em>
+            <h1 style={{ fontFamily: "'Special Elite', Georgia, serif", fontSize: 36, lineHeight: 1, color: '#3A3530', marginBottom: 8 }} className="tw-ink">
+              Market <em style={{ color: '#4A8C40', fontStyle: 'italic' }}>Signals</em>
             </h1>
             <p style={{ fontSize: 13, color: '#888885', fontWeight: 300 }}>
               {total.toLocaleString()} señales — hacé click en cualquier celda para editar
@@ -342,7 +340,7 @@ export default function MarketSignalsPage() {
             className="font-mono-bondy"
             style={{
               fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
-              background: '#C06A2D', color: '#fff', border: 'none',
+              background: '#FEFCF9', color: '#fff', border: 'none',
               padding: '10px 20px', cursor: 'pointer',
             }}>
             + Nueva señal
@@ -376,7 +374,7 @@ export default function MarketSignalsPage() {
         />
         {(filters.category || filters.seniority || filters.modality || filters.tech) && (
           <button onClick={() => { setFilters({ category: '', seniority: '', modality: '', tech: '' }); setPage(1) }}
-            style={{ ...selStyle, color: '#C06A2D', border: '1px solid rgba(192,106,45,0.3)' }}>
+            style={{ ...selStyle, color: '#4A8C40', border: '1px solid rgba(192,106,45,0.3)' }}>
             Limpiar ×
           </button>
         )}
@@ -385,7 +383,7 @@ export default function MarketSignalsPage() {
       {/* Add row form */}
       {addingRow && (
         <div style={{ padding: '16px 40px', borderBottom: '1px solid #EBEBEB', background: '#FFF9F5' }}>
-          <p className="font-mono-bondy" style={{ fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C06A2D', marginBottom: 12 }}>Nueva señal</p>
+          <p className="font-mono-bondy" style={{ fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#4A8C40', marginBottom: 12 }}>Nueva señal</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             {[
               { key: 'company', label: 'Empresa', type: 'text', w: 160 },
@@ -393,7 +391,7 @@ export default function MarketSignalsPage() {
               { key: 'date', label: 'Fecha', type: 'date', w: 130 },
             ].map(f => (
               <div key={f.key}>
-                <div style={{ fontSize: 9, color: '#bbb', fontFamily: 'DM Mono,monospace', letterSpacing: '0.1em', marginBottom: 4, textTransform: 'uppercase' }}>{f.label}</div>
+                <div style={{ fontSize: 9, color: '#bbb', fontFamily: 'Courier Prime, Courier, monospace', letterSpacing: '0.1em', marginBottom: 4, textTransform: 'uppercase' }}>{f.label}</div>
                 <input type={f.type} value={newRow[f.key]}
                   onChange={e => setNewRow(r => ({ ...r, [f.key]: e.target.value }))}
                   style={{ ...selStyle, width: f.w }} />
@@ -405,7 +403,7 @@ export default function MarketSignalsPage() {
               { key: 'modality', label: 'Modalidad', opts: MODALITIES.map(m => ({ val: m, label: m })) },
             ].map(f => (
               <div key={f.key}>
-                <div style={{ fontSize: 9, color: '#bbb', fontFamily: 'DM Mono,monospace', letterSpacing: '0.1em', marginBottom: 4, textTransform: 'uppercase' }}>{f.label}</div>
+                <div style={{ fontSize: 9, color: '#bbb', fontFamily: 'Courier Prime, Courier, monospace', letterSpacing: '0.1em', marginBottom: 4, textTransform: 'uppercase' }}>{f.label}</div>
                 <select value={newRow[f.key]}
                   onChange={e => setNewRow(r => ({ ...r, [f.key]: e.target.value }))}
                   style={selStyle}>
@@ -414,7 +412,7 @@ export default function MarketSignalsPage() {
               </div>
             ))}
             <div>
-              <div style={{ fontSize: 9, color: '#bbb', fontFamily: 'DM Mono,monospace', letterSpacing: '0.1em', marginBottom: 4, textTransform: 'uppercase' }}>Tech Stack (separado por comas)</div>
+              <div style={{ fontSize: 9, color: '#bbb', fontFamily: 'Courier Prime, Courier, monospace', letterSpacing: '0.1em', marginBottom: 4, textTransform: 'uppercase' }}>Tech Stack (separado por comas)</div>
               <input
                 value={newRow.tech_stack.join(', ')}
                 onChange={e => setNewRow(r => ({ ...r, tech_stack: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
@@ -424,7 +422,7 @@ export default function MarketSignalsPage() {
             </div>
             <div style={{ display: 'flex', gap: 8, alignSelf: 'flex-end' }}>
               <button onClick={handleAddRow} disabled={saving === 'new'}
-                style={{ ...selStyle, background: '#C06A2D', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                style={{ ...selStyle, background: '#FEFCF9', color: '#fff', border: 'none', cursor: 'pointer' }}>
                 {saving === 'new' ? 'Guardando...' : 'Guardar'}
               </button>
               <button onClick={() => { setAddingRow(false); setNewRow(EMPTY_ROW) }}
@@ -439,11 +437,11 @@ export default function MarketSignalsPage() {
       {/* Table */}
       <div style={{ overflowX: 'auto' }}>
         {loading ? (
-          <div style={{ padding: '60px 40px', textAlign: 'center', color: '#bbb', fontFamily: 'DM Mono,monospace', fontSize: 12, letterSpacing: '0.1em' }}>
+          <div style={{ padding: '60px 40px', textAlign: 'center', color: '#bbb', fontFamily: 'Courier Prime, Courier, monospace', fontSize: 12, letterSpacing: '0.1em' }}>
             Cargando...
           </div>
         ) : error ? (
-          <div style={{ padding: '40px', color: '#b91c1c', fontFamily: 'DM Mono,monospace', fontSize: 12 }}>
+          <div style={{ padding: '40px', color: '#b91c1c', fontFamily: 'Courier Prime, Courier, monospace', fontSize: 12 }}>
             Error: {error}
           </div>
         ) : (
