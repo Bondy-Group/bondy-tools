@@ -285,6 +285,7 @@ Si el recruiter pega un perfil o describe un candidato:
 // HANDLER PRINCIPAL
 // ─────────────────────────────────────────────
 export async function POST(req) {
+  console.log('Rex route.js v385c8dd — fetch directo a Supabase REST API')
   const rawBody = await req.text()
 
   // 1. Verificar firma de Slack
