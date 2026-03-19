@@ -201,7 +201,7 @@ export async function POST(req) {
     const today = new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20251001',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       system: SYSTEM + '\n\n---\nRECRUITER: ' + recruiterName + ' (' + recruiterEmail + ')\nFECHA: ' + today + '\n\n' + pipelineContext,
       messages,
