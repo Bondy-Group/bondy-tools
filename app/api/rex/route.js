@@ -91,7 +91,7 @@ async function getPipeline(recruiterEmail) {
 
 // ─── HISTORIAL DE SLACK ────────────────────────
 async function getHistory(channelId) {
-  const res = await fetch('https://slack.com/api/conversations.history?channel=' + channelId + '&limit=20', {
+  const res = await fetch('https://slack.com/api/conversations.history?channel=' + channelId + '&limit=6', {
     headers: { 'Authorization': 'Bearer ' + SLACK_BOT_TOKEN },
   })
   const data = await res.json()
