@@ -10,10 +10,15 @@ const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN
 const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY })
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjaHBweXhoYXB4dGplbXhyYnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzE5NTUsImV4cCI6MjA4NzUwNzk1NX0.GwH_UZV_62cOkd8x1UknkajQVk1eDosLL0DkV8hsjhw'
+const SUPABASE_HARDCODED_URL = 'https://tchppyxhapxtjemxrbqm.supabase.co'
+const supabase = createClient(
+  SUPABASE_URL || SUPABASE_HARDCODED_URL,
+  SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY
+)
 
 // Set en memoria para deduplicar reintentos de Slack
 const processedEvents = new Set()
