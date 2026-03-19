@@ -3,725 +3,531 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Supabase — Flujos de Datos · Bondy</title>
+<title>Supabase Flows · Bondy</title>
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
 <style>
-  :root {
-    --cream: #FEFCF9;
-    --ink: #1A1A1A;
-    --ink-sub: #5A5550;
-    --ink-faint: #9A948E;
-    --green: #4A8C40;
-    --green-light: #e8f5e9;
-    --stone: rgba(244,238,229,0.75);
-    --rule: #E8E4DE;
-    --red-margin: rgba(210,100,80,0.10);
-    --blue-lines: rgba(100,140,200,0.09);
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background-color: var(--cream);
-    background-image:
-      repeating-linear-gradient(
-        to bottom,
-        transparent,
-        transparent 31px,
-        var(--blue-lines) 31px,
-        var(--blue-lines) 32px
-      );
-    font-family: 'Courier Prime', monospace;
-    color: var(--ink);
-    min-height: 100vh;
-  }
-
-  /* NAV */
-  nav {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: var(--cream);
-    border-bottom: 1px solid var(--rule);
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 40px;
-  }
-
-  .nav-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-  }
-
-  .nav-logo svg { width: 24px; height: 24px; flex-shrink: 0; }
-
-  .nav-wordmark {
-    font-family: 'Special Elite', cursive;
-    font-size: 15px;
-    color: var(--ink);
-    letter-spacing: 0.04em;
-  }
-
-  .nav-title {
-    font-size: 13px;
-    color: var(--ink-sub);
-    letter-spacing: 0.04em;
-  }
-
-  .nav-badge {
-    font-size: 11px;
-    background: var(--green);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 2px;
-    letter-spacing: 0.06em;
-  }
-
-  /* HERO */
-  .hero {
-    padding: 64px 40px 40px;
-    max-width: 900px;
-    margin: 0 auto;
-    position: relative;
-  }
-
-  .hero::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--red-margin);
-  }
-
-  .eyebrow {
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    color: var(--green);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  h1 {
-    font-family: 'Special Elite', cursive;
-    font-size: 42px;
-    line-height: 1.1;
-    color: var(--ink);
-    filter: contrast(1.15) brightness(0.92);
-    margin-bottom: 16px;
-  }
-
-  .hero-sub {
-    font-size: 14px;
-    color: var(--ink-sub);
-    line-height: 1.7;
-    max-width: 560px;
-    margin-bottom: 32px;
-  }
-
-  /* TAB NAV */
-  .tab-nav {
-    display: flex;
-    gap: 0;
-    border-bottom: 2px solid var(--rule);
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 40px;
-    overflow-x: auto;
-  }
-
-  .tab-btn {
-    font-family: 'Courier Prime', monospace;
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    color: var(--ink-faint);
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    padding: 12px 20px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-  }
-
-  .tab-btn:hover { color: var(--ink-sub); }
-
-  .tab-btn.active {
-    color: var(--green);
-    border-bottom-color: var(--green);
-  }
-
-  /* CONTENT */
-  .content {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 40px 40px 80px;
-  }
-
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-
-  /* DIAGRAM CARD */
-  .diagram-card {
-    background: white;
-    border: 1px solid var(--rule);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 32px;
-  }
-
-  .diagram-header {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--rule);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--stone);
-  }
-
-  .diagram-number {
-    font-family: 'Special Elite', cursive;
-    font-size: 11px;
-    color: var(--green);
-    letter-spacing: 0.1em;
-  }
-
-  .diagram-title {
-    font-family: 'Special Elite', cursive;
-    font-size: 16px;
-    color: var(--ink);
-  }
-
-  .diagram-body {
-    padding: 32px 24px;
-    overflow-x: auto;
-  }
-
-  /* MERMAID overrides */
-  .mermaid {
-    display: flex;
-    justify-content: center;
-  }
-
-  .mermaid svg {
-    max-width: 100%;
-    height: auto;
-  }
-
-  /* LEGEND */
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    padding: 16px 24px;
-    border-top: 1px solid var(--rule);
-    background: #fafaf8;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--ink-sub);
-    letter-spacing: 0.04em;
-  }
-
-  .legend-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  /* DESCRIPTION */
-  .desc {
-    font-size: 13px;
-    color: var(--ink-sub);
-    line-height: 1.75;
-    margin-bottom: 24px;
-    padding: 16px 20px;
-    border-left: 3px solid var(--green);
-    background: var(--green-light);
-    border-radius: 0 4px 4px 0;
-  }
-
-  /* OVERVIEW TABLE */
-  .overview-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  .stat-card {
-    background: white;
-    border: 1px solid var(--rule);
-    padding: 20px;
-    border-radius: 4px;
-  }
-
-  .stat-number {
-    font-family: 'Special Elite', cursive;
-    font-size: 32px;
-    color: var(--green);
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-
-  .stat-label {
-    font-size: 11px;
-    color: var(--ink-sub);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .stat-note {
-    font-size: 11px;
-    color: var(--ink-faint);
-    margin-top: 6px;
-    font-style: italic;
-  }
-
-  /* FOOTER */
-  footer {
-    border-top: 1px solid var(--rule);
-    padding: 20px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-    color: var(--ink-faint);
-    letter-spacing: 0.04em;
-  }
-
-  .footer-links { display: flex; gap: 20px; }
-  .footer-links a { color: var(--green); text-decoration: none; }
-  .footer-links a:hover { text-decoration: underline; }
-
-  /* UPDATED TAG */
-  .updated-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--ink-faint);
-    background: var(--stone);
-    padding: 4px 10px;
-    border-radius: 2px;
-    border: 1px solid var(--rule);
-  }
+:root {
+  --cream: #FEFCF9;
+  --ink: #1A1A1A;
+  --ink-sub: #5A5550;
+  --ink-faint: #9A948E;
+  --green: #4A8C40;
+  --rule: #E8E4DE;
+  --stone: rgba(244,238,229,0.85);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background-color: var(--cream);
+  background-image: repeating-linear-gradient(to bottom, transparent, transparent 31px, rgba(100,140,200,0.09) 31px, rgba(100,140,200,0.09) 32px);
+  font-family: 'Courier Prime', monospace;
+  color: var(--ink);
+  min-height: 100vh;
+}
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--cream); border-bottom: 1px solid var(--rule);
+  height: 60px; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 40px;
+}
+.nl { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nl svg { width: 24px; height: 24px; }
+.nw { font-family: 'Special Elite', cursive; font-size: 15px; color: var(--ink); letter-spacing: 0.04em; }
+.sp { width: 1px; height: 16px; background: var(--rule); }
+.nt { font-size: 13px; color: var(--ink-sub); }
+.badge { font-size: 11px; background: var(--green); color: white; padding: 2px 8px; border-radius: 2px; }
+.tag { font-size: 11px; background: var(--stone); color: var(--ink-faint); padding: 4px 10px; border-radius: 2px; border: 1px solid var(--rule); }
+.hero { padding: 56px 40px 32px; max-width: 960px; margin: 0 auto; }
+.ey { font-size: 11px; letter-spacing: 0.12em; color: var(--green); text-transform: uppercase; margin-bottom: 10px; }
+h1 { font-family: 'Special Elite', cursive; font-size: 40px; margin-bottom: 12px; }
+.hs { font-size: 14px; color: var(--ink-sub); line-height: 1.75; max-width: 540px; margin-bottom: 24px; }
+.tabs { display: flex; border-bottom: 2px solid var(--rule); max-width: 960px; margin: 0 auto; padding: 0 40px; overflow-x: auto; }
+.tb { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.05em; color: var(--ink-faint); background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; padding: 12px 18px; cursor: pointer; white-space: nowrap; transition: color 0.15s; }
+.tb:hover { color: var(--ink-sub); }
+.tb.active { color: var(--green); border-bottom-color: var(--green); }
+.content { max-width: 960px; margin: 0 auto; padding: 36px 40px 80px; }
+.panel { display: none; }
+.panel.active { display: block; }
+.card { background: white; border: 1px solid var(--rule); border-radius: 4px; margin-bottom: 28px; overflow: hidden; }
+.ch { padding: 14px 22px; background: var(--stone); border-bottom: 1px solid var(--rule); display: flex; align-items: center; gap: 12px; }
+.cn { font-size: 10px; color: var(--green); letter-spacing: 0.12em; text-transform: uppercase; }
+.ct { font-family: 'Special Elite', cursive; font-size: 16px; }
+.cb { padding: 28px 22px; overflow-x: auto; }
+.cf { padding: 12px 22px; border-top: 1px solid var(--rule); background: #fafaf8; display: flex; flex-wrap: wrap; gap: 16px; }
+.lg { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-sub); }
+.dt { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.hint { font-size: 13px; color: var(--ink-sub); line-height: 1.75; padding: 14px 18px; border-left: 3px solid var(--green); background: #e8f5e9; border-radius: 0 4px 4px 0; margin-bottom: 22px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.stat { background: white; border: 1px solid var(--rule); padding: 18px; border-radius: 4px; }
+.sn { font-family: 'Special Elite', cursive; font-size: 30px; color: var(--green); line-height: 1; margin-bottom: 4px; }
+.sl { font-size: 11px; color: var(--ink-sub); letter-spacing: 0.06em; text-transform: uppercase; }
+.ss { font-size: 11px; color: var(--ink-faint); margin-top: 5px; font-style: italic; }
+.ds { width: 100%; height: auto; display: block; }
+footer { border-top: 1px solid var(--rule); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--ink-faint); }
+.fl a { color: var(--green); text-decoration: none; margin-left: 20px; }
 </style>
 </head>
 <body>
-
 <nav>
-  <a class="nav-logo" href="#">
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4" y="5" width="14" height="12" rx="2.5" fill="#1A1A1A"/>
-      <rect x="22" y="5" width="14" height="12" rx="2.5" fill="#1A1A1A" opacity="0.18"/>
-      <rect x="4" y="22" width="14" height="12" rx="2.5" fill="#1A1A1A" opacity="0.42"/>
-      <rect x="22" y="22" width="14" height="12" rx="2.5" fill="#4A8C40"/>
-    </svg>
-    <span class="nav-wordmark">BONDY</span>
-    <span style="width:1px;height:16px;background:var(--rule);margin:0 4px;"></span>
-    <span class="nav-title">Supabase Docs</span>
+  <a class="nl" href="#">
+    <svg viewBox="0 0 40 40" fill="none"><rect x="4" y="5" width="14" height="12" rx="2.5" fill="#1A1A1A"/><rect x="22" y="5" width="14" height="12" rx="2.5" fill="#1A1A1A" opacity="0.18"/><rect x="4" y="22" width="14" height="12" rx="2.5" fill="#1A1A1A" opacity="0.42"/><rect x="22" y="22" width="14" height="12" rx="2.5" fill="#4A8C40"/></svg>
+    <span class="nw">BONDY</span><span class="sp"></span><span class="nt">Supabase Docs</span>
   </a>
-  <div style="display:flex;align-items:center;gap:12px;">
-    <span class="updated-tag">↻ 19 mar 2026 — Dana Data</span>
-    <span class="nav-badge">tchppyxhapxtjemxrbqm</span>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="tag">19 mar 2026 — Dana Data</span>
+    <span class="badge">tchppyxhapxtjemxrbqm</span>
   </div>
 </nav>
 
 <div class="hero">
-  <p class="eyebrow">Documentación técnica · Supabase</p>
+  <p class="ey">Documentacion tecnica · Supabase</p>
   <h1>Flujos de datos.</h1>
-  <p class="hero-sub">Mapa visual de cómo se alimentan, conectan y usan las 18 tablas del proyecto Supabase de Bondy. Organizado en 4 ecosistemas funcionales.</p>
-  <span class="updated-tag">Mantenido por Dana Data · Se actualiza automáticamente con cada cambio de estructura</span>
+  <p class="hs">Mapa visual de como se alimentan, conectan y usan las 18 tablas del proyecto Supabase de Bondy. Organizado en 4 ecosistemas funcionales.</p>
+  <span class="tag">Mantenido por Dana Data · Se actualiza con cada cambio de estructura</span>
 </div>
 
-<!-- TABS -->
-<div class="tab-nav">
-  <button class="tab-btn active" onclick="showTab('overview')">📊 Resumen</button>
-  <button class="tab-btn" onclick="showTab('leads')">📥 Captación & Leads</button>
-  <button class="tab-btn" onclick="showTab('outreach')">📤 Outreach B2B</button>
-  <button class="tab-btn" onclick="showTab('jobs')">🔍 Jobs & Market Intel</button>
-  <button class="tab-btn" onclick="showTab('tools')">⚙️ Herramientas Internas</button>
+<div class="tabs">
+  <button class="tb active" onclick="show('ov',this)">Resumen general</button>
+  <button class="tb" onclick="show('ld',this)">Captacion y Leads</button>
+  <button class="tb" onclick="show('ob',this)">Outreach B2B</button>
+  <button class="tb" onclick="show('jb',this)">Jobs y Market Intel</button>
+  <button class="tb" onclick="show('tl',this)">Herramientas Internas</button>
 </div>
 
 <div class="content">
 
-  <!-- OVERVIEW -->
-  <div id="tab-overview" class="tab-panel active">
-    <div class="overview-grid">
-      <div class="stat-card">
-        <div class="stat-number">18</div>
-        <div class="stat-label">Tablas totales</div>
-        <div class="stat-note">5 activas con volumen real</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">1.844</div>
-        <div class="stat-label">Jobs scrapeados</div>
-        <div class="stat-note">Desde 6 fuentes, sin duplicados</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">198</div>
-        <div class="stat-label">Prospectos B2B</div>
-        <div class="stat-note">149 en draft sin enviar</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">11</div>
-        <div class="stat-label">Leads del sitio</div>
-        <div class="stat-note">0 clasificados como real_lead</div>
-      </div>
+<!-- OVERVIEW -->
+<div id="ov" class="panel active">
+  <div class="stats">
+    <div class="stat"><div class="sn">18</div><div class="sl">Tablas totales</div><div class="ss">5 activas con volumen real</div></div>
+    <div class="stat"><div class="sn">1844</div><div class="sl">Jobs scrapeados</div><div class="ss">6 fuentes, sin duplicados</div></div>
+    <div class="stat"><div class="sn">198</div><div class="sl">Prospectos B2B</div><div class="ss">149 en draft sin enviar</div></div>
+    <div class="stat"><div class="sn">11</div><div class="sl">Leads del sitio</div><div class="ss">0 clasificados como real_lead</div></div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="cn">Mapa general</span><span class="ct">Ecosistema Supabase Bondy</span></div>
+    <div class="cb">
+      <svg class="ds" viewBox="0 0 840 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ar" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#9A948E"/></marker>
+          <marker id="arg" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#4A8C40"/></marker>
+        </defs>
+        <!-- Groups -->
+        <rect x="8" y="8" width="170" height="170" rx="5" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/>
+        <text x="93" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#1565c0">CAPTACION</text>
+        <rect x="198" y="8" width="185" height="170" rx="5" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="290" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#2e7d32">OUTREACH B2B</text>
+        <rect x="403" y="8" width="170" height="170" rx="5" fill="#fff8e1" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="488" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#f57f17">MARKET INTEL</text>
+        <rect x="593" y="8" width="240" height="170" rx="5" fill="#fce4ec" stroke="#f48fb1" stroke-width="1.5"/>
+        <text x="713" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#880e4f">HERRAMIENTAS INTERNAS</text>
+        <rect x="8" y="200" width="580" height="70" rx="5" fill="none" stroke="#E8E4DE" stroke-width="1" stroke-dasharray="5 3"/>
+        <text x="298" y="216" text-anchor="middle" font-family="Special Elite,cursive" font-size="9" fill="#9A948E">AIRTABLE MIRROR (read-only)</text>
+        <!-- Captacion nodes -->
+        <rect x="22" y="32" width="142" height="28" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="93" y="50" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">contact_leads</text>
+        <rect x="22" y="68" width="142" height="28" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="93" y="86" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">referrals</text>
+        <rect x="22" y="104" width="142" height="28" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="93" y="122" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">job_applications</text>
+        <!-- Outreach nodes -->
+        <rect x="212" y="32" width="157" height="28" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1"/>
+        <text x="290" y="50" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">outreach_contacts</text>
+        <rect x="212" y="68" width="157" height="28" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1"/>
+        <text x="290" y="86" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">warm_leads</text>
+        <rect x="212" y="104" width="157" height="28" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1"/>
+        <text x="290" y="122" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">Interactions</text>
+        <!-- Market nodes -->
+        <rect x="417" y="32" width="142" height="28" rx="3" fill="white" stroke="#ffe082" stroke-width="1"/>
+        <text x="488" y="50" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">jobs</text>
+        <rect x="417" y="68" width="142" height="28" rx="3" fill="white" stroke="#ffe082" stroke-width="1"/>
+        <text x="488" y="86" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">market_signals</text>
+        <!-- Tools nodes -->
+        <rect x="607" y="28" width="212" height="22" rx="3" fill="white" stroke="#f48fb1" stroke-width="1"/>
+        <text x="713" y="43" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">candidates</text>
+        <rect x="607" y="56" width="212" height="22" rx="3" fill="white" stroke="#f48fb1" stroke-width="1"/>
+        <text x="713" y="71" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">sourcing_pipeline</text>
+        <rect x="607" y="84" width="212" height="22" rx="3" fill="white" stroke="#f48fb1" stroke-width="1"/>
+        <text x="713" y="99" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">client_scorecards</text>
+        <rect x="607" y="112" width="212" height="22" rx="3" fill="white" stroke="#f48fb1" stroke-width="1"/>
+        <text x="713" y="127" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#9A948E">interviews (construccion)</text>
+        <rect x="607" y="140" width="212" height="22" rx="3" fill="white" stroke="#f48fb1" stroke-width="1"/>
+        <text x="713" y="155" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#9A948E">interview_reports</text>
+        <!-- Mirror nodes -->
+        <rect x="22" y="220" width="130" height="28" rx="3" fill="white" stroke="#E8E4DE" stroke-width="1"/>
+        <text x="87" y="238" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#9A948E">Accounts</text>
+        <rect x="172" y="220" width="130" height="28" rx="3" fill="white" stroke="#E8E4DE" stroke-width="1"/>
+        <text x="237" y="238" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#9A948E">Opportunities</text>
+        <rect x="322" y="220" width="130" height="28" rx="3" fill="white" stroke="#E8E4DE" stroke-width="1"/>
+        <text x="387" y="238" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#9A948E">Contacts</text>
+        <!-- Arrows FK -->
+        <line x1="488" y1="60" x2="488" y2="68" stroke="#4A8C40" stroke-width="1.5" marker-end="url(#arg)"/>
+        <line x1="369" y1="86" x2="403" y2="86" stroke="#4A8C40" stroke-width="1.5" marker-end="url(#arg)"/>
+        <line x1="290" y1="96" x2="290" y2="220" stroke="#4A8C40" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arg)"/>
+        <line x1="713" y1="50" x2="713" y2="56" stroke="#9A948E" stroke-width="1.5" marker-end="url(#ar)"/>
+        <line x1="713" y1="78" x2="713" y2="84" stroke="#9A948E" stroke-width="1.5" marker-end="url(#ar)"/>
+        <line x1="713" y1="106" x2="713" y2="112" stroke="#9A948E" stroke-width="1.5" marker-end="url(#ar)"/>
+        <line x1="713" y1="134" x2="713" y2="140" stroke="#9A948E" stroke-width="1.5" marker-end="url(#ar)"/>
+        <text x="494" y="66" font-family="Courier Prime,monospace" font-size="9" fill="#4A8C40">FK</text>
+        <text x="374" y="82" font-family="Courier Prime,monospace" font-size="9" fill="#4A8C40">FK</text>
+      </svg>
     </div>
-
-    <div class="diagram-card">
-      <div class="diagram-header">
-        <span class="diagram-number">MAPA GENERAL</span>
-        <span class="diagram-title">Ecosistema Supabase — Bondy</span>
-      </div>
-      <div class="diagram-body">
-        <div class="mermaid">
-flowchart TB
-  subgraph CAP["CAPTACION"]
-    CL["contact_leads"]
-    REF["referrals"]
-    JA["job_applications"]
-  end
-  subgraph OUT["OUTREACH B2B"]
-    OC["outreach_contacts"]
-    WL["warm_leads"]
-    INT["Interactions"]
-  end
-  subgraph MKT["MARKET INTEL"]
-    JB["jobs"]
-    MS["market_signals"]
-  end
-  subgraph TOOLS["HERRAMIENTAS INTERNAS"]
-    CAND["candidates"]
-    SP["sourcing_pipeline"]
-    CLI["clients"]
-    SC["client_scorecards"]
-    IV["interviews"]
-    IR["interview_reports"]
-  end
-  subgraph MIRROR["AIRTABLE MIRROR"]
-    ACC["Accounts"]
-    OPP["Opportunities"]
-    CON["Contacts"]
-  end
-
-  WEB["wearebondy.com"] --> CL
-  WEB --> REF
-  WEB --> JA
-  APOLLO["Apollo.io"] --> OC
-  SCRAPER["Scraper automatico"] --> JB
-  JB -->|"FK job_id"| MS
-  OC -->|"FK"| WL
-  WL -->|"manual"| OPP
-  CAND -->|"FK"| SP
-  CLI -->|"FK"| SC
-  SC -->|"FK"| IV
-  IV -->|"FK"| IR
-        </div>
-      </div>
+    <div class="cf">
+      <div class="lg"><div class="dt" style="background:#1565c0"></div>Captacion</div>
+      <div class="lg"><div class="dt" style="background:#2e7d32"></div>Outreach B2B</div>
+      <div class="lg"><div class="dt" style="background:#f57f17"></div>Market Intel</div>
+      <div class="lg"><div class="dt" style="background:#880e4f"></div>Herramientas internas</div>
+      <div class="lg"><div class="dt" style="background:#9A948E"></div>Airtable mirror</div>
     </div>
   </div>
+</div>
 
-  <!-- CAPTACIÓN -->
-  <div id="tab-leads" class="tab-panel">
-    <p class="desc">Tres tablas capturan entradas desde el sitio web. Cada formulario tiene su propia tabla. El flujo crítico es <strong>contact_leads</strong>: todo lead entra como <code>unclassified</code> y requiere clasificación manual antes de ser trabajado comercialmente.</p>
-
-    <div class="diagram-card">
-      <div class="diagram-header">
-        <span class="diagram-number">FLUJO 01</span>
-        <span class="diagram-title">Captación & Leads del Sitio</span>
-      </div>
-      <div class="diagram-body">
-        <div class="mermaid">
-flowchart LR
-  subgraph SITE["wearebondy.com"]
-    F1["/contacto"]
-    F2["/referrals"]
-    F3["/aplicar"]
-  end
-
-  subgraph SB["Supabase"]
-    CL[("contact_leads\n11 registros")]
-    REF[("referrals\n1 registro")]
-    JA[("job_applications\n1 registro")]
-  end
-
-  subgraph CLAS["Clasificacion"]
-    direction TB
-    RL["real_lead"]
-    JS["job_seeker"]
-    SP["spam"]
-    UC["unclassified"]
-  end
-
-  subgraph DEST["Destino"]
-    AT["Airtable Opportunities"]
-    BRUNO["Bruno Comercial"]
-    DESC["Descartado"]
-  end
-
-  F1 -->|"POST auto"| CL
-  F2 -->|"POST auto"| REF
-  F3 -->|"POST auto"| JA
-
-  CL -->|"Mara o Dana\nclasifican"| CLAS
-
-  RL --> AT
-  RL --> BRUNO
-  JS --> DESC
-  SP --> DESC
-  UC -->|"pendiente"| CLAS
-        </div>
-      </div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#4A8C40"></div>real_lead → acción comercial</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div>unclassified → requiere revisión</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#e57373"></div>spam / job_seeker → descartado</div>
-      </div>
+<!-- LEADS -->
+<div id="ld" class="panel">
+  <p class="hint">Tres formularios del sitio inyectan registros automaticamente. Todo lead entra como <strong>unclassified</strong> y necesita clasificacion manual. Al 19-mar: 0 <em>real_leads</em>, 5 pendientes de revisar.</p>
+  <div class="card">
+    <div class="ch"><span class="cn">Flujo 01</span><span class="ct">Captacion y Leads del Sitio</span></div>
+    <div class="cb">
+      <svg class="ds" viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="a1" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#9A948E"/></marker>
+          <marker id="a1g" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#4A8C40"/></marker>
+          <marker id="a1r" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#e53935"/></marker>
+          <marker id="a1o" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#f57f17"/></marker>
+        </defs>
+        <!-- Sitio -->
+        <rect x="8" y="8" width="150" height="180" rx="5" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/>
+        <text x="83" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#1565c0">WEAREBONDY.COM</text>
+        <rect x="20" y="32" width="126" height="30" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="83" y="51" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">/contacto</text>
+        <rect x="20" y="70" width="126" height="30" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="83" y="89" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">/referrals</text>
+        <rect x="20" y="108" width="126" height="30" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="83" y="127" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">/aplicar</text>
+        <!-- Supabase -->
+        <rect x="200" y="8" width="166" height="180" rx="5" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="283" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#2e7d32">SUPABASE</text>
+        <rect x="212" y="32" width="142" height="38" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="283" y="49" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">contact_leads</text>
+        <text x="283" y="63" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">11 registros</text>
+        <rect x="212" y="78" width="142" height="38" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="283" y="95" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">referrals</text>
+        <text x="283" y="109" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">1 registro</text>
+        <rect x="212" y="124" width="142" height="38" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="283" y="141" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">job_applications</text>
+        <text x="283" y="155" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">1 registro</text>
+        <!-- Clasificacion -->
+        <rect x="418" y="8" width="156" height="220" rx="5" fill="#fff8e1" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="496" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#f57f17">CLASIFICACION</text>
+        <text x="496" y="38" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">Mara o Dana</text>
+        <rect x="430" y="46" width="132" height="28" rx="3" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="496" y="64" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#2e7d32">real_lead</text>
+        <rect x="430" y="82" width="132" height="28" rx="3" fill="white" stroke="#E8E4DE" stroke-width="1"/>
+        <text x="496" y="100" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">job_seeker</text>
+        <rect x="430" y="118" width="132" height="28" rx="3" fill="#fce4ec" stroke="#f48fb1" stroke-width="1.5"/>
+        <text x="496" y="136" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#c62828">spam</text>
+        <rect x="430" y="154" width="132" height="36" rx="3" fill="#fff8e1" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="496" y="170" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#f57f17">unclassified</text>
+        <text x="496" y="183" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">5 pendientes</text>
+        <!-- Destino -->
+        <rect x="620" y="8" width="170" height="180" rx="5" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="705" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#2e7d32">DESTINO</text>
+        <rect x="632" y="32" width="146" height="38" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="705" y="49" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Airtable Opportunities</text>
+        <text x="705" y="63" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">si real_lead</text>
+        <rect x="632" y="78" width="146" height="38" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="705" y="95" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Bruno Comercial</text>
+        <text x="705" y="109" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">si real_lead</text>
+        <rect x="632" y="124" width="146" height="38" rx="3" fill="#fce4ec" stroke="#f48fb1" stroke-width="1.5"/>
+        <text x="705" y="141" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#c62828">Descartado</text>
+        <text x="705" y="155" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">spam o job_seeker</text>
+        <!-- Arrows sitio -> supabase -->
+        <line x1="146" y1="47" x2="212" y2="51" stroke="#90caf9" stroke-width="1.5" marker-end="url(#a1)"/>
+        <line x1="146" y1="85" x2="212" y2="97" stroke="#90caf9" stroke-width="1.5" marker-end="url(#a1)"/>
+        <line x1="146" y1="123" x2="212" y2="143" stroke="#90caf9" stroke-width="1.5" marker-end="url(#a1)"/>
+        <!-- Arrow supabase -> clasificacion -->
+        <line x1="354" y1="80" x2="418" y2="120" stroke="#f57f17" stroke-width="1.5" marker-end="url(#a1o)"/>
+        <text x="382" y="95" font-family="Courier Prime,monospace" font-size="9" fill="#f57f17">clasifica</text>
+        <!-- Arrows clasificacion -> destino -->
+        <line x1="562" y1="60" x2="632" y2="51" stroke="#4A8C40" stroke-width="1.5" marker-end="url(#a1g)"/>
+        <line x1="562" y1="60" x2="632" y2="97" stroke="#4A8C40" stroke-width="1.5" marker-end="url(#a1g)"/>
+        <line x1="562" y1="96" x2="632" y2="143" stroke="#e53935" stroke-width="1.5" marker-end="url(#a1r)"/>
+        <line x1="562" y1="132" x2="632" y2="143" stroke="#e53935" stroke-width="1.5" marker-end="url(#a1r)"/>
+      </svg>
+    </div>
+    <div class="cf">
+      <div class="lg"><div class="dt" style="background:#4A8C40"></div>real_lead: accion comercial</div>
+      <div class="lg"><div class="dt" style="background:#f57f17"></div>unclassified: requiere revision</div>
+      <div class="lg"><div class="dt" style="background:#e53935"></div>spam/job_seeker: descartado</div>
     </div>
   </div>
+</div>
 
-  <!-- OUTREACH -->
-  <div id="tab-outreach" class="tab-panel">
-    <p class="desc">El pipeline B2B más activo del sistema. El agente de prospecting matutino alimenta <strong>outreach_contacts</strong> con leads enriquecidos de Apollo. Mara revisa los drafts y decide qué enviar. Las respuestas positivas suben a <strong>warm_leads</strong> y eventualmente a Airtable.</p>
-
-    <div class="diagram-card">
-      <div class="diagram-header">
-        <span class="diagram-number">FLUJO 02</span>
-        <span class="diagram-title">Outreach B2B — Pipeline Completo</span>
-      </div>
-      <div class="diagram-body">
-        <div class="mermaid">
-flowchart TD
-  subgraph FUENTES["Fuentes"]
-    APOLLO["Apollo.io"]
-    WEB["Web Research"]
-    GOB["GetOnBoard"]
-  end
-
-  subgraph AGENTE["Agente Morning Prospecting"]
-    Q["Consulta Supabase\nbusca sin contacto reciente"]
-    E["Enriquece contactos\nvia Apollo"]
-    I["Investiga empresa"]
-    D["Genera draft\npersonalizado"]
-  end
-
-  subgraph SB["Supabase"]
-    OC[("outreach_contacts\n198 registros")]
-    WL[("warm_leads\n0 registros")]
-  end
-
-  subgraph PIPELINE["Estados del Pipeline"]
-    direction LR
-    S1["draft\n149"] --> S2["sent\n18"] --> S3["opened"] --> S4["replied\n3"]
-    S2 --> S6["follow_up\n26"]
-    S4 -->|"positivo"| WL2["warm_lead"]
-    S4 -->|"negativo"| S7["bounced u\nopted_out"]
-  end
-
-  subgraph DEST["Conversion"]
-    GMAIL["Draft Gmail\nMara revisa"]
-    NOTION["Tarea Notion"]
-    AT["Airtable Opportunities"]
-  end
-
-  APOLLO --> AGENTE
-  WEB --> AGENTE
-  GOB --> AGENTE
-  Q --> E --> I --> D
-  D -->|"INSERT"| OC
-  D --> GMAIL
-  D --> NOTION
-  OC --> S1
-  WL2 --> WL
-  WL -->|"Mara promueve"| AT
-        </div>
-      </div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Automatizado por agente</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div>Revisión manual de Mara</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#4A8C40"></div>Conversión a Airtable</div>
-      </div>
+<!-- OUTREACH -->
+<div id="ob" class="panel">
+  <p class="hint">Pipeline B2B mas activo. El agente matutino alimenta <strong>outreach_contacts</strong> con leads de Apollo. Mara revisa los drafts y envia. Las respuestas positivas suben a <strong>warm_leads</strong> y luego a Airtable.</p>
+  <div class="card">
+    <div class="ch"><span class="cn">Flujo 02</span><span class="ct">Outreach B2B</span></div>
+    <div class="cb">
+      <svg class="ds" viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="a2" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#9A948E"/></marker>
+          <marker id="a2g" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#4A8C40"/></marker>
+        </defs>
+        <!-- Fuentes -->
+        <rect x="8" y="8" width="148" height="130" rx="5" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/>
+        <text x="82" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#1565c0">FUENTES</text>
+        <rect x="20" y="32" width="124" height="26" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="82" y="49" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">Apollo.io</text>
+        <rect x="20" y="64" width="124" height="26" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="82" y="81" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">Web Research</text>
+        <rect x="20" y="96" width="124" height="26" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="82" y="113" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">GetOnBoard</text>
+        <!-- Agente -->
+        <rect x="200" y="8" width="178" height="170" rx="5" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="289" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#2e7d32">AGENTE MORNING</text>
+        <rect x="212" y="32" width="154" height="26" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1"/>
+        <text x="289" y="49" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">1. Consulta Supabase</text>
+        <rect x="212" y="64" width="154" height="26" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1"/>
+        <text x="289" y="81" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">2. Enriquece en Apollo</text>
+        <rect x="212" y="96" width="154" height="26" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1"/>
+        <text x="289" y="113" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">3. Investiga empresa</text>
+        <rect x="212" y="128" width="154" height="38" rx="3" fill="#e8f5e9" stroke="#4A8C40" stroke-width="1.5"/>
+        <text x="289" y="145" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">4. Genera draft</text>
+        <text x="289" y="159" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#4A8C40">INSERT outreach_contacts</text>
+        <!-- Salidas agente -->
+        <rect x="430" y="8" width="148" height="80" rx="5" fill="#fce4ec" stroke="#f48fb1" stroke-width="1.5"/>
+        <text x="504" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#880e4f">SALIDAS AUTO</text>
+        <rect x="442" y="32" width="124" height="24" rx="3" fill="white" stroke="#f48fb1" stroke-width="1"/>
+        <text x="504" y="48" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Draft en Gmail</text>
+        <rect x="442" y="60" width="124" height="24" rx="3" fill="white" stroke="#f48fb1" stroke-width="1"/>
+        <text x="504" y="76" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Tarea en Notion</text>
+        <!-- Pipeline -->
+        <rect x="8" y="220" width="600" height="120" rx="5" fill="#fff8e1" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="308" y="236" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#f57f17">PIPELINE OUTREACH — 198 registros</text>
+        <rect x="20" y="244" width="78" height="46" rx="3" fill="white" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="59" y="262" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">draft</text>
+        <text x="59" y="278" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#f57f17">149</text>
+        <rect x="118" y="244" width="78" height="46" rx="3" fill="white" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="157" y="262" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">sent</text>
+        <text x="157" y="278" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">18</text>
+        <rect x="216" y="244" width="78" height="46" rx="3" fill="white" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="255" y="262" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">follow_up</text>
+        <text x="255" y="278" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">26</text>
+        <rect x="314" y="244" width="78" height="46" rx="3" fill="white" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="353" y="262" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">replied</text>
+        <text x="353" y="278" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#4A8C40">3</text>
+        <rect x="412" y="244" width="130" height="46" rx="3" fill="#fce4ec" stroke="#f48fb1" stroke-width="1.5"/>
+        <text x="477" y="262" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">bounced/opted_out</text>
+        <text x="477" y="278" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#9A948E">2</text>
+        <line x1="98" y1="267" x2="118" y2="267" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="196" y1="267" x2="216" y2="267" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="294" y1="267" x2="314" y2="267" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a2)"/>
+        <!-- Conversion -->
+        <rect x="624" y="220" width="168" height="120" rx="5" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="708" y="236" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#2e7d32">CONVERSION</text>
+        <rect x="636" y="244" width="144" height="36" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="708" y="259" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">warm_leads</text>
+        <text x="708" y="273" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">0 registros</text>
+        <rect x="636" y="288" width="144" height="36" rx="3" fill="#e8f5e9" stroke="#4A8C40" stroke-width="1.5"/>
+        <text x="708" y="303" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#4A8C40">Airtable Opps</text>
+        <text x="708" y="317" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">Mara promueve manual</text>
+        <!-- Arrows -->
+        <line x1="156" y1="70" x2="200" y2="70" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="378" y1="148" x2="430" y2="50" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="392" y1="267" x2="624" y2="262" stroke="#4A8C40" stroke-width="1.5" marker-end="url(#a2g)"/>
+        <text x="508" y="256" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#4A8C40">replied positivo</text>
+        <line x1="708" y1="280" x2="708" y2="288" stroke="#4A8C40" stroke-width="1.5" marker-end="url(#a2g)"/>
+      </svg>
+    </div>
+    <div class="cf">
+      <div class="lg"><div class="dt" style="background:#1565c0"></div>Automatizado por agente</div>
+      <div class="lg"><div class="dt" style="background:#f57f17"></div>Revision manual de Mara</div>
+      <div class="lg"><div class="dt" style="background:#4A8C40"></div>Conversion a Airtable</div>
     </div>
   </div>
+</div>
 
-  <!-- JOBS -->
-  <div id="tab-jobs" class="tab-panel">
-    <p class="desc">El scraper automático recolecta ofertas tech de 6 fuentes externas. La constraint <code>source_url UNIQUE</code> garantiza que no haya duplicados. Los datos alimentan el producto <strong>Market Signals</strong> en tools.wearebondy.com.</p>
-
-    <div class="diagram-card">
-      <div class="diagram-header">
-        <span class="diagram-number">FLUJO 03</span>
-        <span class="diagram-title">Jobs & Market Intelligence</span>
-      </div>
-      <div class="diagram-body">
-        <div class="mermaid">
-flowchart LR
-  subgraph SCRAPER["Scraper Automatico - bondy-job-scraper"]
-    G["GetOnBoard"]
-    Y["YC Companies"]
-    R["Remotive"]
-    H["Himalayas"]
-    W["WeWorkRemotely"]
-    GH["Greenhouse"]
-  end
-
-  subgraph SB["Supabase"]
-    JB[("jobs\n1844 registros\nsource_url UNIQUE")]
-    MS[("market_signals\n472 registros")]
-  end
-
-  subgraph PROD["tools.wearebondy.com/market-signals"]
-    FILTROS["Filtros:\ntecnologia, seniority\nmodalidad, pais"]
-    TABLA["Tabla de tendencias"]
-  end
-
-  subgraph USO["Usuarios"]
-    REC["Recruiters"]
-    CLI["Clientes Bondy"]
-    DAN["Dana Data"]
-  end
-
-  G -->|"scraping diario"| JB
-  Y -->|"scraping diario"| JB
-  R -->|"scraping diario"| JB
-  H -->|"scraping diario"| JB
-  W -->|"scraping diario"| JB
-  GH -->|"scraping diario"| JB
-  JB -->|"FK job_id"| MS
-  JB --> PROD
-  MS --> PROD
-  FILTROS --> TABLA
-  TABLA --> REC
-  TABLA --> CLI
-  TABLA --> DAN
-        </div>
-      </div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Automatizado · sin intervención manual</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#4A8C40"></div>source_url UNIQUE → 0 duplicados</div>
-      </div>
+<!-- JOBS -->
+<div id="jb" class="panel">
+  <p class="hint">Scraper automatico recolecta jobs tech de 6 fuentes. <code>source_url UNIQUE</code> garantiza cero duplicados. Alimenta el producto <strong>Market Signals</strong> en tools.wearebondy.com.</p>
+  <div class="card">
+    <div class="ch"><span class="cn">Flujo 03</span><span class="ct">Jobs y Market Intelligence</span></div>
+    <div class="cb">
+      <svg class="ds" viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="a3" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#9A948E"/></marker>
+          <marker id="a3g" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#4A8C40"/></marker>
+        </defs>
+        <!-- Scraper -->
+        <rect x="8" y="8" width="156" height="240" rx="5" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/>
+        <text x="86" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#1565c0">SCRAPER DIARIO</text>
+        <rect x="20" y="32" width="132" height="28" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="86" y="50" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">GetOnBoard</text>
+        <rect x="20" y="68" width="132" height="28" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="86" y="86" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">YC Companies</text>
+        <rect x="20" y="104" width="132" height="28" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="86" y="122" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">Remotive</text>
+        <rect x="20" y="140" width="132" height="28" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="86" y="158" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">Himalayas</text>
+        <rect x="20" y="176" width="132" height="28" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="86" y="194" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">WeWorkRemotely</text>
+        <rect x="20" y="212" width="132" height="28" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="86" y="230" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">Greenhouse</text>
+        <!-- Jobs -->
+        <rect x="220" y="60" width="168" height="100" rx="5" fill="#fff8e1" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="304" y="76" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#f57f17">SUPABASE</text>
+        <rect x="232" y="84" width="144" height="62" rx="3" fill="white" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="304" y="106" text-anchor="middle" font-family="Courier Prime,monospace" font-size="12" fill="#1A1A1A">jobs</text>
+        <text x="304" y="120" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">1844 registros</text>
+        <text x="304" y="134" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#4A8C40">source_url UNIQUE</text>
+        <!-- market_signals -->
+        <rect x="220" y="190" width="168" height="60" rx="5" fill="#fff8e1" stroke="#ffe082" stroke-width="1.5"/>
+        <rect x="232" y="200" width="144" height="40" rx="3" fill="white" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="304" y="217" text-anchor="middle" font-family="Courier Prime,monospace" font-size="12" fill="#1A1A1A">market_signals</text>
+        <text x="304" y="231" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">472 registros</text>
+        <!-- Producto -->
+        <rect x="450" y="40" width="176" height="130" rx="5" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="538" y="56" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#2e7d32">PRODUCTO</text>
+        <rect x="462" y="64" width="152" height="26" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1"/>
+        <text x="538" y="81" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">tools.wearebondy.com</text>
+        <rect x="462" y="96" width="152" height="60" rx="3" fill="#e8f5e9" stroke="#4A8C40" stroke-width="1.5"/>
+        <text x="538" y="118" text-anchor="middle" font-family="Courier Prime,monospace" font-size="12" fill="#1A1A1A">Market Signals</text>
+        <text x="538" y="134" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">tech, seniority, pais, modality</text>
+        <!-- Usuarios -->
+        <rect x="690" y="40" width="100" height="130" rx="5" fill="#fce4ec" stroke="#f48fb1" stroke-width="1.5"/>
+        <text x="740" y="56" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#880e4f">USUARIOS</text>
+        <rect x="700" y="64" width="80" height="26" rx="3" fill="white" stroke="#f48fb1" stroke-width="1"/>
+        <text x="740" y="81" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Recruiters</text>
+        <rect x="700" y="96" width="80" height="26" rx="3" fill="white" stroke="#f48fb1" stroke-width="1"/>
+        <text x="740" y="113" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Clientes</text>
+        <rect x="700" y="128" width="80" height="26" rx="3" fill="white" stroke="#f48fb1" stroke-width="1"/>
+        <text x="740" y="145" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Dana</text>
+        <!-- Arrows -->
+        <line x1="164" y1="130" x2="220" y2="115" stroke="#90caf9" stroke-width="1.5" marker-end="url(#a3)"/>
+        <line x1="304" y1="146" x2="304" y2="200" stroke="#4A8C40" stroke-width="1.5" marker-end="url(#a3g)"/>
+        <text x="316" y="176" font-family="Courier Prime,monospace" font-size="9" fill="#4A8C40">FK</text>
+        <line x1="388" y1="115" x2="450" y2="115" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a3)"/>
+        <line x1="388" y1="220" x2="450" y2="140" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a3)"/>
+        <line x1="626" y1="105" x2="690" y2="105" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a3)"/>
+      </svg>
+    </div>
+    <div class="cf">
+      <div class="lg"><div class="dt" style="background:#1565c0"></div>Scraping automatico diario</div>
+      <div class="lg"><div class="dt" style="background:#4A8C40"></div>FK job_id conecta ambas tablas</div>
+      <div class="lg"><div class="dt" style="background:#f57f17"></div>source_url UNIQUE: sin duplicados</div>
     </div>
   </div>
+</div>
 
-  <!-- TOOLS -->
-  <div id="tab-tools" class="tab-panel">
-    <p class="desc">El ecosistema de herramientas internas para recruiters. <strong>Rex</strong> es el bot de Slack que usa <code>sourcing_pipeline</code> como contexto para responder preguntas. Las tablas de <code>interviews</code> e <code>interview_reports</code> están creadas pero aún sin datos — son el próximo gran producto.</p>
-
-    <div class="diagram-card">
-      <div class="diagram-header">
-        <span class="diagram-number">FLUJO 04</span>
-        <span class="diagram-title">Herramientas Internas & Rex</span>
-      </div>
-      <div class="diagram-body">
-        <div class="mermaid">
-flowchart TD
-  subgraph INPUT["Inputs"]
-    AT["Airtable\nBase General\n40k+ candidatos"]
-    LI["LinkedIn\nsourcing manual"]
-    SLACK_IN["Recruiter escribe a Rex\npor DM en Slack"]
-  end
-
-  subgraph REX["Rex - tools.wearebondy.com/api/rex"]
-    VER["Verifica\nfirma Slack"]
-    CTX["Lee contexto de\nsourcing_pipeline"]
-    CL["Claude API\ngenera respuesta"]
-    REP["Responde\nal recruiter"]
-  end
-
-  subgraph SB["Supabase - Herramientas"]
-    CAND[("candidates\n8 perfiles")]
-    SP[("sourcing_pipeline\n8 registros")]
-    CLI[("clients\n1")]
-    SC[("client_scorecards\n1")]
-    IV[("interviews\nen construccion")]
-    IR[("interview_reports\nen construccion")]
-    QB[("question_bank\nen construccion")]
-  end
-
-  subgraph TOOLS["tools.wearebondy.com"]
-    DASH["Dashboard\nrecruiters"]
-    SCORE["Scorecard\nde entrevista"]
-    REPORT["Reporte IA\npara cliente"]
-  end
-
-  AT -->|"airtable_id"| CAND
-  LI -->|"carga manual"| CAND
-  CAND -->|"FK candidate_supabase_id"| SP
-  SLACK_IN --> VER --> CTX
-  CTX -->|"lee"| SP
-  SP --> CL --> REP
-  CLI -->|"FK client_id"| SC
-  SC -->|"FK scorecard_id"| IV
-  IV -->|"FK interview_report_id"| IR
-  QB --> SCORE
-  SP --> DASH
-  CAND --> DASH
-  SC --> SCORE --> REPORT --> IR
-        </div>
-      </div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Rex — bot activo en Slack</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#4A8C40"></div>Tablas activas</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#9A948E"></div>🏗️ Tablas creadas, sin datos aún</div>
-      </div>
+<!-- TOOLS -->
+<div id="tl" class="panel">
+  <p class="hint"><strong>Rex</strong> es el bot de Slack que usa <code>sourcing_pipeline</code> como contexto para responder al recruiter en tiempo real. Las tablas de entrevistas estan construidas pero sin datos todavia.</p>
+  <div class="card">
+    <div class="ch"><span class="cn">Flujo 04</span><span class="ct">Herramientas Internas y Rex</span></div>
+    <div class="cb">
+      <svg class="ds" viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="a4" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#9A948E"/></marker>
+          <marker id="a4g" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#4A8C40"/></marker>
+          <marker id="a4b" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#1565c0"/></marker>
+        </defs>
+        <!-- Inputs -->
+        <rect x="8" y="8" width="154" height="140" rx="5" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/>
+        <text x="85" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#1565c0">INPUTS</text>
+        <rect x="20" y="32" width="130" height="30" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="85" y="51" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Airtable Base General</text>
+        <rect x="20" y="68" width="130" height="30" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="85" y="87" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">LinkedIn (manual)</text>
+        <rect x="20" y="104" width="130" height="30" rx="3" fill="#e8f5e9" stroke="#4A8C40" stroke-width="1.5"/>
+        <text x="85" y="123" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Recruiter DM a Rex</text>
+        <!-- Supabase sourcing -->
+        <rect x="218" y="8" width="186" height="140" rx="5" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="311" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#2e7d32">SUPABASE</text>
+        <rect x="230" y="32" width="162" height="46" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="311" y="52" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">candidates</text>
+        <text x="311" y="68" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">8 perfiles — airtable_id</text>
+        <rect x="230" y="84" width="162" height="50" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="311" y="105" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">sourcing_pipeline</text>
+        <text x="311" y="119" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">8 registros</text>
+        <text x="311" y="130" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#4A8C40">contexto de Rex</text>
+        <!-- Rex -->
+        <rect x="462" y="8" width="180" height="140" rx="5" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/>
+        <text x="552" y="24" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#1565c0">REX — Slack Bot</text>
+        <rect x="474" y="32" width="156" height="26" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="552" y="49" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">1. Verifica firma Slack</text>
+        <rect x="474" y="64" width="156" height="26" rx="3" fill="white" stroke="#90caf9" stroke-width="1"/>
+        <text x="552" y="81" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">2. Lee sourcing_pipeline</text>
+        <rect x="474" y="96" width="156" height="40" rx="3" fill="#e8f5e9" stroke="#4A8C40" stroke-width="1.5"/>
+        <text x="552" y="113" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">3. Claude API</text>
+        <text x="552" y="128" text-anchor="middle" font-family="Courier Prime,monospace" font-size="9" fill="#4A8C40">responde al recruiter por DM</text>
+        <!-- Supabase entrevistas -->
+        <rect x="218" y="210" width="186" height="160" rx="5" fill="#fff8e1" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="311" y="226" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#f57f17">ENTREVISTAS</text>
+        <rect x="230" y="234" width="162" height="28" rx="3" fill="white" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="311" y="252" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">clients (1)</text>
+        <rect x="230" y="268" width="162" height="28" rx="3" fill="white" stroke="#ffe082" stroke-width="1.5"/>
+        <text x="311" y="286" text-anchor="middle" font-family="Courier Prime,monospace" font-size="11" fill="#1A1A1A">client_scorecards (1)</text>
+        <rect x="230" y="302" width="162" height="26" rx="3" fill="#fce4ec" stroke="#f48fb1" stroke-width="1"/>
+        <text x="311" y="319" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#9A948E">interviews (construccion)</text>
+        <rect x="230" y="334" width="162" height="26" rx="3" fill="#fce4ec" stroke="#f48fb1" stroke-width="1"/>
+        <text x="311" y="351" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#9A948E">interview_reports</text>
+        <!-- Tools -->
+        <rect x="462" y="210" width="180" height="160" rx="5" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1.5"/>
+        <text x="552" y="226" text-anchor="middle" font-family="Special Elite,cursive" font-size="10" fill="#2e7d32">TOOLS INTERNO</text>
+        <rect x="474" y="234" width="156" height="28" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1"/>
+        <text x="552" y="252" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Dashboard recruiters</text>
+        <rect x="474" y="268" width="156" height="28" rx="3" fill="white" stroke="#a5d6a7" stroke-width="1"/>
+        <text x="552" y="286" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#1A1A1A">Scorecard entrevista</text>
+        <rect x="474" y="302" width="156" height="28" rx="3" fill="#e8f5e9" stroke="#4A8C40" stroke-width="1.5"/>
+        <text x="552" y="320" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#4A8C40">Reporte IA para cliente</text>
+        <rect x="474" y="336" width="156" height="28" rx="3" fill="#e8f5e9" stroke="#4A8C40" stroke-width="1.5"/>
+        <text x="552" y="354" text-anchor="middle" font-family="Courier Prime,monospace" font-size="10" fill="#4A8C40">question_bank</text>
+        <!-- Arrows top -->
+        <line x1="150" y1="47" x2="218" y2="55" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a4)"/>
+        <text x="180" y="44" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">airtable_id</text>
+        <line x1="150" y1="83" x2="218" y2="80" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a4)"/>
+        <line x1="311" y1="78" x2="311" y2="84" stroke="#4A8C40" stroke-width="1.5" marker-end="url(#a4g)"/>
+        <text x="320" y="82" font-family="Courier Prime,monospace" font-size="9" fill="#4A8C40">FK</text>
+        <line x1="150" y1="119" x2="462" y2="119" stroke="#1565c0" stroke-width="1.5" marker-end="url(#a4b)"/>
+        <line x1="404" y1="109" x2="462" y2="109" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a4)"/>
+        <text x="430" y="104" font-family="Courier Prime,monospace" font-size="9" fill="#9A948E">lee</text>
+        <!-- Arrows entrevistas FK chain -->
+        <line x1="311" y1="262" x2="311" y2="268" stroke="#f57f17" stroke-width="1.5" marker-end="url(#a4)"/>
+        <line x1="311" y1="296" x2="311" y2="302" stroke="#f57f17" stroke-width="1.5" marker-end="url(#a4)"/>
+        <line x1="311" y1="328" x2="311" y2="334" stroke="#f57f17" stroke-width="1.5" marker-end="url(#a4)"/>
+        <!-- Arrows tools -->
+        <line x1="404" y1="248" x2="462" y2="248" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a4)"/>
+        <line x1="404" y1="282" x2="462" y2="282" stroke="#9A948E" stroke-width="1.5" marker-end="url(#a4)"/>
+        <line x1="404" y1="316" x2="462" y2="316" stroke="#4A8C40" stroke-width="1.5" marker-end="url(#a4g)"/>
+      </svg>
+    </div>
+    <div class="cf">
+      <div class="lg"><div class="dt" style="background:#1565c0"></div>Rex activo en Slack</div>
+      <div class="lg"><div class="dt" style="background:#4A8C40"></div>Tablas activas</div>
+      <div class="lg"><div class="dt" style="background:#f57f17"></div>FK chain: clients → scorecards → interviews → reports</div>
+      <div class="lg"><div class="dt" style="background:#f48fb1"></div>En construccion</div>
     </div>
   </div>
+</div>
 
 </div>
 
 <footer>
-  <span>© 2026 Bondy Group · Uso interno</span>
-  <div class="footer-links">
+  <span>Bondy Group · Uso interno · 2026</span>
+  <div class="fl">
     <a href="https://www.notion.so/328357974ab2817689d6e744c78a0866" target="_blank">Notion Docs</a>
-    <a href="https://tchppyxhapxtjemxrbqm.supabase.co" target="_blank">Supabase Console</a>
+    <a href="https://tchppyxhapxtjemxrbqm.supabase.co" target="_blank">Supabase</a>
     <a href="https://tools.wearebondy.com" target="_blank">tools.wearebondy.com</a>
   </div>
 </footer>
 
 <script>
-  mermaid.initialize({
-    startOnLoad: true,
-    theme: 'base',
-    themeVariables: {
-      primaryColor: '#e8f5e9',
-      primaryTextColor: '#1A1A1A',
-      primaryBorderColor: '#4A8C40',
-      lineColor: '#5A5550',
-      secondaryColor: '#FEFCF9',
-      tertiaryColor: '#fff8e1',
-      background: '#ffffff',
-      mainBkg: '#e8f5e9',
-      nodeBorder: '#4A8C40',
-      clusterBkg: '#FEFCF9',
-      clusterBorder: '#E8E4DE',
-      titleColor: '#1A1A1A',
-      edgeLabelBackground: '#FEFCF9',
-      fontFamily: 'Courier Prime, monospace',
-      fontSize: '13px'
-    }
-  });
-
-  function showTab(name) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    event.target.classList.add('active');
-  }
+function show(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
 </script>
 </body>
 </html>
