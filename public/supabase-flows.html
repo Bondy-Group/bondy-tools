@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supabase — Flujos de Datos · Bondy</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+<style>
+  :root {
+    --cream: #FEFCF9;
+    --ink: #1A1A1A;
+    --ink-sub: #5A5550;
+    --ink-faint: #9A948E;
+    --green: #4A8C40;
+    --green-light: #e8f5e9;
+    --stone: rgba(244,238,229,0.75);
+    --rule: #E8E4DE;
+    --red-margin: rgba(210,100,80,0.10);
+    --blue-lines: rgba(100,140,200,0.09);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--cream);
+    background-image:
+      repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 31px,
+        var(--blue-lines) 31px,
+        var(--blue-lines) 32px
+      );
+    font-family: 'Courier Prime', monospace;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--cream);
+    border-bottom: 1px solid var(--rule);
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .nav-logo svg { width: 24px; height: 24px; flex-shrink: 0; }
+
+  .nav-wordmark {
+    font-family: 'Special Elite', cursive;
+    font-size: 15px;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+  }
+
+  .nav-title {
+    font-size: 13px;
+    color: var(--ink-sub);
+    letter-spacing: 0.04em;
+  }
+
+  .nav-badge {
+    font-size: 11px;
+    background: var(--green);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.06em;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 64px 40px 40px;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--red-margin);
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: 'Special Elite', cursive;
+    font-size: 42px;
+    line-height: 1.1;
+    color: var(--ink);
+    filter: contrast(1.15) brightness(0.92);
+    margin-bottom: 16px;
+  }
+
+  .hero-sub {
+    font-size: 14px;
+    color: var(--ink-sub);
+    line-height: 1.7;
+    max-width: 560px;
+    margin-bottom: 32px;
+  }
+
+  /* TAB NAV */
+  .tab-nav {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--rule);
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 40px;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    font-family: 'Courier Prime', monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover { color: var(--ink-sub); }
+
+  .tab-btn.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+  }
+
+  /* CONTENT */
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 40px 80px;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* DIAGRAM CARD */
+  .diagram-card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  .diagram-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--stone);
+  }
+
+  .diagram-number {
+    font-family: 'Special Elite', cursive;
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 0.1em;
+  }
+
+  .diagram-title {
+    font-family: 'Special Elite', cursive;
+    font-size: 16px;
+    color: var(--ink);
+  }
+
+  .diagram-body {
+    padding: 32px 24px;
+    overflow-x: auto;
+  }
+
+  /* MERMAID overrides */
+  .mermaid {
+    display: flex;
+    justify-content: center;
+  }
+
+  .mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--rule);
+    background: #fafaf8;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--ink-sub);
+    letter-spacing: 0.04em;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* DESCRIPTION */
+  .desc {
+    font-size: 13px;
+    color: var(--ink-sub);
+    line-height: 1.75;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    border-left: 3px solid var(--green);
+    background: var(--green-light);
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* OVERVIEW TABLE */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: white;
+    border: 1px solid var(--rule);
+    padding: 20px;
+    border-radius: 4px;
+  }
+
+  .stat-number {
+    font-family: 'Special Elite', cursive;
+    font-size: 32px;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--ink-sub);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .stat-note {
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--rule);
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+  }
+
+  .footer-links { display: flex; gap: 20px; }
+  .footer-links a { color: var(--green); text-decoration: none; }
+  .footer-links a:hover { text-decoration: underline; }
+
+  /* UPDATED TAG */
+  .updated-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    background: var(--stone);
+    padding: 4px 10px;
+    border-radius: 2px;
+    border: 1px solid var(--rule);
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="5" width="14" height="12" rx="2.5" fill="#1A1A1A"/>
+      <rect x="22" y="5" width="14" height="12" rx="2.5" fill="#1A1A1A" opacity="0.18"/>
+      <rect x="4" y="22" width="14" height="12" rx="2.5" fill="#1A1A1A" opacity="0.42"/>
+      <rect x="22" y="22" width="14" height="12" rx="2.5" fill="#4A8C40"/>
+    </svg>
+    <span class="nav-wordmark">BONDY</span>
+    <span style="width:1px;height:16px;background:var(--rule);margin:0 4px;"></span>
+    <span class="nav-title">Supabase Docs</span>
+  </a>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span class="updated-tag">↻ 19 mar 2026 — Dana Data</span>
+    <span class="nav-badge">tchppyxhapxtjemxrbqm</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <p class="eyebrow">Documentación técnica · Supabase</p>
+  <h1>Flujos de datos.</h1>
+  <p class="hero-sub">Mapa visual de cómo se alimentan, conectan y usan las 18 tablas del proyecto Supabase de Bondy. Organizado en 4 ecosistemas funcionales.</p>
+  <span class="updated-tag">Mantenido por Dana Data · Se actualiza automáticamente con cada cambio de estructura</span>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('overview')">📊 Resumen</button>
+  <button class="tab-btn" onclick="showTab('leads')">📥 Captación & Leads</button>
+  <button class="tab-btn" onclick="showTab('outreach')">📤 Outreach B2B</button>
+  <button class="tab-btn" onclick="showTab('jobs')">🔍 Jobs & Market Intel</button>
+  <button class="tab-btn" onclick="showTab('tools')">⚙️ Herramientas Internas</button>
+</div>
+
+<div class="content">
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview" class="tab-panel active">
+    <div class="overview-grid">
+      <div class="stat-card">
+        <div class="stat-number">18</div>
+        <div class="stat-label">Tablas totales</div>
+        <div class="stat-note">5 activas con volumen real</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">1.844</div>
+        <div class="stat-label">Jobs scrapeados</div>
+        <div class="stat-note">Desde 6 fuentes, sin duplicados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">198</div>
+        <div class="stat-label">Prospectos B2B</div>
+        <div class="stat-note">149 en draft sin enviar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">11</div>
+        <div class="stat-label">Leads del sitio</div>
+        <div class="stat-note">0 clasificados como real_lead</div>
+      </div>
+    </div>
+
+    <div class="diagram-card">
+      <div class="diagram-header">
+        <span class="diagram-number">MAPA GENERAL</span>
+        <span class="diagram-title">Ecosistema Supabase — Bondy</span>
+      </div>
+      <div class="diagram-body">
+        <div class="mermaid">
+flowchart TB
+  subgraph CAP["📥 Captación"]
+    CL["contact_leads"]
+    REF["referrals"]
+    JA["job_applications"]
+  end
+  subgraph OUT["📤 Outreach B2B"]
+    OC["outreach_contacts"]
+    WL["warm_leads"]
+    INT["Interactions"]
+  end
+  subgraph MKT["🔍 Market Intel"]
+    JB["jobs"]
+    MS["market_signals"]
+  end
+  subgraph TOOLS["⚙️ Herramientas"]
+    CAND["candidates"]
+    SP["sourcing_pipeline"]
+    CLI["clients"]
+    SC["client_scorecards"]
+    IV["interviews"]
+    IR["interview_reports"]
+  end
+  subgraph MIRROR["⚠️ Airtable Mirror"]
+    ACC["Accounts"]
+    OPP["Opportunities"]
+    CON["Contacts"]
+  end
+
+  WEB["🌐 wearebondy.com"] --> CL & REF & JA
+  APOLLO["Apollo.io"] --> OC
+  SCRAPER["🤖 Scraper"] --> JB
+  JB -->|"FK job_id"| MS
+  OC -->|"FK"| WL
+  WL -->|"manual"| OPP
+  CAND -->|"FK"| SP
+  CLI -->|"FK"| SC
+  SC -->|"FK"| IV
+  IV -->|"FK"| IR
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAPTACIÓN -->
+  <div id="tab-leads" class="tab-panel">
+    <p class="desc">Tres tablas capturan entradas desde el sitio web. Cada formulario tiene su propia tabla. El flujo crítico es <strong>contact_leads</strong>: todo lead entra como <code>unclassified</code> y requiere clasificación manual antes de ser trabajado comercialmente.</p>
+
+    <div class="diagram-card">
+      <div class="diagram-header">
+        <span class="diagram-number">FLUJO 01</span>
+        <span class="diagram-title">Captación & Leads del Sitio</span>
+      </div>
+      <div class="diagram-body">
+        <div class="mermaid">
+flowchart LR
+  subgraph SITE["🌐 wearebondy.com"]
+    F1["/contacto\nform"]
+    F2["/referrals\nform"]
+    F3["/aplicar\nform"]
+  end
+
+  subgraph SB["🗄️ Supabase"]
+    CL[("contact_leads\n11 registros")]
+    REF[("referrals\n1 registro")]
+    JA[("job_applications\n1 registro")]
+  end
+
+  subgraph CLAS["🏷️ Clasificación"]
+    direction TB
+    RL["real_lead ✅"]
+    JS["job_seeker"]
+    SP["spam ❌"]
+    UC["unclassified ⏳"]
+  end
+
+  subgraph DEST["⬇️ Destino"]
+    AT["Airtable\nOpportunities"]
+    BRUNO["Bruno Comercial"]
+    DESC["Descartado"]
+  end
+
+  F1 -->|"POST auto"| CL
+  F2 -->|"POST auto"| REF
+  F3 -->|"POST auto"| JA
+
+  CL -->|"Mara / Dana\nclasifican"| CLAS
+
+  RL -->|"activa"| AT
+  RL --> BRUNO
+  JS --> DESC
+  SP --> DESC
+  UC -->|"pendiente\nrevisión"| CLAS
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#4A8C40"></div>real_lead → acción comercial</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div>unclassified → requiere revisión</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e57373"></div>spam / job_seeker → descartado</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUTREACH -->
+  <div id="tab-outreach" class="tab-panel">
+    <p class="desc">El pipeline B2B más activo del sistema. El agente de prospecting matutino alimenta <strong>outreach_contacts</strong> con leads enriquecidos de Apollo. Mara revisa los drafts y decide qué enviar. Las respuestas positivas suben a <strong>warm_leads</strong> y eventualmente a Airtable.</p>
+
+    <div class="diagram-card">
+      <div class="diagram-header">
+        <span class="diagram-number">FLUJO 02</span>
+        <span class="diagram-title">Outreach B2B — Pipeline Completo</span>
+      </div>
+      <div class="diagram-body">
+        <div class="mermaid">
+flowchart TD
+  subgraph FUENTES["🔍 Fuentes"]
+    APOLLO["Apollo.io\nenriquecimiento"]
+    WEB["Web Research"]
+    GOB["GetOnBoard\nroles abiertos"]
+  end
+
+  subgraph AGENTE["🤖 Morning Prospecting Agent"]
+    Q["Consulta Supabase\nbusca sin contacto reciente"]
+    E["Enriquece contactos\nvía Apollo"]
+    I["Investiga empresa"]
+    D["Genera draft\npersonalizado"]
+  end
+
+  subgraph SB["🗄️ Supabase"]
+    OC[("outreach_contacts\n198 registros")]
+    WL[("warm_leads\n0 registros")]
+  end
+
+  subgraph PIPELINE["📊 Estados del Pipeline"]
+    direction LR
+    S1["draft\n149"] --> S2["sent\n18"] --> S3["opened"] --> S4["replied\n3"]
+    S2 --> S6["follow_up\n26"]
+    S4 -->|"positivo"| WL2["→ warm_lead"]
+    S4 -->|"negativo"| S7["bounced /\nopted_out"]
+  end
+
+  subgraph DEST["⬇️ Conversión"]
+    GMAIL["Draft Gmail\nMara revisa"]
+    NOTION["Tarea Notion"]
+    AT["Airtable Opportunities\nsi convierte"]
+  end
+
+  APOLLO & WEB & GOB --> AGENTE
+  Q --> E --> I --> D
+  D -->|"INSERT"| OC
+  D --> GMAIL
+  D --> NOTION
+  OC --> S1
+  WL2 --> WL
+  WL -->|"Mara promueve"| AT
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Automatizado por agente</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div>Revisión manual de Mara</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4A8C40"></div>Conversión a Airtable</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOBS -->
+  <div id="tab-jobs" class="tab-panel">
+    <p class="desc">El scraper automático recolecta ofertas tech de 6 fuentes externas. La constraint <code>source_url UNIQUE</code> garantiza que no haya duplicados. Los datos alimentan el producto <strong>Market Signals</strong> en tools.wearebondy.com.</p>
+
+    <div class="diagram-card">
+      <div class="diagram-header">
+        <span class="diagram-number">FLUJO 03</span>
+        <span class="diagram-title">Jobs & Market Intelligence</span>
+      </div>
+      <div class="diagram-body">
+        <div class="mermaid">
+flowchart LR
+  subgraph SCRAPER["🤖 Scraper Automático — bondy-job-scraper"]
+    G["GetOnBoard"]
+    Y["YC Companies"]
+    R["Remotive"]
+    H["Himalayas"]
+    W["WeWorkRemotely"]
+    GH["Greenhouse"]
+  end
+
+  subgraph SB["🗄️ Supabase"]
+    JB[("jobs\n1.844 registros\nsource_url UNIQUE")]
+    MS[("market_signals\n472 registros")]
+  end
+
+  subgraph PROD["💻 tools.wearebondy.com/market-signals"]
+    FILTROS["Filtros:\ntecnología · seniority\nmodalidad · país"]
+    TABLA["Tabla de tendencias"]
+  end
+
+  subgraph USO["👥 Usuarios"]
+    REC["Recruiters"]
+    CLI["Clientes Bondy"]
+    DAN["Dana Data"]
+  end
+
+  G & Y & R & H & W & GH -->|"scraping diario"| JB
+  JB -->|"FK job_id"| MS
+  JB & MS --> PROD
+  FILTROS --> TABLA
+  TABLA --> REC & CLI & DAN
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Automatizado · sin intervención manual</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4A8C40"></div>source_url UNIQUE → 0 duplicados</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLS -->
+  <div id="tab-tools" class="tab-panel">
+    <p class="desc">El ecosistema de herramientas internas para recruiters. <strong>Rex</strong> es el bot de Slack que usa <code>sourcing_pipeline</code> como contexto para responder preguntas. Las tablas de <code>interviews</code> e <code>interview_reports</code> están creadas pero aún sin datos — son el próximo gran producto.</p>
+
+    <div class="diagram-card">
+      <div class="diagram-header">
+        <span class="diagram-number">FLUJO 04</span>
+        <span class="diagram-title">Herramientas Internas & Rex</span>
+      </div>
+      <div class="diagram-body">
+        <div class="mermaid">
+flowchart TD
+  subgraph INPUT["📥 Inputs"]
+    AT["Airtable\nBase General\n40k+ candidatos"]
+    LI["LinkedIn\nsourcing manual"]
+    SLACK_IN["Recruiter → Rex\npor DM en Slack"]
+  end
+
+  subgraph REX["🤖 Rex · tools.wearebondy.com/api/rex"]
+    VER["Verifica\nfirma Slack"]
+    CTX["Lee contexto de\nsourcing_pipeline"]
+    CL["Claude API\ngenera respuesta"]
+    REP["Responde\nal recruiter"]
+  end
+
+  subgraph SB["🗄️ Supabase — Herramientas"]
+    CAND[("candidates\n8 perfiles\nairtable_id = link")]
+    SP[("sourcing_pipeline\n8 registros")]
+    CLI[("clients\n1")]
+    SC[("client_scorecards\n1")]
+    IV[("interviews\n🏗️ en construcción")]
+    IR[("interview_reports\n🏗️ en construcción")]
+    QB[("question_bank\n🏗️ en construcción")]
+  end
+
+  subgraph TOOLS["💻 tools.wearebondy.com"]
+    DASH["Dashboard\nrecruiters"]
+    SCORE["Scorecard\nde entrevista"]
+    REPORT["Reporte IA\npara cliente"]
+  end
+
+  AT -->|"airtable_id"| CAND
+  LI -->|"carga manual"| CAND
+  CAND -->|"FK candidate_supabase_id"| SP
+
+  SLACK_IN --> VER --> CTX
+  CTX -->|"lee"| SP
+  SP --> CL --> REP
+
+  CLI -->|"FK client_id"| SC
+  SC -->|"FK scorecard_id"| IV
+  IV -->|"FK interview_report_id"| IR
+  QB --> SCORE
+
+  SP & CAND --> DASH
+  SC --> SCORE --> REPORT --> IR
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Rex — bot activo en Slack</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4A8C40"></div>Tablas activas</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#9A948E"></div>🏗️ Tablas creadas, sin datos aún</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>© 2026 Bondy Group · Uso interno</span>
+  <div class="footer-links">
+    <a href="https://www.notion.so/328357974ab2817689d6e744c78a0866" target="_blank">Notion Docs</a>
+    <a href="https://tchppyxhapxtjemxrbqm.supabase.co" target="_blank">Supabase Console</a>
+    <a href="https://tools.wearebondy.com" target="_blank">tools.wearebondy.com</a>
+  </div>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#e8f5e9',
+      primaryTextColor: '#1A1A1A',
+      primaryBorderColor: '#4A8C40',
+      lineColor: '#5A5550',
+      secondaryColor: '#FEFCF9',
+      tertiaryColor: '#fff8e1',
+      background: '#ffffff',
+      mainBkg: '#e8f5e9',
+      nodeBorder: '#4A8C40',
+      clusterBkg: '#FEFCF9',
+      clusterBorder: '#E8E4DE',
+      titleColor: '#1A1A1A',
+      edgeLabelBackground: '#FEFCF9',
+      fontFamily: 'Courier Prime, monospace',
+      fontSize: '13px'
+    }
+  });
+
+  function showTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>
