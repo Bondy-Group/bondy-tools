@@ -53,7 +53,7 @@ async function getActiveSearchContext(recruiterEmail) {
   let query = supabase
     .from('sourcing_pipeline')
     .select(
-      'full_name, current_title, current_company, tier, status, job_title, client_name, tech_stack, years_exp, linkedin_url, email, updated_at, rejection_reason, recruiter_email'
+      'full_name, current_title, current_company, tier, status, job_title, client_name, tech_stack, years_exp, linkedin_url, email, updated_at, recruiter_email'
     )
     .in('status', [
       'sourced', 'contacted', 'follow_up_1', 'follow_up_2',
