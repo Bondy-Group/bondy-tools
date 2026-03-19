@@ -391,21 +391,21 @@
       <div class="diagram-body">
         <div class="mermaid">
 flowchart TB
-  subgraph CAP["📥 Captación"]
+  subgraph CAP["CAPTACION"]
     CL["contact_leads"]
     REF["referrals"]
     JA["job_applications"]
   end
-  subgraph OUT["📤 Outreach B2B"]
+  subgraph OUT["OUTREACH B2B"]
     OC["outreach_contacts"]
     WL["warm_leads"]
     INT["Interactions"]
   end
-  subgraph MKT["🔍 Market Intel"]
+  subgraph MKT["MARKET INTEL"]
     JB["jobs"]
     MS["market_signals"]
   end
-  subgraph TOOLS["⚙️ Herramientas"]
+  subgraph TOOLS["HERRAMIENTAS INTERNAS"]
     CAND["candidates"]
     SP["sourcing_pipeline"]
     CLI["clients"]
@@ -413,15 +413,17 @@ flowchart TB
     IV["interviews"]
     IR["interview_reports"]
   end
-  subgraph MIRROR["⚠️ Airtable Mirror"]
+  subgraph MIRROR["AIRTABLE MIRROR"]
     ACC["Accounts"]
     OPP["Opportunities"]
     CON["Contacts"]
   end
 
-  WEB["🌐 wearebondy.com"] --> CL & REF & JA
+  WEB["wearebondy.com"] --> CL
+  WEB --> REF
+  WEB --> JA
   APOLLO["Apollo.io"] --> OC
-  SCRAPER["🤖 Scraper"] --> JB
+  SCRAPER["Scraper automatico"] --> JB
   JB -->|"FK job_id"| MS
   OC -->|"FK"| WL
   WL -->|"manual"| OPP
@@ -446,28 +448,28 @@ flowchart TB
       <div class="diagram-body">
         <div class="mermaid">
 flowchart LR
-  subgraph SITE["🌐 wearebondy.com"]
-    F1["/contacto\nform"]
-    F2["/referrals\nform"]
-    F3["/aplicar\nform"]
+  subgraph SITE["wearebondy.com"]
+    F1["/contacto"]
+    F2["/referrals"]
+    F3["/aplicar"]
   end
 
-  subgraph SB["🗄️ Supabase"]
+  subgraph SB["Supabase"]
     CL[("contact_leads\n11 registros")]
     REF[("referrals\n1 registro")]
     JA[("job_applications\n1 registro")]
   end
 
-  subgraph CLAS["🏷️ Clasificación"]
+  subgraph CLAS["Clasificacion"]
     direction TB
-    RL["real_lead ✅"]
+    RL["real_lead"]
     JS["job_seeker"]
-    SP["spam ❌"]
-    UC["unclassified ⏳"]
+    SP["spam"]
+    UC["unclassified"]
   end
 
-  subgraph DEST["⬇️ Destino"]
-    AT["Airtable\nOpportunities"]
+  subgraph DEST["Destino"]
+    AT["Airtable Opportunities"]
     BRUNO["Bruno Comercial"]
     DESC["Descartado"]
   end
@@ -476,13 +478,13 @@ flowchart LR
   F2 -->|"POST auto"| REF
   F3 -->|"POST auto"| JA
 
-  CL -->|"Mara / Dana\nclasifican"| CLAS
+  CL -->|"Mara o Dana\nclasifican"| CLAS
 
-  RL -->|"activa"| AT
+  RL --> AT
   RL --> BRUNO
   JS --> DESC
   SP --> DESC
-  UC -->|"pendiente\nrevisión"| CLAS
+  UC -->|"pendiente"| CLAS
         </div>
       </div>
       <div class="legend">
@@ -505,39 +507,41 @@ flowchart LR
       <div class="diagram-body">
         <div class="mermaid">
 flowchart TD
-  subgraph FUENTES["🔍 Fuentes"]
-    APOLLO["Apollo.io\nenriquecimiento"]
+  subgraph FUENTES["Fuentes"]
+    APOLLO["Apollo.io"]
     WEB["Web Research"]
-    GOB["GetOnBoard\nroles abiertos"]
+    GOB["GetOnBoard"]
   end
 
-  subgraph AGENTE["🤖 Morning Prospecting Agent"]
+  subgraph AGENTE["Agente Morning Prospecting"]
     Q["Consulta Supabase\nbusca sin contacto reciente"]
-    E["Enriquece contactos\nvía Apollo"]
+    E["Enriquece contactos\nvia Apollo"]
     I["Investiga empresa"]
     D["Genera draft\npersonalizado"]
   end
 
-  subgraph SB["🗄️ Supabase"]
+  subgraph SB["Supabase"]
     OC[("outreach_contacts\n198 registros")]
     WL[("warm_leads\n0 registros")]
   end
 
-  subgraph PIPELINE["📊 Estados del Pipeline"]
+  subgraph PIPELINE["Estados del Pipeline"]
     direction LR
     S1["draft\n149"] --> S2["sent\n18"] --> S3["opened"] --> S4["replied\n3"]
     S2 --> S6["follow_up\n26"]
-    S4 -->|"positivo"| WL2["→ warm_lead"]
-    S4 -->|"negativo"| S7["bounced /\nopted_out"]
+    S4 -->|"positivo"| WL2["warm_lead"]
+    S4 -->|"negativo"| S7["bounced u\nopted_out"]
   end
 
-  subgraph DEST["⬇️ Conversión"]
+  subgraph DEST["Conversion"]
     GMAIL["Draft Gmail\nMara revisa"]
     NOTION["Tarea Notion"]
-    AT["Airtable Opportunities\nsi convierte"]
+    AT["Airtable Opportunities"]
   end
 
-  APOLLO & WEB & GOB --> AGENTE
+  APOLLO --> AGENTE
+  WEB --> AGENTE
+  GOB --> AGENTE
   Q --> E --> I --> D
   D -->|"INSERT"| OC
   D --> GMAIL
@@ -567,7 +571,7 @@ flowchart TD
       <div class="diagram-body">
         <div class="mermaid">
 flowchart LR
-  subgraph SCRAPER["🤖 Scraper Automático — bondy-job-scraper"]
+  subgraph SCRAPER["Scraper Automatico - bondy-job-scraper"]
     G["GetOnBoard"]
     Y["YC Companies"]
     R["Remotive"]
@@ -576,27 +580,35 @@ flowchart LR
     GH["Greenhouse"]
   end
 
-  subgraph SB["🗄️ Supabase"]
-    JB[("jobs\n1.844 registros\nsource_url UNIQUE")]
+  subgraph SB["Supabase"]
+    JB[("jobs\n1844 registros\nsource_url UNIQUE")]
     MS[("market_signals\n472 registros")]
   end
 
-  subgraph PROD["💻 tools.wearebondy.com/market-signals"]
-    FILTROS["Filtros:\ntecnología · seniority\nmodalidad · país"]
+  subgraph PROD["tools.wearebondy.com/market-signals"]
+    FILTROS["Filtros:\ntecnologia, seniority\nmodalidad, pais"]
     TABLA["Tabla de tendencias"]
   end
 
-  subgraph USO["👥 Usuarios"]
+  subgraph USO["Usuarios"]
     REC["Recruiters"]
     CLI["Clientes Bondy"]
     DAN["Dana Data"]
   end
 
-  G & Y & R & H & W & GH -->|"scraping diario"| JB
+  G -->|"scraping diario"| JB
+  Y -->|"scraping diario"| JB
+  R -->|"scraping diario"| JB
+  H -->|"scraping diario"| JB
+  W -->|"scraping diario"| JB
+  GH -->|"scraping diario"| JB
   JB -->|"FK job_id"| MS
-  JB & MS --> PROD
+  JB --> PROD
+  MS --> PROD
   FILTROS --> TABLA
-  TABLA --> REC & CLI & DAN
+  TABLA --> REC
+  TABLA --> CLI
+  TABLA --> DAN
         </div>
       </div>
       <div class="legend">
@@ -618,30 +630,30 @@ flowchart LR
       <div class="diagram-body">
         <div class="mermaid">
 flowchart TD
-  subgraph INPUT["📥 Inputs"]
+  subgraph INPUT["Inputs"]
     AT["Airtable\nBase General\n40k+ candidatos"]
     LI["LinkedIn\nsourcing manual"]
-    SLACK_IN["Recruiter → Rex\npor DM en Slack"]
+    SLACK_IN["Recruiter escribe a Rex\npor DM en Slack"]
   end
 
-  subgraph REX["🤖 Rex · tools.wearebondy.com/api/rex"]
+  subgraph REX["Rex - tools.wearebondy.com/api/rex"]
     VER["Verifica\nfirma Slack"]
     CTX["Lee contexto de\nsourcing_pipeline"]
     CL["Claude API\ngenera respuesta"]
     REP["Responde\nal recruiter"]
   end
 
-  subgraph SB["🗄️ Supabase — Herramientas"]
-    CAND[("candidates\n8 perfiles\nairtable_id = link")]
+  subgraph SB["Supabase - Herramientas"]
+    CAND[("candidates\n8 perfiles")]
     SP[("sourcing_pipeline\n8 registros")]
     CLI[("clients\n1")]
     SC[("client_scorecards\n1")]
-    IV[("interviews\n🏗️ en construcción")]
-    IR[("interview_reports\n🏗️ en construcción")]
-    QB[("question_bank\n🏗️ en construcción")]
+    IV[("interviews\nen construccion")]
+    IR[("interview_reports\nen construccion")]
+    QB[("question_bank\nen construccion")]
   end
 
-  subgraph TOOLS["💻 tools.wearebondy.com"]
+  subgraph TOOLS["tools.wearebondy.com"]
     DASH["Dashboard\nrecruiters"]
     SCORE["Scorecard\nde entrevista"]
     REPORT["Reporte IA\npara cliente"]
@@ -650,17 +662,15 @@ flowchart TD
   AT -->|"airtable_id"| CAND
   LI -->|"carga manual"| CAND
   CAND -->|"FK candidate_supabase_id"| SP
-
   SLACK_IN --> VER --> CTX
   CTX -->|"lee"| SP
   SP --> CL --> REP
-
   CLI -->|"FK client_id"| SC
   SC -->|"FK scorecard_id"| IV
   IV -->|"FK interview_report_id"| IR
   QB --> SCORE
-
-  SP & CAND --> DASH
+  SP --> DASH
+  CAND --> DASH
   SC --> SCORE --> REPORT --> IR
         </div>
       </div>
