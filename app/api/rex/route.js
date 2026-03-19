@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@supabase/supabase-js'
 
 // Aumentar el tiempo límite de la función a 60s
 export const maxDuration = 60
@@ -9,14 +8,31 @@ export const maxDuration = 60
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN
 const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 
 const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY })
+const SUPABASE_URL = 'https://tchppyxhapxtjemxrbqm.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjaHBweXhoYXB4dGplbXhyYnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzE5NTUsImV4cCI6MjA4NzUwNzk1NX0.GwH_UZV_62cOkd8x1UknkajQVk1eDosLL0DkV8hsjhw'
-const supabase = createClient(
-  'https://tchppyxhapxtjemxrbqm.supabase.co',
-  SUPABASE_ANON_KEY
-)
+
+// Supabase REST helper — sin dependencia de supabase-js
+async function supabaseQuery(table, filters = {}) {
+  const params = new URLSearchParams({ select: '*' })
+  for (const [k, v] of Object.entries(filters)) {
+    if (Array.isArray(v)) params.append(`${k}`, `in.(${v.join(',')})`)
+    else params.append(k, `eq.${v}`)
+  }
+  params.append('order', 'updated_at.desc')
+  const res = await fetch(\`\${SUPABASE_URL}/rest/v1/\${table}?\${params}\`, {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: \`Bearer \${SUPABASE_ANON_KEY}\`,
+    },
+  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(\`\${res.status} \${res.statusText} - \${err}\`)
+  }
+  return res.json()
+}
 
 // Set en memoria para deduplicar reintentos de Slack
 const processedEvents = new Set()
@@ -53,32 +69,36 @@ const FULL_ACCESS_EMAILS = ['mara@schmitman.com', 'mara@wearebondy.com']
 async function getActiveSearchContext(recruiterEmail) {
   const isFullAccess = FULL_ACCESS_EMAILS.includes(recruiterEmail?.toLowerCase())
 
-  let query = supabase
-    .from('sourcing_pipeline')
-    .select(
-      'full_name, current_title, current_company, tier, status, job_title, client_name, tech_stack, years_exp, linkedin_url, email, updated_at, recruiter_email'
-    )
-    .in('status', [
-      'sourced', 'contacted', 'follow_up_1', 'follow_up_2',
-      'replied_positive', 'shortlisted', 'interview_scheduled',
-    ])
-    .order('updated_at', { ascending: false })
+  const ACTIVE_STATUSES = ['sourced','contacted','follow_up_1','follow_up_2','replied_positive','shortlisted','interview_scheduled']
 
-  if (!isFullAccess) {
-    query = query.eq('recruiter_email', recruiterEmail)
-  }
+  try {
+    const params = new URLSearchParams()
+    params.append('select', 'full_name,current_title,current_company,tier,status,job_title,client_name,tech_stack,years_exp,linkedin_url,email,updated_at,recruiter_email')
+    params.append('status', `in.(${ACTIVE_STATUSES.join(',')})`)
+    params.append('order', 'updated_at.desc')
+    if (!isFullAccess) {
+      params.append('recruiter_email', `eq.${recruiterEmail}`)
+    }
 
-  const { data, error } = await query
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/sourcing_pipeline?${params}`, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    })
 
-  if (error) {
-    return `Error al consultar Supabase: ${error.message}`
-  }
+    if (!res.ok) {
+      const err = await res.text()
+      return `Error al consultar Supabase: ${res.status} ${res.statusText} - ${err}`
+    }
 
-  if (!data || data.length === 0) {
-    return isFullAccess
-      ? 'El pipeline está vacío — no hay candidatos activos en este momento.'
-      : `No hay candidatos activos asignados a ${recruiterEmail} en este momento.`
-  }
+    const data = await res.json()
+
+    if (!data || data.length === 0) {
+      return isFullAccess
+        ? 'El pipeline está vacío — no hay candidatos activos en este momento.'
+        : `No hay candidatos activos asignados a ${recruiterEmail} en este momento.`
+    }
 
   // Agrupar por búsqueda
   const grouped = data.reduce((acc, c) => {
