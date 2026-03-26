@@ -42,7 +42,7 @@ const quizSchema = z.object({
   email:         z.string().email('A valid email is required'),
   role:          z.string().optional(),
   companySize:   z.string().min(1, 'Company size is required'),
-  industry:      z.string().optional(),
+  industry:      z.array(z.string()).max(3).optional(),
 
   // Step 2 — Work style & autonomy
   autonomyLevel:      z.number().int().min(1).max(5),
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
         email:            validated.email,
         role:             validated.role      || null,
         company_size:     validated.companySize,
-        industry:         validated.industry  || null,
+        industry:         validated.industry?.join(', ') || null,
         raw_answers:      validated,
         cultural_profile: culturalProfile,
         free_text_notes:  validated.freeTextNotes || null,
