@@ -100,7 +100,7 @@ const resources = [
     description: 'Capturá perfiles de LinkedIn directamente en tu flujo de trabajo. Descargá e instalá con el instructivo.',
     cta: 'Descargar',
     available: true,
-    internal: true,
+    href: '/internal/chrome-extension',
   },
   {
     id: 'interview-hub',
