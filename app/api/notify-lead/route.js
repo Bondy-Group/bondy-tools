@@ -50,7 +50,7 @@ async function updateAccessToken(email, accessToken) {
   })
 }
 
-async function sendEmail(accessToken, to, subject, htmlBody, fromEmail) {
+async function buildRawEmail(to, subject, htmlBody, fromEmail) {
   const emailLines = [
     `From: Bondy Leads <${fromEmail}>`,
     `To: ${to}`,
@@ -60,22 +60,47 @@ async function sendEmail(accessToken, to, subject, htmlBody, fromEmail) {
     '',
     htmlBody,
   ]
-  const raw = Buffer.from(emailLines.join('\r\n')).toString('base64url')
+  return Buffer.from(emailLines.join('\r\n')).toString('base64url')
+}
 
-  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+// Crea un draft y luego lo envía (funciona con gmail.compose scope)
+async function sendEmail(accessToken, to, subject, htmlBody, fromEmail) {
+  const raw = await buildRawEmail(to, subject, htmlBody, fromEmail)
+
+  // Paso 1: crear el draft
+  const draftRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ raw }),
+    body: JSON.stringify({ message: { raw } }),
   })
 
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error('Gmail send error: ' + err)
+  if (!draftRes.ok) {
+    const err = await draftRes.text()
+    throw new Error('Gmail draft creation error: ' + err)
   }
-  return res.json()
+
+  const draft = await draftRes.json()
+  const draftId = draft.id
+
+  // Paso 2: enviar el draft
+  const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts/send', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id: draftId }),
+  })
+
+  if (!sendRes.ok) {
+    const err = await sendRes.text()
+    throw new Error('Gmail draft send error: ' + err)
+  }
+
+  return sendRes.json()
 }
 
 function buildEmailHtml(lead) {
