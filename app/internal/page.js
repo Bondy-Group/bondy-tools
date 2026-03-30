@@ -80,6 +80,17 @@ const IconSignals = () => (
   </svg>
 )
 
+const IconIntelligence = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+    <rect x="5" y="28" width="6" height="8" rx="1" stroke="#4A8C40" strokeWidth="1.5"/>
+    <rect x="13" y="20" width="6" height="16" rx="1" stroke="#4A8C40" strokeWidth="1.5"/>
+    <rect x="21" y="12" width="6" height="24" rx="1" stroke="#4A8C40" strokeWidth="1.5"/>
+    <rect x="29" y="6" width="6" height="30" rx="1" fill="rgba(74,140,64,0.15)" stroke="#4A8C40" strokeWidth="1.5"/>
+    <circle cx="32" cy="6" r="3" fill="#4A8C40"/>
+    <path d="M7 22 L16 16 L24 10 L32 6" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
+
 const IconBruno = () => (
   <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
     <rect x="5" y="8" width="30" height="20" rx="3" stroke="#4A8C40" strokeWidth="1.5"/>
@@ -144,6 +155,16 @@ const resources = [
     cta: 'Abrir Bruno',
     available: true,
     href: '/internal/lead-analyzer',
+  },
+  {
+    id: 'intelligence',
+    number: '07',
+    icon: <IconIntelligence />,
+    title: 'Bondy Intelligence',
+    description: 'Panel unificado: historial de candidatos y clientes, performance del equipo, búsqueda y campañas. Master DB en vivo.',
+    cta: 'Abrir panel',
+    available: true,
+    href: '/internal/intelligence',
   },
   {
     id: 'library',
@@ -358,3 +379,4 @@ function AssistantTabs({ isAdmin }) {
     </div>
   )
 }
+
