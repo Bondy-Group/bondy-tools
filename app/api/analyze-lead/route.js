@@ -7,17 +7,35 @@ const SYSTEM_PROMPT = `Sos Bruno Comercial, el agente de outreach B2B de Bondy G
 
 Tu tarea es ejecutar el workflow completo de análisis de un lead comercial. Respondé en español. Los emails de outreach van en inglés para empresas US/globales y en español para empresas argentinas.
 
-## ICP de Bondy
-- Tamaño: 51–500 empleados (flexible con señales fuertes)
-- Etapa: Serie A a Serie C, equity-backed
-- Industria: fintech, SaaS, AI/ML, ciberseguridad, healthtech
-- Modelo: remote-friendly, contratando en LATAM/Argentina
-- Señales: job postings activos de engineering
+## ICP de Bondy — Industrias válidas
+- **Core:** fintech, SaaS, AI/ML, ciberseguridad, healthtech
+- **También válidas si tienen área tech activa contratando:**
+  - Travel / hospitality / turismo (ej: Despegar fue cliente histórico)
+  - E-commerce / marketplace
+  - Logística / supply chain tech
+  - Medios / entretenimiento digital
+  - Cualquier empresa con equipo de ingeniería > 10 personas contratando activamente en LATAM
+- **Criterio clave:** lo que define el fit NO es la industria sino si tienen un área de Engineering/Tech/Data contratando activamente
+
+## ICP — Otros criterios
+- Tamaño: 51–500 empleados (flexible con señales fuertes de contratación)
+- Etapa: Serie A a Serie C, equity-backed (o empresa establecida con historial)
+- Modelo: remote-friendly, contratando en Argentina/LATAM
+- Señales: job postings activos de engineering, crecimiento de headcount
+
+## Clientes históricos de Bondy — elevan el score de "facilidad de cierre"
+Si la empresa o una empresa muy similar aparece en esta lista, subí el score de facilidad de cierre y mencionalo en el análisis:
+Despegar, Newfront, Elementum AI (ex-Elementum SCM), SOUTHWORKS, Siena AI, Clara, Carda Health,
+Ripio, Improvado, Uberall, Launch Potato, Tenjin, Unicity, dLocal, Bitso, Checkr, Emi Labs,
+Sardine AI, Turismocity, Frávega, Workast/Brainner, Code54, Numia (ex-DebMedia), Inclufin,
+Healthatom, Cumplo, La Nación Digital, Globant, Despegar.com, OLX, Mercado Libre (áreas específicas),
+Taringa, Auth0, Medallia, Mulesoft.
 
 ## Reglas de descarte automático
-- redbee → SIEMPRE descartar (competidor directo)
-- IT consulting / staffing firms → descartar
+- redbee → SIEMPRE descartar (competidor directo, nunca contactar)
+- IT consulting / staffing / nearshore firms → descartar
 - Empresas sin equity (solo deuda) → descartar
+- Empresas con < 10 personas en engineering → descartar salvo señal muy fuerte
 
 ## Workflow (ejecutá cada paso en orden)
 
@@ -84,7 +102,7 @@ Buscá en LinkedIn o fuentes públicas. Inferí el email con el patrón del domi
 
 export async function POST(request) {
   try {
-    const { input, context, type } = await request.json()
+    const { input, context, type, userContext } = await request.json()
 
     if (!input?.trim()) {
       return new Response(JSON.stringify({ error: 'Input requerido' }), {
@@ -112,10 +130,23 @@ export async function POST(request) {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     })
 
+    const contextBlock = [
+      context ? `**Contexto adicional:** ${context}` : '',
+      userContext ? `**⚠️ Contexto crítico ingresado por Mara/Lucía (PRIORIDAD MÁXIMA):** ${userContext}` : '',
+    ].filter(Boolean).join('\n')
+
+    const contextBlock = [
+      context ? `**Contexto adicional:** ${context}` : '',
+      userContext ? `**⚠️ Contexto crítico ingresado por Mara/Lucía (PRIORIDAD MÁXIMA):** ${userContext}` : '',
+    ].filter(Boolean).join('\n')
+
     const userMessage = `Analizá este lead para Bondy:
 
 **Tipo de análisis:** ${typeLabels[type] || 'empresa nueva'}
-**Input:** ${input}${context ? `\n**Contexto adicional:** ${context}` : ''}
+**Input:** ${input}
+${contextBlock}
+
+IMPORTANTE: Si hay un "Contexto crítico", tomalo como información verificada por Mara y ajustá el análisis en consecuencia. Por ejemplo, si dice "fue cliente histórico", subí el score de facilidad de cierre. Si dice "tengo una call activa con ellos", la decisión debe ser GO salvo que haya un bloqueante absoluto.
 
 Ejecutá el workflow completo: research web, roles abiertos, scoring ICP, identificación de contacto y draft de email si corresponde.
 Hoy es ${today}.`

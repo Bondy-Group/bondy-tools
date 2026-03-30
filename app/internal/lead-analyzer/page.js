@@ -135,9 +135,10 @@ function renderMarkdown(md) {
 
 export default function LeadAnalyzerPage() {
   const { data: session } = useSession()
-  const [input, setInput]     = useState('')
-  const [context, setContext] = useState('')
-  const [type, setType]       = useState('new')
+  const [input, setInput]         = useState('')
+  const [context, setContext]     = useState('')
+  const [userContext, setUserContext] = useState('')
+  const [type, setType]           = useState('new')
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState('')
   const [history, setHistory] = useState([])
@@ -179,7 +180,7 @@ export default function LeadAnalyzerPage() {
       const res = await fetch('/api/analyze-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: input.trim(), context: context.trim(), type }),
+        body: JSON.stringify({ input: input.trim(), context: context.trim(), type, userContext: userContext.trim() }),
         signal: abortRef.current.signal,
       })
 
@@ -366,6 +367,29 @@ export default function LeadAnalyzerPage() {
               style={{
                 width: '100%', background: tw.white,
                 border: `1px solid ${tw.rule}`, borderRadius: '3px',
+                padding: '9px 10px', fontFamily: mono, fontSize: '12px',
+                color: tw.inkMid, resize: 'none', lineHeight: 1.55,
+                outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          {/* ⚠️ Lo que yo sé y Bruno no */}
+          <div style={{ padding: '14px 16px', borderBottom: `1px solid #e8d98a`, background: '#fffdf0' }}>
+            <div style={{ fontFamily: mono, fontSize: '8.5px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#b08a20', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span>⚠️</span> Lo que yo sé y Bruno no
+            </div>
+            <div style={{ fontFamily: mono, fontSize: '10px', color: '#9a7a20', marginBottom: '7px', lineHeight: 1.5 }}>
+              Bruno lo toma como dato verificado y ajusta el análisis.
+            </div>
+            <textarea
+              rows={3}
+              placeholder={'Ej: "Despegar fue cliente de Bondy. Tengo call con su Head of Talent la semana que viene. Travel/hospitality con tech es válido para nosotros."'}
+              value={userContext}
+              onChange={e => setUserContext(e.target.value)}
+              style={{
+                width: '100%', background: '#fffef5',
+                border: '1px solid #e8d98a', borderRadius: '3px',
                 padding: '9px 10px', fontFamily: mono, fontSize: '12px',
                 color: tw.inkMid, resize: 'none', lineHeight: 1.55,
                 outline: 'none', boxSizing: 'border-box',
