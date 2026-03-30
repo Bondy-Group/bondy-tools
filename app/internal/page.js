@@ -80,6 +80,19 @@ const IconSignals = () => (
   </svg>
 )
 
+const IconBruno = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+    <rect x="5" y="8" width="30" height="20" rx="3" stroke="#4A8C40" strokeWidth="1.5"/>
+    <circle cx="14" cy="18" r="3" fill="#4A8C40" opacity="0.3"/>
+    <circle cx="14" cy="18" r="1.5" fill="#4A8C40"/>
+    <line x1="20" y1="14" x2="30" y2="14" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round"/>
+    <line x1="20" y1="18" x2="30" y2="18" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round"/>
+    <line x1="20" y1="22" x2="26" y2="22" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round"/>
+    <path d="M12 32 L18 28 H28" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="10" cy="33" r="2" fill="#4A8C40"/>
+  </svg>
+)
+
 const resources = [
   {
     id: 'assistant',
@@ -123,8 +136,18 @@ const resources = [
     href: '/internal/market-signals',
   },
   {
-    id: 'library',
+    id: 'lead-analyzer',
     number: '05',
+    icon: <IconBruno />,
+    title: 'Lead Analyzer',
+    description: 'Bruno analiza empresas con IA: scoring ICP, contacto verificado y draft de email personalizado en segundos.',
+    cta: 'Abrir Bruno',
+    available: true,
+    href: '/internal/lead-analyzer',
+  },
+  {
+    id: 'library',
+    number: '06',
     icon: <IconBook />,
     title: 'Biblioteca de Recursos',
     description: 'Libros, guías y materiales de referencia para el equipo. Descargables y organizados por categoría.',
