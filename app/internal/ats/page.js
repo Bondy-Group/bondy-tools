@@ -333,7 +333,7 @@ export default function ATSPage() {
   const { data: session } = useSession()
   const [activeSearch, setActiveSearch] = useState('globant-python')
   const [view, setView] = useState('board') // 'board' | 'list'
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [selectedCand, setSelectedCand] = useState(null)
   const [activeStage, setActiveStage] = useState(null) // null = all
 
