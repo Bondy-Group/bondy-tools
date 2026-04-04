@@ -333,6 +333,7 @@ export default function ATSPage() {
   const { data: session } = useSession()
   const [activeSearch, setActiveSearch] = useState('globant-python')
   const [view, setView] = useState('board') // 'board' | 'list'
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [selectedCand, setSelectedCand] = useState(null)
   const [activeStage, setActiveStage] = useState(null) // null = all
 
@@ -346,38 +347,57 @@ export default function ATSPage() {
     <div style={{ display: 'flex', height: '100vh', background: C.bg, fontFamily: 'Inter,system-ui,sans-serif', overflow: 'hidden' }}>
 
       {/* ── SIDEBAR ── */}
-      <div style={{ width: 214, background: C.s0, borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+      <div style={{
+        width: sidebarOpen ? 214 : 48,
+        background: C.s0,
+        borderRight: `1px solid ${C.border}`,
+        display: 'flex', flexDirection: 'column', flexShrink: 0,
+        transition: 'width 0.18s ease',
+        overflow: 'hidden',
+      }}>
         {/* brand */}
         <div style={{ height: 48, borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', padding: '0 13px', gap: 8 }}>
           <Logo />
           <span style={{ fontFamily: "'Special Elite',Georgia,serif", fontSize: 15, color: C.text, letterSpacing: '0.03em' }}>BONDY</span>
-          <span style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.green, border: `1px solid ${C.greenBr}`, background: C.greenBg, padding: '2px 5px', borderRadius: 2 }}>ATS</span>
+          {sidebarOpen && <span style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.green, border: `1px solid ${C.greenBr}`, background: C.greenBg, padding: '2px 5px', borderRadius: 2 }}>ATS</span>}
+          <button onClick={() => setSidebarOpen(o => !o)} style={{
+            marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer',
+            color: C.text3, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 4, borderRadius: 3, flexShrink: 0,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              {sidebarOpen
+                ? <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                : <path d="M5 2l5 5-5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              }
+            </svg>
+          </button>
         </div>
 
         {/* user */}
-        <div style={{ padding: '9px 13px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '9px 13px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8, justifyContent: sidebarOpen ? 'flex-start' : 'center' }}>
           <div style={{ width: 26, height: 26, borderRadius: '50%', background: C.greenBg, border: `1px solid ${C.greenBr}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: C.green, flexShrink: 0 }}>
             {session?.user?.name?.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase() || 'U'}
           </div>
-          <div>
+          {sidebarOpen && <div>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text }}>{session?.user?.name?.split(' ')[0] || 'Usuario'}</div>
             <div style={{ fontSize: 10, color: C.text3 }}>Sourcer</div>
-          </div>
+          </div>}
         </div>
 
         {/* nav */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.text3, padding: '10px 13px 3px' }}>Mis búsquedas</div>
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          {sidebarOpen && <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.text3, padding: '10px 13px 3px' }}>Mis búsquedas</div>}
           {SEARCHES.map(s => (
             <SbItem key={s.id} icon={<IcoDoc />} label={s.label} count={s.count} active={activeSearch === s.id} alertDot={s.alertDot} warnDot={s.warnDot} onClick={() => setActiveSearch(s.id)} />
           ))}
-          <div style={{ height: 1, background: C.border, margin: '5px 13px' }} />
-          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.text3, padding: '10px 13px 3px' }}>Equipo</div>
+          {sidebarOpen && <div style={{ height: 1, background: C.border, margin: '5px 13px' }} />}
+          {sidebarOpen && <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.text3, padding: '10px 13px 3px' }}>Equipo</div>}
           {TEAM_SEARCHES.map(s => (
             <SbItem key={s.id} icon={<IcoDoc />} label={s.label} count={s.count} active={false} onClick={() => {}} />
           ))}
-          <div style={{ height: 1, background: C.border, margin: '5px 13px' }} />
-          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.text3, padding: '10px 13px 3px' }}>Navegación</div>
+          {sidebarOpen && <div style={{ height: 1, background: C.border, margin: '5px 13px' }} />}
+          {sidebarOpen && <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.text3, padding: '10px 13px 3px' }}>Navegación</div>}
           <SbItem icon={<IcoPerson />} label="Candidatos" active={false} onClick={() => {}} />
           <SbItem icon={<IcoCard />}   label="Cuentas"    active={false} onClick={() => {}} />
           <SbItem icon={<IcoChart />}  label="Revenue"    active={false} onClick={() => {}} />
@@ -385,8 +405,10 @@ export default function ATSPage() {
 
         {/* footer */}
         <div style={{ padding: '9px 13px', borderTop: `1px solid ${C.border}` }}>
-          <Link href="/internal" style={{ display: 'block', fontFamily: 'Inter,sans-serif', fontSize: 11, color: C.text3, padding: '3px 0', textDecoration: 'none' }}>← Panel Bondy</Link>
-          <button onClick={() => signOut({ callbackUrl: '/login' })} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter,sans-serif', fontSize: 11, color: C.text3, padding: '3px 0', display: 'block', textAlign: 'left' }}>Cerrar sesión</button>
+          {sidebarOpen && <>
+            <Link href="/internal" style={{ display: 'block', fontFamily: 'Inter,sans-serif', fontSize: 11, color: C.text3, padding: '3px 0', textDecoration: 'none' }}>← Panel Bondy</Link>
+            <button onClick={() => signOut({ callbackUrl: '/login' })} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter,sans-serif', fontSize: 11, color: C.text3, padding: '3px 0', display: 'block', textAlign: 'left' }}>Cerrar sesión</button>
+          </>}
         </div>
       </div>
 
