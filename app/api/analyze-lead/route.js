@@ -135,11 +135,6 @@ export async function POST(request) {
       userContext ? `**⚠️ Contexto crítico ingresado por Mara/Lucía (PRIORIDAD MÁXIMA):** ${userContext}` : '',
     ].filter(Boolean).join('\n')
 
-    const contextBlock = [
-      context ? `**Contexto adicional:** ${context}` : '',
-      userContext ? `**⚠️ Contexto crítico ingresado por Mara/Lucía (PRIORIDAD MÁXIMA):** ${userContext}` : '',
-    ].filter(Boolean).join('\n')
-
     const userMessage = `Analizá este lead para Bondy:
 
 **Tipo de análisis:** ${typeLabels[type] || 'empresa nueva'}
