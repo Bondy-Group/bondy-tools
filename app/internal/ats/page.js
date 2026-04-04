@@ -348,7 +348,7 @@ export default function ATSPage() {
 
       {/* ── SIDEBAR ── */}
       <div style={{
-        width: sidebarOpen ? 214 : 48,
+        width: sidebarOpen ? 214 : 40,
         background: C.s0,
         borderRight: `1px solid ${C.border}`,
         display: 'flex', flexDirection: 'column', flexShrink: 0,
@@ -356,19 +356,29 @@ export default function ATSPage() {
         overflow: 'hidden',
       }}>
         {/* brand */}
-        <div style={{ height: 48, borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', padding: '0 13px', gap: 8 }}>
-          <Logo />
-          <span style={{ fontFamily: "'Special Elite',Georgia,serif", fontSize: 15, color: C.text, letterSpacing: '0.03em' }}>BONDY</span>
-          {sidebarOpen && <span style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.green, border: `1px solid ${C.greenBr}`, background: C.greenBg, padding: '2px 5px', borderRadius: 2 }}>ATS</span>}
-          <button onClick={() => setSidebarOpen(o => !o)} style={{
-            marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer',
-            color: C.text3, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 4, borderRadius: 3, flexShrink: 0,
-          }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <div style={{
+          height: 48, borderBottom: `1px solid ${C.border}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '0 8px', gap: 0, position: 'relative',
+        }}>
+          {/* Logo siempre visible */}
+          <Logo size={20} />
+          {/* Botón toggle — flecha afuera del sidebar */}
+          <button
+            onClick={() => setSidebarOpen(o => !o)}
+            title={sidebarOpen ? 'Colapsar' : 'Expandir'}
+            style={{
+              position: 'absolute', right: -11, top: '50%', transform: 'translateY(-50%)',
+              width: 22, height: 22, borderRadius: '50%',
+              background: C.s0, border: `1px solid ${C.border}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', zIndex: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            }}
+          >
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
               {sidebarOpen
-                ? <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                : <path d="M5 2l5 5-5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                ? <path d="M5 1L2 4l3 3" stroke={C.text3} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                : <path d="M3 1l3 3-3 3" stroke={C.text3} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
               }
             </svg>
           </button>
