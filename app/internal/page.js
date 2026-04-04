@@ -104,6 +104,19 @@ const IconBruno = () => (
   </svg>
 )
 
+const IconATS = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+    <rect x="4" y="6" width="32" height="28" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
+    <line x1="4" y1="14" x2="36" y2="14" stroke="#4A8C40" strokeWidth="1.2"/>
+    <rect x="8" y="18" width="8" height="12" rx="1" fill="rgba(74,140,64,0.15)" stroke="#4A8C40" strokeWidth="1.2"/>
+    <rect x="19" y="18" width="8" height="8" rx="1" stroke="#4A8C40" strokeWidth="1.2"/>
+    <rect x="30" y="18" width="2" height="12" rx="1" fill="#4A8C40" opacity="0.3"/>
+    <circle cx="9" cy="10" r="1.5" fill="#4A8C40"/>
+    <circle cx="14" cy="10" r="1.5" fill="#4A8C40" opacity="0.4"/>
+    <circle cx="19" cy="10" r="1.5" fill="#4A8C40" opacity="0.2"/>
+  </svg>
+)
+
 const resources = [
   {
     id: 'assistant',
@@ -167,7 +180,16 @@ const resources = [
     href: '/internal/intelligence',
   },
   {
-    id: 'library',
+    id: 'ats',
+    number: '08',
+    icon: <IconATS />,
+    title: 'Bondy ATS',
+    description: 'Pipeline de candidatos por búsqueda, vistas lista y kanban, quick actions, panel de detalle con scorecard.',
+    cta: 'Abrir ATS',
+    available: true,
+    href: '/internal/ats',
+  },
+  {
     number: '06',
     icon: <IconBook />,
     title: 'Biblioteca de Recursos',
