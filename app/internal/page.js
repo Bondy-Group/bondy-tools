@@ -117,6 +117,17 @@ const IconATS = () => (
   </svg>
 )
 
+const IconJobBoard = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+    <rect x="4" y="8" width="32" height="26" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
+    <path d="M14 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round"/>
+    <line x1="10" y1="16" x2="30" y2="16" stroke="#4A8C40" strokeWidth="1.2"/>
+    <line x1="10" y1="22" x2="30" y2="22" stroke="#4A8C40" strokeWidth="1.2" opacity="0.6"/>
+    <line x1="10" y1="28" x2="22" y2="28" stroke="#4A8C40" strokeWidth="1.2" opacity="0.4"/>
+    <circle cx="32" cy="28" r="3" fill="rgba(74,140,64,0.15)" stroke="#4A8C40" strokeWidth="1.2"/>
+  </svg>
+)
+
 const resources = [
   {
     id: 'assistant',
@@ -188,6 +199,17 @@ const resources = [
     cta: 'Abrir ATS',
     available: true,
     href: '/internal/ats',
+  },
+  {
+    id: 'job-board',
+    number: '09',
+    icon: <IconJobBoard />,
+    title: 'Job Board',
+    description: 'CRUD de búsquedas abiertas publicadas en wearebondy.com/roles + inbox de aplicaciones entrantes con CV.',
+    cta: 'Abrir panel',
+    available: true,
+    href: '/internal/job-board',
+    adminOnly: true,
   },
   {
     number: '06',
@@ -277,8 +299,8 @@ export default function InternalPage() {
       {/* Cards or active tool */}
       {!activeResource ? (
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', borderBottom: `1px solid ${tw.rule}` }}>
-          {resources.map((r, i) => {
-            const borderRight = i < resources.length - 1 ? `1px solid ${tw.rule}` : 'none'
+          {resources.filter(r => !r.adminOnly || isAdmin).map((r, i, arr) => {
+            const borderRight = i < arr.length - 1 ? `1px solid ${tw.rule}` : 'none'
             const bgCard = i % 2 === 0 ? tw.white : tw.bg
 
             if (!r.available) {
