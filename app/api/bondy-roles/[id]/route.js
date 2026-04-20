@@ -17,6 +17,10 @@ const EDITABLE_FIELDS = [
   'salary_visible', 'salary_note', 'is_featured',
 ]
 
+// Columns that have CHECK constraints and reject empty string ''.
+// Empty strings coming from unselected dropdowns must be normalized to null.
+const NULLABLE_ENUM_FIELDS = ['seniority', 'role_category', 'modality', 'english_level']
+
 /** GET /api/bondy-roles/[id] — single role (any status, admin only) */
 export async function GET(_req, { params }) {
   const guard = await requireJobBoardAdmin()
@@ -48,6 +52,13 @@ export async function PATCH(req, { params }) {
   const update = {}
   for (const field of EDITABLE_FIELDS) {
     if (field in body) update[field] = body[field]
+  }
+
+  // Normalize empty strings to null for enum-constrained columns.
+  // Supabase CHECK constraints reject '' on seniority/role_category/modality/english_level,
+  // which would otherwise surface to the admin UI as a generic "Save failed".
+  for (const field of NULLABLE_ENUM_FIELDS) {
+    if (field in update && update[field] === '') update[field] = null
   }
 
   // Validate status transitions
