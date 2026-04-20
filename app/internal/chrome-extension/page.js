@@ -311,7 +311,7 @@ export default function ChromeExtensionPage() {
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Descargar extensión (v3.1)
+            Descargar extensión (v3.1.1)
           </a>
           <span style={{ fontFamily: mono, fontSize: '10px', color: tw.inkFaint }}>Chrome · Manifest V3 · ~18 KB</span>
         </div>
