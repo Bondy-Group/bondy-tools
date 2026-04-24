@@ -40,7 +40,7 @@ const sections = [
     number: '03',
     title: 'Hiring Strategy',
     description: 'Guías para hiring managers y fondos planeando su estrategia en LATAM.',
-    available: false,
+    available: true,
   },
 ]
 
