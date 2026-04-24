@@ -121,6 +121,17 @@ const IconJobBoard = () => (
   </svg>
 )
 
+const IconPagos = () => (
+  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+    <rect x="4" y="10" width="32" height="22" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
+    <line x1="4" y1="18" x2="36" y2="18" stroke="#4A8C40" strokeWidth="1.2"/>
+    <circle cx="14" cy="27" r="4" stroke="#4A8C40" strokeWidth="1.2"/>
+    <line x1="21" y1="24" x2="30" y2="24" stroke="#4A8C40" strokeWidth="1.2" strokeLinecap="round"/>
+    <line x1="21" y1="28" x2="27" y2="28" stroke="#4A8C40" strokeWidth="1.2" strokeLinecap="round" opacity="0.6"/>
+    <path d="M14 13 L14 10 M20 13 L20 10 M26 13 L26 10" stroke="#4A8C40" strokeWidth="1.2" strokeLinecap="round"/>
+  </svg>
+)
+
 const resources = [
   {
     id: 'assistant',
@@ -212,6 +223,17 @@ const resources = [
     description: 'Libros, guías y materiales del equipo. Descargables y organizados por categoría.',
     cta: null,
     available: false,
+  },
+  {
+    id: 'seguimiento-pagos',
+    number: '10',
+    icon: <IconPagos />,
+    title: 'Seguimiento de Pagos',
+    description: 'Comisiones por búsqueda, estado de cobros y envío de invoices para recruiters y sourcers.',
+    cta: 'Abrir',
+    available: true,
+    href: '/internal/seguimiento-pagos',
+    adminOnly: true,
   },
 ]
 
