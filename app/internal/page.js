@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { useState, useMemo } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import InterviewTab from '@/components/InterviewTab'
 import CulturalFitTab from '@/components/CulturalFitTab'
@@ -9,12 +8,18 @@ import ScorecardAdminPage from '@/app/internal/scorecard-admin/page'
 
 const ADMIN_EMAILS = ['mara@wearebondy.com', 'lucia@wearebondy.com']
 
-const notebookBg = [
-  'linear-gradient(90deg, transparent 68px, rgba(210,100,80,0.10) 68px, rgba(210,100,80,0.10) 69.5px, transparent 69.5px)',
-  'repeating-linear-gradient(180deg, transparent 0px, transparent 31px, rgba(100,140,200,0.09) 31px, rgba(100,140,200,0.09) 32px)',
-].join(',')
-
-const tw = { bg: '#FEFCF9', inkMid: '#3A3530', inkSub: '#5A5550', inkFaint: '#7A7874', rule: '#E8E4DE', white: '#FFFFFF', green: '#4A8C40' }
+const tw = {
+  bg: '#FEFCF9',
+  white: '#FFFFFF',
+  ink: '#1A1A1A',
+  inkMid: '#3A3530',
+  inkSub: '#5A5550',
+  inkFaint: '#7A7874',
+  rule: '#E8E4DE',
+  green: '#4A8C40',
+  greenTint: 'rgba(74,140,64,0.08)',
+  greenEdge: 'rgba(74,140,64,0.35)',
+}
 const serif = "'Special Elite', Georgia, serif"
 const mono  = "'Courier Prime', Courier, monospace"
 const ui    = "'Plus Jakarta Sans', system-ui, sans-serif"
@@ -28,407 +33,659 @@ const BondyLogo = ({ size = 22 }) => (
   </svg>
 )
 
-/* ── Iconos ── */
-const IconReport = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <rect x="4" y="6" width="24" height="28" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="10" y1="14" x2="22" y2="14" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="10" y1="19" x2="22" y2="19" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="10" y1="24" x2="17" y2="24" stroke="#4A8C40" strokeWidth="1.5"/>
-    <circle cx="31" cy="31" r="7" fill="#FEFCF9" stroke="#4A8C40" strokeWidth="1.5"/>
-    <path d="M28 31l2 2 4-4" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-)
-const IconChrome = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <circle cx="20" cy="20" r="14" stroke="#7A7874" strokeWidth="1.5"/>
-    <circle cx="20" cy="20" r="6" fill="#FEFCF9" stroke="#7A7874" strokeWidth="1.5"/>
-    <path d="M20 6v8M32 26l-7-4M32 14l-7 4M20 34v-8M8 14l7 4M8 26l7-4" stroke="#7A7874" strokeWidth="1.5" strokeLinecap="round"/>
-  </svg>
-)
-const IconBook = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <rect x="6"  y="8" width="10" height="26" rx="1" stroke="#7A7874" strokeWidth="1.5"/>
-    <rect x="18" y="8" width="10" height="26" rx="1" stroke="#7A7874" strokeWidth="1.5"/>
-    <rect x="30" y="8" width="6"  height="26" rx="1" stroke="#7A7874" strokeWidth="1.5"/>
-  </svg>
-)
-const IconHub = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <circle cx="20" cy="20" r="4" fill="#4A8C40"/>
-    <rect x="6"  y="8"  width="10" height="7" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
-    <rect x="24" y="8"  width="10" height="7" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
-    <rect x="6"  y="25" width="10" height="7" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
-    <rect x="24" y="25" width="10" height="7" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="16" y1="11.5" x2="20" y2="18" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="24" y1="11.5" x2="20" y2="18" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="16" y1="28.5" x2="20" y2="22" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="24" y1="28.5" x2="20" y2="22" stroke="#4A8C40" strokeWidth="1.5"/>
-  </svg>
-)
-const IconSignals = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <rect x="6"  y="26" width="5" height="8"  rx="1" stroke="#4A8C40" strokeWidth="1.5"/>
-    <rect x="14" y="18" width="5" height="16" rx="1" stroke="#4A8C40" strokeWidth="1.5"/>
-    <rect x="22" y="12" width="5" height="22" rx="1" stroke="#4A8C40" strokeWidth="1.5"/>
-    <rect x="30" y="6"  width="5" height="28" rx="1" stroke="#4A8C40" strokeWidth="1.5"/>
-    <path d="M8 18 L16 12 L24 8 L32 4" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="32" cy="4" r="2.5" fill="#4A8C40"/>
-  </svg>
-)
-const IconIntelligence = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <rect x="5" y="28" width="6" height="8" rx="1" stroke="#4A8C40" strokeWidth="1.5"/>
-    <rect x="13" y="20" width="6" height="16" rx="1" stroke="#4A8C40" strokeWidth="1.5"/>
-    <rect x="21" y="12" width="6" height="24" rx="1" stroke="#4A8C40" strokeWidth="1.5"/>
-    <rect x="29" y="6" width="6" height="30" rx="1" fill="rgba(74,140,64,0.15)" stroke="#4A8C40" strokeWidth="1.5"/>
-    <circle cx="32" cy="6" r="3" fill="#4A8C40"/>
-    <path d="M7 22 L16 16 L24 10 L32 6" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-)
-const IconBruno = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <rect x="5" y="8" width="30" height="20" rx="3" stroke="#4A8C40" strokeWidth="1.5"/>
-    <circle cx="14" cy="18" r="3" fill="#4A8C40" opacity="0.3"/>
-    <circle cx="14" cy="18" r="1.5" fill="#4A8C40"/>
-    <line x1="20" y1="14" x2="30" y2="14" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round"/>
-    <line x1="20" y1="18" x2="30" y2="18" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round"/>
-    <line x1="20" y1="22" x2="26" y2="22" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M12 32 L18 28 H28" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="10" cy="33" r="2" fill="#4A8C40"/>
-  </svg>
-)
-const IconProposal = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <rect x="6" y="4" width="22" height="30" rx="1.5" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="11" y1="11" x2="23" y2="11" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="11" y1="16" x2="23" y2="16" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="11" y1="21" x2="20" y2="21" stroke="#4A8C40" strokeWidth="1.5"/>
-    <path d="M22 28 Q26 30 30 28" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-    <circle cx="30" cy="34" r="4" fill="rgba(74,140,64,0.15)" stroke="#4A8C40" strokeWidth="1.5"/>
-    <path d="M28 34l1.3 1.3 2.7-2.6" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-)
-const IconATS = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <rect x="4" y="6" width="32" height="28" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="4" y1="14" x2="36" y2="14" stroke="#4A8C40" strokeWidth="1.2"/>
-    <rect x="8" y="18" width="8" height="12" rx="1" fill="rgba(74,140,64,0.15)" stroke="#4A8C40" strokeWidth="1.2"/>
-    <rect x="19" y="18" width="8" height="8" rx="1" stroke="#4A8C40" strokeWidth="1.2"/>
-    <rect x="30" y="18" width="2" height="12" rx="1" fill="#4A8C40" opacity="0.3"/>
-    <circle cx="9" cy="10" r="1.5" fill="#4A8C40"/>
-    <circle cx="14" cy="10" r="1.5" fill="#4A8C40" opacity="0.4"/>
-    <circle cx="19" cy="10" r="1.5" fill="#4A8C40" opacity="0.2"/>
-  </svg>
-)
-const IconJobBoard = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <rect x="4" y="8" width="32" height="26" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
-    <path d="M14 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round"/>
-    <line x1="10" y1="16" x2="30" y2="16" stroke="#4A8C40" strokeWidth="1.2"/>
-    <line x1="10" y1="22" x2="30" y2="22" stroke="#4A8C40" strokeWidth="1.2" opacity="0.6"/>
-    <line x1="10" y1="28" x2="22" y2="28" stroke="#4A8C40" strokeWidth="1.2" opacity="0.4"/>
-    <circle cx="32" cy="28" r="3" fill="rgba(74,140,64,0.15)" stroke="#4A8C40" strokeWidth="1.2"/>
-  </svg>
-)
-
-const IconPagos = () => (
-  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-    <rect x="4" y="10" width="32" height="22" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
-    <line x1="4" y1="18" x2="36" y2="18" stroke="#4A8C40" strokeWidth="1.2"/>
-    <circle cx="14" cy="27" r="4" stroke="#4A8C40" strokeWidth="1.2"/>
-    <line x1="21" y1="24" x2="30" y2="24" stroke="#4A8C40" strokeWidth="1.2" strokeLinecap="round"/>
-    <line x1="21" y1="28" x2="27" y2="28" stroke="#4A8C40" strokeWidth="1.2" strokeLinecap="round" opacity="0.6"/>
-    <path d="M14 13 L14 10 M20 13 L20 10 M26 13 L26 10" stroke="#4A8C40" strokeWidth="1.2" strokeLinecap="round"/>
-  </svg>
-)
-
+/* RESOURCES — sorted by usageRank, top 3 = pinned */
 const resources = [
   {
     id: 'assistant',
-    number: '01',
-    icon: <IconReport />,
-    title: 'Asistente de Informes',
-    description: 'Screening reports y cultural fit con IA. Scorecard ponderado por posición.',
-    cta: 'Abrir',
-    available: true,
+    name: 'Asistente de Informes',
+    cat: 'AI / Reportes', catKey: 'ai',
+    desc: 'Screening reports y cultural fit con IA. Scorecard ponderado por posición. El motor que arma los informes que mandás a clientes.',
+    descShort: 'Screening + cultural fit con IA. Scorecards.',
+    glyph: 'AI',
+    shortcut: '⌘1', usageRank: 1, status: 'live',
+    usage: 'Diaria', lastUsed: 'hoy',
     href: 'https://interview-report-gen1.vercel.app',
     external: true,
   },
   {
-    id: 'chrome',
-    number: '02',
-    icon: <IconChrome />,
-    title: 'Extensión Chrome',
-    description: 'Capturá perfiles de LinkedIn directo en tu flujo. Descargá e instalá.',
-    cta: 'Descargar',
-    available: true,
-    href: '/internal/chrome-extension',
-  },
-  {
-    id: 'interview-hub',
-    number: '03',
-    icon: <IconHub />,
-    title: 'Interview Hub',
-    description: 'Agendá entrevistas, generá preguntas por competencia y tomá notas estructuradas.',
-    cta: 'Abrir',
-    available: true,
-    href: '/interview-hub',
-  },
-  {
-    id: 'market-signals',
-    number: '04',
-    icon: <IconSignals />,
-    title: 'Market Signals',
-    description: 'Señales del mercado tech: qué tecnologías y perfiles están contratando en LATAM.',
-    cta: 'Ver',
-    available: true,
-    href: '/internal/market-signals',
-  },
-  {
-    id: 'lead-analyzer',
-    number: '05',
-    icon: <IconBruno />,
-    title: 'Lead Analyzer',
-    description: 'Scoring ICP, contacto verificado y draft de email personalizado en segundos.',
-    cta: 'Abrir',
-    available: true,
-    href: '/internal/lead-analyzer',
-  },
-  {
-    id: 'intelligence',
-    number: '07',
-    icon: <IconIntelligence />,
-    title: 'Bondy Intelligence',
-    description: 'Historial de candidatos y clientes, performance del equipo, campañas. Master DB en vivo.',
-    cta: 'Abrir',
-    available: true,
-    href: '/internal/intelligence',
-  },
-  {
     id: 'ats',
-    number: '08',
-    icon: <IconATS />,
-    title: 'Bondy ATS',
-    description: 'Pipeline por búsqueda, vistas lista y kanban, quick actions y scorecard.',
-    cta: 'Abrir',
-    available: true,
+    name: 'Bondy ATS',
+    cat: 'Pipeline', catKey: 'pipeline',
+    desc: 'Pipeline por búsqueda con vistas lista y kanban, quick actions y scorecard integrado.',
+    descShort: 'Pipeline por búsqueda. Lista, kanban, scorecard.',
+    glyph: 'AT',
+    shortcut: '⌘2', usageRank: 2, status: 'live',
+    usage: 'Diaria', lastUsed: 'hoy',
     href: '/internal/ats',
   },
   {
     id: 'job-board',
-    number: '09',
-    icon: <IconJobBoard />,
-    title: 'Job Board',
-    description: 'CRUD de búsquedas en wearebondy.com/roles + inbox de aplicaciones con CV.',
-    cta: 'Abrir',
-    available: true,
+    name: 'Job Board',
+    cat: 'Pipeline', catKey: 'pipeline',
+    desc: 'CRUD de búsquedas en wearebondy.com/roles + inbox de aplicaciones con CV.',
+    descShort: 'CRUD de roles públicos + inbox de aplicaciones.',
+    glyph: 'JB',
+    shortcut: '⌘3', usageRank: 3, status: 'live',
+    usage: 'Diaria', lastUsed: 'hoy',
     href: '/internal/job-board',
     adminOnly: true,
   },
   {
-    id: 'biblioteca',
-    number: '06',
-    icon: <IconBook />,
-    title: 'Biblioteca de Recursos',
-    description: 'Libros, guías y materiales del equipo. Descargables y organizados por categoría.',
-    cta: null,
-    available: false,
+    id: 'lead-analyzer',
+    name: 'Lead Analyzer',
+    cat: 'AI / Reportes', catKey: 'ai',
+    descShort: 'Scoring ICP, contacto verificado y draft de email.',
+    desc: 'Scoring ICP, contacto verificado y draft de email personalizado en segundos.',
+    glyph: 'LA',
+    shortcut: '⌘4', usageRank: 4, status: 'live',
+    usage: 'Diaria', lastUsed: 'esta semana',
+    href: '/internal/lead-analyzer',
+  },
+  {
+    id: 'interview-hub',
+    name: 'Interview Hub',
+    cat: 'Pipeline', catKey: 'pipeline',
+    descShort: 'Agenda, preguntas por competencia y notas estructuradas.',
+    desc: 'Agendá entrevistas, generá preguntas por competencia y tomá notas estructuradas.',
+    glyph: 'IH',
+    shortcut: '⌘5', usageRank: 5, status: 'live',
+    usage: 'Semanal', lastUsed: 'esta semana',
+    href: '/interview-hub',
+  },
+  {
+    id: 'intelligence',
+    name: 'Bondy Intelligence',
+    cat: 'Datos', catKey: 'datos',
+    descShort: 'Master DB en vivo: candidatos, clientes, performance.',
+    desc: 'Historial de candidatos y clientes, performance del equipo, campañas. Master DB en vivo.',
+    glyph: 'BI',
+    shortcut: '⌘6', usageRank: 6, status: 'live',
+    usage: 'Semanal', lastUsed: 'esta semana',
+    href: '/internal/intelligence',
+  },
+  {
+    id: 'market-signals',
+    name: 'Market Signals',
+    cat: 'Datos', catKey: 'datos',
+    descShort: 'Qué tecnologías y perfiles contratan en LATAM.',
+    desc: 'Señales del mercado tech: qué tecnologías y perfiles están contratando en LATAM.',
+    glyph: 'MS',
+    shortcut: '⌘7', usageRank: 7, status: 'live',
+    usage: 'Semanal', lastUsed: 'esta semana',
+    href: '/internal/market-signals',
+  },
+  {
+    id: 'proposals',
+    name: 'Service Proposals',
+    cat: 'Admin', catKey: 'admin',
+    descShort: 'Generador de acuerdos. Form + preview + PDF.',
+    desc: 'Generador de acuerdos de servicio. Form + preview live + export PDF. Persistido en Supabase con agreement ID.',
+    glyph: 'SP',
+    shortcut: '⌘8', usageRank: 8, status: 'live',
+    usage: 'Semanal', lastUsed: 'esta semana',
+    href: '/internal/proposals',
+    adminOnly: true,
   },
   {
     id: 'seguimiento-pagos',
-    number: '10',
-    icon: <IconPagos />,
-    title: 'Seguimiento de Pagos',
-    description: 'Comisiones por búsqueda, estado de cobros y envío de invoices para recruiters y sourcers.',
-    cta: 'Abrir',
-    available: true,
+    name: 'Seguimiento de Pagos',
+    cat: 'Admin', catKey: 'admin',
+    descShort: 'Comisiones, cobros y envío de invoices.',
+    desc: 'Comisiones por búsqueda, estado de cobros y envío de invoices para recruiters y sourcers.',
+    glyph: 'PG',
+    shortcut: '⌘9', usageRank: 9, status: 'live',
+    usage: 'Mensual', lastUsed: 'este mes',
     href: '/internal/seguimiento-pagos',
     adminOnly: true,
   },
   {
-    id: 'proposals',
-    number: '11',
-    icon: <IconProposal />,
-    title: 'Service Proposals',
-    description: 'Generador de acuerdos de servicio. Form + preview live + export PDF. Persistido en Supabase con agreement ID.',
-    cta: 'Abrir',
-    available: true,
-    href: '/internal/proposals',
-    adminOnly: true,
+    id: 'chrome',
+    name: 'Extensión Chrome',
+    cat: 'Extras', catKey: 'extras',
+    descShort: 'Capturá perfiles de LinkedIn directo en tu flujo.',
+    desc: 'Capturá perfiles de LinkedIn directo en tu flujo. Descargá e instalá.',
+    glyph: 'CR',
+    shortcut: '⌘0', usageRank: 10, status: 'live',
+    usage: 'Diaria', lastUsed: 'hoy',
+    href: '/internal/chrome-extension',
+  },
+  {
+    id: 'biblioteca',
+    name: 'Biblioteca de Recursos',
+    cat: 'Extras', catKey: 'extras',
+    descShort: 'Libros, guías y materiales del equipo.',
+    desc: 'Libros, guías y materiales del equipo. Descargables y organizados por categoría.',
+    glyph: 'BL',
+    shortcut: '', usageRank: 99, status: 'soon',
+    usage: 'Pronto', lastUsed: '—',
+    href: null,
   },
 ]
 
-/* ── Card component ── */
-function ToolCard({ r, isAdmin, bgCard }) {
-  const [hovered, setHovered] = useState(false)
+const categories = [
+  { key: 'ai',       label: 'AI / Reportes' },
+  { key: 'pipeline', label: 'Pipeline' },
+  { key: 'datos',    label: 'Datos' },
+  { key: 'admin',    label: 'Admin' },
+  { key: 'extras',   label: 'Extras' },
+]
 
-  const cardStyle = {
-    background: hovered ? 'rgba(74,140,64,0.04)' : bgCard,
-    border: `1px solid ${tw.rule}`,
-    borderRadius: '2px',
-    padding: '1.5rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0',
-    transition: 'background 0.2s, border-color 0.2s',
-    borderColor: hovered ? 'rgba(74,140,64,0.3)' : tw.rule,
-    height: '100%',
-    boxSizing: 'border-box',
-    opacity: r.available ? 1 : 0.42,
-    cursor: r.available && r.href ? 'pointer' : r.available ? 'pointer' : 'default',
-    textDecoration: 'none',
-    color: 'inherit',
-  }
+/* ── small bits ── */
 
-  const inner = (
-    <div
-      style={cardStyle}
-      onMouseEnter={() => r.available && setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <div style={{ padding: '8px', background: 'rgba(74,140,64,0.07)', borderRadius: '2px' }}>
-          {r.icon}
-        </div>
-        <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.14em', color: tw.inkFaint }}>
-          {r.number}
-        </span>
-      </div>
-      <h2 style={{ fontFamily: serif, fontSize: '1.05rem', color: tw.inkMid, marginBottom: '0.4rem', lineHeight: 1.25 }}>
-        {r.title}
-      </h2>
-      <p style={{ fontFamily: ui, fontSize: '12px', color: tw.inkSub, lineHeight: 1.65, flex: 1, marginBottom: '1.25rem', fontWeight: 400 }}>
-        {r.description}
-      </p>
-      {r.available && r.cta ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: tw.green }}>
-            {r.cta} →
-          </span>
-        </div>
-      ) : !r.available ? (
-        <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.13em', textTransform: 'uppercase', color: tw.inkFaint, border: `1px solid ${tw.rule}`, padding: '3px 8px', display: 'inline-block' }}>
-          Próximamente
-        </span>
-      ) : null}
-    </div>
+function StatusPip({ status }) {
+  return (
+    <span
+      aria-label={status === 'live' ? 'activo' : 'próximamente'}
+      style={{
+        display: 'inline-block',
+        width: '6px', height: '6px',
+        borderRadius: '50%',
+        background: status === 'soon' ? tw.inkFaint : tw.green,
+        marginRight: '8px',
+        verticalAlign: 'middle',
+        flexShrink: 0,
+      }}
+    />
   )
-
-  if (!r.available) return <div key={r.id}>{inner}</div>
-  if (r.href) {
-    const linkProps = r.external
-      ? { href: r.href, target: '_blank', rel: 'noopener noreferrer' }
-      : { href: r.href }
-    return <Link key={r.id} {...linkProps} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>{inner}</Link>
-  }
-  return <button key={r.id} onClick={() => {}} style={{ all: 'unset', display: 'block', width: '100%', height: '100%', boxSizing: 'border-box' }}>{inner}</button>
 }
 
+function Kbd({ children }) {
+  if (!children) return <span />
+  return (
+    <span style={{
+      fontFamily: mono, fontSize: '10px',
+      color: tw.inkFaint,
+      border: `1px solid ${tw.rule}`,
+      padding: '2px 7px',
+      background: tw.white,
+      letterSpacing: '0.05em',
+      whiteSpace: 'nowrap',
+    }}>{children}</span>
+  )
+}
+
+function SectionHeader({ num, label, count }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'baseline', gap: '14px',
+      padding: '28px clamp(1.25rem,5vw,4rem) 12px',
+    }}>
+      <span style={{
+        fontFamily: mono, fontSize: '11px', letterSpacing: '0.18em',
+        color: tw.green, fontWeight: 700,
+      }}>{num}</span>
+      <span style={{
+        fontFamily: ui, fontSize: '13px', fontWeight: 600,
+        letterSpacing: '0.16em', textTransform: 'uppercase', color: tw.ink,
+      }}>{label}</span>
+      <span style={{ flex: 1, height: '1px', background: tw.rule }} />
+      {count && (
+        <span style={{ fontFamily: mono, fontSize: '11px', color: tw.inkFaint }}>
+          {count}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function PinHero({ r, stats, onOpen }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <div
+      onClick={() => onOpen(r)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        padding: '24px 28px 22px',
+        borderRight: `1px solid ${tw.rule}`,
+        background: hover ? 'rgba(74,140,64,0.12)' : tw.greenTint,
+        display: 'flex', flexDirection: 'column', gap: '10px',
+        cursor: 'pointer',
+        transition: 'background 0.15s',
+      }}
+    >
+      <span style={{
+        fontFamily: ui, fontSize: '9px', letterSpacing: '0.2em',
+        textTransform: 'uppercase', color: tw.green, fontWeight: 700,
+      }}>
+        ★ Más usado · {r.cat.toUpperCase()}
+      </span>
+      <h2 style={{
+        fontFamily: serif, fontSize: 'clamp(1.75rem, 3.2vw, 2.4rem)',
+        color: tw.inkMid, opacity: 0.95,
+        textShadow: '0.4px 0.4px 0 rgba(0,0,0,0.2)',
+        lineHeight: 1, letterSpacing: '-0.01em',
+        margin: '4px 0 0',
+      }}>
+        {r.name}.
+      </h2>
+      <p style={{
+        fontFamily: ui, fontSize: '13px', color: tw.inkSub,
+        lineHeight: 1.55, maxWidth: '460px', margin: 0,
+      }}>
+        {r.desc}
+      </p>
+      <div style={{ display: 'flex', gap: '28px', marginTop: '10px' }}>
+        {stats.map((s, i) => (
+          <div key={i}>
+            <div style={{
+              fontFamily: serif, fontSize: '22px',
+              color: tw.inkMid, opacity: 0.95,
+              textShadow: '0.4px 0.4px 0 rgba(0,0,0,0.2)',
+              lineHeight: 1,
+            }}>
+              {s.val}
+              {s.sup && <span style={{ fontSize: '0.5em', color: tw.green, marginLeft: '1px' }}>{s.sup}</span>}
+            </div>
+            <div style={{
+              fontFamily: ui, fontSize: '9px', letterSpacing: '0.16em',
+              textTransform: 'uppercase', color: tw.inkFaint, marginTop: '5px',
+            }}>{s.lbl}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        marginTop: '8px',
+        fontFamily: mono, fontSize: '10px', letterSpacing: '0.1em',
+        color: tw.inkFaint,
+      }}>
+        <span>último: {r.lastUsed} · {r.shortcut}</span>
+        <span style={{
+          fontFamily: mono, fontSize: '10px', letterSpacing: '0.14em',
+          textTransform: 'uppercase', color: tw.green, fontWeight: 700,
+        }}>
+          Abrir →
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function PinCard({ r, isLast, onOpen }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <div
+      onClick={() => onOpen(r)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        padding: '20px 22px',
+        borderRight: isLast ? 'none' : `1px solid ${tw.rule}`,
+        display: 'flex', flexDirection: 'column', gap: '8px',
+        cursor: 'pointer',
+        background: hover ? 'rgba(74,140,64,0.04)' : 'transparent',
+        transition: 'background 0.15s',
+        minHeight: '180px',
+      }}
+    >
+      <span style={{
+        fontFamily: ui, fontSize: '9px', letterSpacing: '0.18em',
+        textTransform: 'uppercase', color: tw.inkFaint, fontWeight: 600,
+      }}>
+        {r.cat}
+      </span>
+      <h3 style={{
+        fontFamily: ui, fontWeight: 600, fontSize: '17px',
+        color: tw.ink, letterSpacing: '-0.005em', lineHeight: 1.2,
+        margin: '2px 0 0',
+      }}>
+        {r.name}
+      </h3>
+      <p style={{
+        fontFamily: ui, fontSize: '12.5px', color: tw.inkSub,
+        lineHeight: 1.5, margin: 0,
+      }}>
+        {r.descShort}
+      </p>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between',
+        alignItems: 'flex-end', marginTop: 'auto', paddingTop: '8px',
+      }}>
+        <div>
+          <div style={{
+            fontFamily: serif, fontSize: '15px',
+            color: tw.inkMid, lineHeight: 1,
+          }}>{r.lastUsed}</div>
+          <div style={{
+            fontFamily: ui, fontSize: '9px', letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: tw.inkFaint, marginTop: '5px',
+          }}>último uso</div>
+        </div>
+        <Kbd>{r.shortcut}</Kbd>
+      </div>
+    </div>
+  )
+}
+
+function DenseRow({ r, onOpen }) {
+  const [hover, setHover] = useState(false)
+  const interactive = r.status === 'live' && r.href
+  return (
+    <div
+      onClick={() => interactive && onOpen(r)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '28px 240px 1fr 80px 70px',
+        gap: '16px',
+        padding: '11px 4px',
+        alignItems: 'center',
+        cursor: interactive ? 'pointer' : 'default',
+        background: hover && interactive ? tw.greenTint : 'transparent',
+        borderTop: `1px solid ${tw.rule}`,
+        transition: 'background 0.1s',
+        opacity: r.status === 'soon' ? 0.55 : 1,
+      }}
+    >
+      <span style={{
+        fontFamily: mono, fontWeight: 700, fontSize: '9px',
+        width: '22px', height: '22px',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        border: `1px solid ${tw.greenEdge}`,
+        background: tw.greenTint,
+        color: tw.green,
+        flexShrink: 0,
+      }}>{r.glyph}</span>
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        fontFamily: ui, fontWeight: 600, fontSize: '14px',
+        color: tw.ink, letterSpacing: '-0.005em',
+      }}>
+        <StatusPip status={r.status} />
+        {r.name}
+      </div>
+      <div style={{
+        fontFamily: ui, fontSize: '12.5px', color: tw.inkSub,
+        lineHeight: 1.45,
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}>
+        {r.descShort}
+      </div>
+      <div style={{
+        fontFamily: mono, fontSize: '10px', letterSpacing: '0.06em',
+        color: tw.inkFaint,
+      }}>
+        {r.usage}
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <Kbd>{r.shortcut || '—'}</Kbd>
+      </div>
+    </div>
+  )
+}
+
+/* ── Page ── */
 export default function InternalPage() {
   const [activeResource, setActiveResource] = useState(null)
+  const [query, setQuery] = useState('')
   const { data: session } = useSession()
   const isAdmin = ADMIN_EMAILS.includes(session?.user?.email)
 
-  const visibleResources = resources.filter(r => !r.adminOnly || isAdmin)
+  const visible = useMemo(
+    () => resources.filter(r => !r.adminOnly || isAdmin),
+    [isAdmin]
+  )
+
+  const sorted = useMemo(
+    () => [...visible].sort((a, b) => a.usageRank - b.usageRank),
+    [visible]
+  )
+  const [hero, pinB, pinC] = sorted
+  const pinnedIds = useMemo(
+    () => new Set([hero?.id, pinB?.id, pinC?.id].filter(Boolean)),
+    [hero, pinB, pinC]
+  )
+
+  const filteredRest = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return visible.filter(r => {
+      if (pinnedIds.has(r.id)) return false
+      if (!q) return true
+      return (
+        r.name.toLowerCase().includes(q) ||
+        r.descShort.toLowerCase().includes(q) ||
+        r.cat.toLowerCase().includes(q) ||
+        r.shortcut.toLowerCase().includes(q)
+      )
+    })
+  }, [visible, query, pinnedIds])
+
+  const groups = useMemo(
+    () => categories
+      .map(c => ({
+        ...c,
+        items: filteredRest
+          .filter(r => r.catKey === c.key)
+          .sort((a, b) => a.usageRank - b.usageRank),
+      }))
+      .filter(g => g.items.length > 0),
+    [filteredRest]
+  )
+
+  const heroStats = [
+    { val: '—', lbl: 'esta semana' },
+    { val: '—', lbl: 'hoy' },
+    { val: '—', lbl: 'match rate' },
+  ]
+
+  const openResource = (r) => {
+    if (!r.href) return
+    if (r.external) {
+      window.open(r.href, '_blank', 'noopener,noreferrer')
+    } else {
+      window.location.href = r.href
+    }
+  }
 
   return (
-    <main style={{ backgroundColor: tw.bg, backgroundImage: notebookBg, minHeight: '100vh' }}>
+    <main style={{ backgroundColor: tw.bg, minHeight: '100vh' }}>
 
-      {/* Nav */}
-      <nav style={{
+      {/* Top bar */}
+      <header style={{
+        display: 'flex', alignItems: 'center', gap: '16px',
+        padding: '16px clamp(1.25rem,5vw,4rem)',
         borderBottom: `1px solid ${tw.rule}`,
-        padding: '0 clamp(1.25rem,5vw,4rem)',
-        height: '60px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: 'rgba(254,252,249,0.97)',
-        backgroundImage: notebookBg,
+        background: 'rgba(255,255,255,0.55)',
         position: 'sticky', top: 0, zIndex: 50,
         backdropFilter: 'blur(12px)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
           <BondyLogo size={22} />
-          <span style={{ fontFamily: serif, fontSize: '17px', color: '#1A1A1A', letterSpacing: '0.04em' }}>BONDY</span>
-          <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: tw.green, border: `1px solid rgba(74,140,64,0.3)`, padding: '3px 8px' }}>
-            Internal
-          </span>
+          <span style={{ fontFamily: serif, fontSize: '17px', color: tw.ink, letterSpacing: '0.04em' }}>BONDY</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          {session?.user?.email && (
-            <span style={{ fontFamily: ui, fontSize: '11px', color: tw.inkFaint, fontWeight: 400 }}>
-              {session.user.email}
-            </span>
-          )}
+        <span style={{
+          fontFamily: ui, fontSize: '9px', letterSpacing: '0.18em',
+          textTransform: 'uppercase', color: tw.green,
+          border: `1px solid ${tw.greenEdge}`,
+          padding: '3px 8px', background: tw.greenTint,
+        }}>
+          Internal
+        </span>
+        <div style={{ flex: 1 }} />
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '20px',
+          fontSize: '11px', color: tw.inkFaint, letterSpacing: '0.04em',
+          fontFamily: ui,
+        }}>
+          {session?.user?.email && <span>{session.user.email}</span>}
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
-            style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: tw.inkFaint, background: 'none', border: `1px solid ${tw.rule}`, padding: '5px 12px', cursor: 'pointer', transition: 'all 0.15s' }}
+            style={{
+              fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em',
+              textTransform: 'uppercase', color: tw.inkFaint,
+              background: 'none', border: `1px solid ${tw.rule}`,
+              padding: '5px 12px', cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = tw.green; e.currentTarget.style.color = tw.green }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = tw.rule; e.currentTarget.style.color = tw.inkFaint }}
           >
             Cerrar sesión
           </button>
-          <Link href="/" style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: tw.inkFaint, textDecoration: 'none' }}>
-            ← Bondy Tools
-          </Link>
         </div>
-      </nav>
+      </header>
 
-      {/* Header */}
-      <section style={{ padding: '3.5rem clamp(1.25rem,5vw,4rem) 2.5rem', borderBottom: `1px solid ${tw.rule}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem' }}>
-          <div style={{ width: '20px', height: '1px', background: tw.green }} />
-          <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: tw.green }}>
-            Equipo Bondy
-          </span>
-        </div>
-        <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.2rem,4.5vw,3.5rem)', lineHeight: 1.0, color: tw.inkMid, marginBottom: '0.5rem' }} className="tw-ink-heavy">
-          Tu centro de recursos.
-        </h1>
-        <svg width="200" height="8" viewBox="0 0 200 8" fill="none" style={{ display: 'block', marginBottom: '1rem' }}>
-          <path d="M0 4 Q50 1 100 4 Q150 7 200 4" stroke="#4A8C40" strokeWidth="2" fill="none" strokeLinecap="round"/>
-        </svg>
-        <p style={{ fontFamily: ui, fontSize: '14px', color: tw.inkFaint, maxWidth: '440px', lineHeight: 1.7, fontWeight: 400 }}>
-          Todo lo que necesitás para hacer tu trabajo: herramientas, extensiones y materiales del equipo.
-        </p>
-      </section>
-
-      {/* Tools label */}
-      {!activeResource && (
-        <div style={{ padding: '0.875rem clamp(1.25rem,5vw,4rem)', borderBottom: `1px solid ${tw.rule}`, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '16px', height: '1px', background: tw.green }} />
-          <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: tw.green }}>
-            Herramientas activas — {visibleResources.filter(r => r.available).length} disponibles
-          </span>
-        </div>
-      )}
-
-      {/* Grid */}
       {!activeResource ? (
-        <section style={{ padding: '2rem clamp(1.25rem,5vw,4rem) 3rem' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '1px',
-            background: tw.rule,
-            border: `1px solid ${tw.rule}`,
+        <>
+          {/* Hero */}
+          <section style={{
+            padding: '36px clamp(1.25rem,5vw,4rem) 24px',
+            display: 'flex', flexDirection: 'column', gap: '14px',
           }}>
-            {visibleResources.map((r, i) => (
-              <div key={r.id || r.number} style={{ background: tw.bg }}>
-                <ToolCard r={r} isAdmin={isAdmin} bgCard={i % 2 === 0 ? tw.white : tw.bg} />
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '12px',
+              fontFamily: ui, fontSize: '10px', letterSpacing: '0.2em',
+              textTransform: 'uppercase', color: tw.green, fontWeight: 500,
+            }}>
+              <span style={{ width: '22px', height: '1px', background: tw.green }} />
+              <span>— Buenos días, {session?.user?.name?.split(' ')[0] ?? 'equipo'}</span>
+            </div>
+            <h1 style={{
+              fontFamily: serif,
+              fontSize: 'clamp(2.4rem, 5vw, 3.4rem)',
+              lineHeight: 0.96,
+              color: tw.inkMid, opacity: 0.95,
+              textShadow: '0.5px 0.5px 0 rgba(0,0,0,0.22)',
+              margin: 0, letterSpacing: '-0.005em',
+            }}>
+              Centro de recursos.
+            </h1>
+            <p style={{
+              fontFamily: ui, fontSize: '14px', lineHeight: 1.7,
+              color: tw.inkSub, maxWidth: '560px', margin: 0,
+            }}>
+              Lo que más usás, fijado arriba. El resto, en lista densa con atajos.
+            </p>
+          </section>
+
+          {/* 01 Pinned */}
+          <SectionHeader num="01" label="Fijado para vos" />
+          <div style={{ padding: '0 clamp(1.25rem,5vw,4rem)' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1.6fr 1fr 1fr',
+              border: `1px solid ${tw.rule}`,
+              background: tw.white,
+            }}>
+              {hero && <PinHero r={hero} stats={heroStats} onOpen={openResource} />}
+              {pinB && <PinCard r={pinB} isLast={false} onOpen={openResource} />}
+              {pinC && <PinCard r={pinC} isLast={true} onOpen={openResource} />}
+            </div>
+          </div>
+
+          {/* 02 Dense list */}
+          <SectionHeader
+            num="02"
+            label="Todo lo demás"
+            count={`${visible.length - pinnedIds.size} herramientas`}
+          />
+
+          <div style={{ padding: '0 clamp(1.25rem,5vw,4rem)' }}>
+            <div role="search" style={{
+              display: 'flex', alignItems: 'center', gap: '14px',
+              borderTop: `1px solid ${tw.rule}`,
+              borderBottom: `1px solid ${tw.rule}`,
+              padding: '12px 4px',
+              background: 'rgba(255,255,255,0.4)',
+            }}>
+              <span aria-hidden="true" style={{
+                fontFamily: mono, color: tw.green, fontSize: '14px', fontWeight: 700,
+              }}>⌕</span>
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Buscar herramienta, categoría o atajo…"
+                aria-label="Buscar"
+                style={{
+                  flex: 1,
+                  fontFamily: ui, fontSize: '14px',
+                  color: tw.ink,
+                  background: 'transparent',
+                  border: 'none', outline: 'none',
+                }}
+              />
+              <Kbd>⌘K</Kbd>
+            </div>
+          </div>
+
+          <div style={{ padding: '0 clamp(1.25rem,5vw,4rem) 32px' }}>
+            {groups.length === 0 ? (
+              <div style={{
+                padding: '32px 4px',
+                fontFamily: ui, fontSize: '13px', color: tw.inkFaint,
+                textAlign: 'center',
+              }}>
+                Sin resultados para "{query}".
+              </div>
+            ) : groups.map(g => (
+              <div key={g.key}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '20px 4px 10px',
+                  fontFamily: ui, fontSize: '9px', letterSpacing: '0.2em',
+                  textTransform: 'uppercase', color: tw.inkFaint, fontWeight: 600,
+                  borderBottom: `1px solid ${tw.rule}`,
+                }}>
+                  <span>{g.label}</span>
+                  <span style={{ fontFamily: mono, letterSpacing: '0.06em' }}>
+                    · {g.items.length}
+                  </span>
+                </div>
+                {g.items.map(r => (
+                  <DenseRow key={r.id} r={r} onOpen={openResource} />
+                ))}
               </div>
             ))}
           </div>
-        </section>
+
+          {/* Asistente embebido (legacy entry, abajo y discreto) */}
+          <div style={{
+            padding: '0 clamp(1.25rem,5vw,4rem) 48px',
+            display: 'flex', justifyContent: 'flex-start',
+          }}>
+            <button
+              onClick={() => setActiveResource('assistant-embed')}
+              style={{
+                fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em',
+                textTransform: 'uppercase', color: tw.inkFaint,
+                background: 'none', border: `1px solid ${tw.rule}`,
+                padding: '8px 14px', cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = tw.green; e.currentTarget.style.color = tw.green }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = tw.rule; e.currentTarget.style.color = tw.inkFaint }}
+            >
+              Abrir asistente embebido →
+            </button>
+          </div>
+        </>
       ) : (
         <section>
-          <div style={{ padding: '1rem clamp(1.25rem,5vw,4rem)', borderBottom: `1px solid ${tw.rule}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{
+            padding: '14px clamp(1.25rem,5vw,4rem)',
+            borderBottom: `1px solid ${tw.rule}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ width: '16px', height: '1px', background: tw.green }} />
-              <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: tw.green }}>
+              <span style={{
+                fontFamily: mono, fontSize: '10px', letterSpacing: '0.16em',
+                textTransform: 'uppercase', color: tw.green,
+              }}>
                 Asistente de Informes
               </span>
             </div>
-            <button onClick={() => setActiveResource(null)} style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: tw.inkFaint, background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button
+              onClick={() => setActiveResource(null)}
+              style={{
+                fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em',
+                textTransform: 'uppercase', color: tw.inkFaint,
+                background: 'none', border: 'none', cursor: 'pointer',
+              }}
+            >
               ← Volver
             </button>
           </div>
@@ -439,24 +696,30 @@ export default function InternalPage() {
       )}
 
       {/* Footer */}
-      <div style={{ padding: '1.25rem clamp(1.25rem,5vw,4rem)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${tw.rule}` }}>
-        <span style={{ fontFamily: ui, fontSize: '11px', color: tw.inkFaint, fontWeight: 400 }}>
+      <div style={{
+        padding: '1.25rem clamp(1.25rem,5vw,4rem)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        borderTop: `1px solid ${tw.rule}`,
+      }}>
+        <span style={{ fontFamily: ui, fontSize: '11px', color: tw.inkFaint }}>
           Uso exclusivo equipo Bondy
         </span>
-        <a href="https://wearebondy.com" target="_blank" rel="noopener noreferrer"
-          style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.10em', color: tw.green, textDecoration: 'none' }}>
+        <a
+          href="https://wearebondy.com" target="_blank" rel="noopener noreferrer"
+          style={{
+            fontFamily: mono, fontSize: '11px', letterSpacing: '0.10em',
+            color: tw.green, textDecoration: 'none',
+          }}
+        >
           wearebondy.com ↗
         </a>
       </div>
-
     </main>
   )
 }
 
 function AssistantTabs({ isAdmin }) {
   const [activeTab, setActiveTab] = useState('interview')
-  const mono  = "'Courier Prime', Courier, monospace"
-  const tw = { rule: '#E8E4DE', inkFaint: '#7A7874', green: '#4A8C40' }
 
   const tabs = [
     { id: 'interview', label: 'Screening Report' },
@@ -466,14 +729,20 @@ function AssistantTabs({ isAdmin }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '2rem', borderBottom: `1px solid ${tw.rule}`, paddingBottom: '0' }}>
+      <div style={{
+        display: 'flex', gap: '4px', marginBottom: '2rem',
+        borderBottom: `1px solid ${tw.rule}`, paddingBottom: '0',
+      }}>
         {tabs.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
             style={{
               padding: '10px 20px',
-              fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase',
+              fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em',
+              textTransform: 'uppercase',
               background: 'none', border: 'none', cursor: 'pointer',
-              color: activeTab === tab.id ? '#1A1A1A' : tw.inkFaint,
+              color: activeTab === tab.id ? tw.ink : tw.inkFaint,
               borderBottom: activeTab === tab.id ? `2px solid ${tw.green}` : '2px solid transparent',
               transition: 'all 0.2s', marginBottom: '-1px',
             }}
