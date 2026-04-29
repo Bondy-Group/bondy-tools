@@ -165,6 +165,11 @@ export default function ProposalEditorPage() {
           <Field label="Nombre corto">
             <Input value={row.client_short_name || ''} onChange={(v) => update('client_short_name', v)} />
           </Field>
+          <ClientNamesWarning
+            name={row.client_name}
+            legal={row.client_legal_name}
+            short={row.client_short_name}
+          />
           <Field label="Contacto">
             <Input value={row.client_contact || ''} onChange={(v) => update('client_contact', v)} />
           </Field>
@@ -294,6 +299,39 @@ function Field({ label, children }) {
     <div style={{ marginBottom: 10 }}>
       <label style={{ display: 'block', fontSize: 11, color: tw.inkFaint, marginBottom: 4, fontWeight: 500 }}>{label}</label>
       {children}
+    </div>
+  )
+}
+
+// Tokenizado simple para detectar nombres muy distintos entre los 3 campos del cliente.
+// Ignora forma legal (SA, SAS, SRL, LLC, INC, LTDA, GMBH) y stopwords cortas.
+function _tokens(str) {
+  const STOP = new Set(['sa', 'sas', 'srl', 'llc', 'inc', 'ltd', 'ltda', 'gmbh', 'co', 'corp', 'group', 'the', 'de', 'del', 'la', 'el'])
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && !STOP.has(t))
+}
+function _shareToken(a, b) {
+  const ta = _tokens(a), tb = new Set(_tokens(b))
+  if (!ta.length || !tb.size) return true // si alguno está vacío no avisamos
+  return ta.some((t) => tb.has(t))
+}
+
+function ClientNamesWarning({ name, legal, short }) {
+  const issues = []
+  if (legal && !_shareToken(name, legal)) issues.push('Razón social')
+  if (short && !_shareToken(name, short)) issues.push('Nombre corto')
+  if (!issues.length) return null
+  return (
+    <div style={{
+      marginBottom: 10, padding: '8px 10px', fontSize: 12, fontFamily: ui,
+      color: '#8A4500', background: '#FFF5E6', border: '1px solid #FFD9A8',
+      borderRadius: 2,
+    }}>
+      <strong>Atención:</strong> {issues.join(' y ')} no comparte palabras con el nombre comercial. Confirmá que sea intencional.
     </div>
   )
 }
