@@ -185,7 +185,7 @@ function ExecSummary({ data, lang }) {
     why: `Por qué esta propuesta está calibrada para ${data.client.shortName}`,
     bullets: [
       ['AI-first como modo de trabajo.', 'Filtramos por “AI Architects” — no “AI Operators”. Nuestro lente cognitivo distingue quién diseña y orquesta IA de quién la usa.'],
-      ['DNA del cliente integrado.', 'Las 6 fortalezas del documento interno de DNA — Resiliencia, Autonomía, Power, Aprendizaje, Integridad, Juicio — se traducen al scorecard y se prueban en cada entrevista.'],
+      ['DNA del cliente integrado.', `Las ${data.dna.length} fortalezas del documento interno de DNA — ${data.dna.map((d) => d.title).join(', ')} — se traducen al scorecard y se prueban en cada entrevista.`],
       ['Filtro senior-only.', 'Sin juniors. Sin semi-seniors. Cada candidato presentado tiene la madurez operativa para loops semanales sin micromanagement.'],
       ['Velocidad dentro del método.', 'Primer shortlist en 10–14 días corridos desde el kickoff. Más rápido si hay matches “Hot” en la base al kickoff.'],
     ],
@@ -207,7 +207,7 @@ function ExecSummary({ data, lang }) {
     why: `Why this proposal is calibrated for ${data.client.shortName}`,
     bullets: [
       ['AI-first way of working.', 'We screen for “AI Architects” — not “AI Operators”. Our cognitive lens distinguishes who designs and orchestrates AI from who simply uses it.'],
-      ['Client DNA integration.', 'The 6 strengths from your internal DNA document — Resilience, Autonomy, Power, Learning, Integrity, Judgment — translate into our scorecard and are tested in every interview.'],
+      ['Client DNA integration.', `The ${data.dna.length} strengths from your internal DNA document — ${data.dna.map((d) => d.title).join(', ')} — translate into our scorecard and are tested in every interview.`],
       ['Senior-only filter.', 'No juniors. No semi-seniors. Every candidate presented has the operating maturity for weekly loops with no micromanagement.'],
       ['Speed within method.', 'First shortlist in 10–14 calendar days from kickoff. We move faster on “Hot” candidates already mapped in our base, flagged at kickoff.'],
     ],
@@ -443,8 +443,8 @@ function Fees({ data, lang }) {
     feeNote: `Base salarial en ${data.salaryCurrency} con ajuste IPC trimestral. Fee calculado sobre el bruto al día de inicio del candidato.`,
     pre: ['Candidatos pre-existentes', 'Si el cliente desea incluir en una búsqueda gestionada por Bondy un candidato previamente identificado o referido por el cliente, el proceso sigue sujeto a fees. En ese caso, Bondy factura el 50% del fee aplicable.'],
     guar: ['Garantía de placement', 'Garantía de 30 días por placement. Si el candidato renuncia voluntariamente o es desvinculado dentro de los 30 días desde el inicio, Bondy realiza una búsqueda de reemplazo sin costo adicional. La garantía no aplica si la desvinculación se relaciona con incumplimiento de buenas prácticas (acoso, discriminación, abuso), incumplimiento del cliente con el empleado, o evaluación incorrecta de skills técnicos por parte del cliente.'],
-    pay: ['Términos de pago', 'Fee facturado el día de inicio del candidato. Facturas vencen a 14 días de recibidas. Intereses por mora aplican pasados los 35 días corridos:'],
-    payRows: [['1–10 días', '+1.95%'], ['10–20 días', '+3.89%'], ['20–30 días', '+5.84%']],
+    pay: ['Términos de pago', 'Fee facturado el día de inicio del candidato. Las facturas vencen a 14 días de recibidas. Pasados 30 días corridos desde la recepción sin pago, aplican intereses por mora calculados sobre los días adicionales de atraso:'],
+    payRows: [['1–10 días adicionales', '+1.95%'], ['11–20 días adicionales', '+3.89%'], ['21–30 días adicionales', '+5.84%']],
     cancel: ['Cancelación', 'Si el cliente termina una requisición antes de presentar 3 candidatos válidos: 25% del cap salarial mensual acordado. Después de presentados 3 válidos: 50%. La fee de cancelación no aplica si la búsqueda es cubierta por otro consultor o referido interno.'],
     commit: ['Compromiso', 'El cliente se compromete a comunicación y decisiones oportunas. Si no responde por más de 10 días corridos, Bondy se reserva el derecho de terminar la requisición y aplicar la fee de cancelación.'],
   } : {
@@ -456,8 +456,8 @@ function Fees({ data, lang }) {
     feeNote: `Salary base in ${data.salaryCurrency} with quarterly CPI adjustment. Fee calculated on gross salary at candidate's start date.`,
     pre: ['Pre-existing candidates', 'If the client wishes to include in a Bondy-managed search a candidate previously identified, contacted or referred by the client, the process remains subject to fees. In that case, Bondy invoices 50% of the applicable recruitment fee.'],
     guar: ['Placement guarantee', '30-day guarantee per placement. If the candidate voluntarily resigns or is terminated within 30 days of start date, Bondy conducts a replacement search at no additional cost. The guarantee does not apply if termination relates to non-compliance with good practices (harassment, discrimination, abuse), client breach of obligations to the employee, or client misjudging technical skills or seniority during the interview process.'],
-    pay: ['Payment terms', 'Fee invoiced on candidate\u2019s start date. Invoices due within 14 days of receipt. Late-payment interest applies on delays beyond 35 consecutive days:'],
-    payRows: [['1–10 days late', '+1.95%'], ['10–20 days late', '+3.89%'], ['20–30 days late', '+5.84%']],
+    pay: ['Payment terms', 'Fee invoiced on candidate\u2019s start date. Invoices due within 14 days of receipt. Past 30 consecutive days from receipt without payment, late-payment interest applies on additional days of delay:'],
+    payRows: [['1–10 additional days', '+1.95%'], ['11–20 additional days', '+3.89%'], ['21–30 additional days', '+5.84%']],
     cancel: ['Cancellation', 'If the client terminates a requisition before Bondy presents 3 suitable candidates: 25% of the agreed monthly salary cap. After 3 suitable candidates have been presented: 50%. The cancellation fee does not apply if the search is filled by another consultant or by an internal referral.'],
     commit: ['Commitment', 'Client agrees to prompt and timely communication and decision-making. If client does not respond for more than 10 calendar days, Bondy reserves the right to terminate the requisition and apply the cancellation fee.'],
   }
