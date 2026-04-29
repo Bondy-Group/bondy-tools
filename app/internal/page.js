@@ -155,6 +155,17 @@ const resources = [
     shortcut: '', staticRank: 99, status: 'soon',
     href: null,
   },
+  {
+    id: 'usage-admin',
+    name: 'Uso del equipo',
+    cat: 'Admin', catKey: 'admin',
+    descShort: 'Cómo usa el equipo cada tool. Vista de admin.',
+    desc: 'Métricas de uso por tool y por usuario. Quién usa qué, cuándo, y con qué frecuencia. Vista exclusiva de admin.',
+    glyph: 'UA',
+    shortcut: '', staticRank: 50, status: 'live',
+    href: '/internal/usage-admin',
+    adminOnly: true,
+  },
 ]
 
 const categories = [
@@ -598,6 +609,25 @@ export default function InternalPage() {
     }
   }
 
+  // Hotkeys ⌘1-⌘9, ⌘0. Match contra el `shortcut` literal de cada resource.
+  // Se ignoran si el foco está en un input/textarea (no chocar con search).
+  useEffect(() => {
+    if (sessionStatus !== 'authenticated' || activeResource) return
+    const handler = (e) => {
+      if (!(e.metaKey || e.ctrlKey)) return
+      const tag = (e.target?.tagName || '').toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || e.target?.isContentEditable) return
+      if (!/^[0-9]$/.test(e.key)) return
+      const wanted = `⌘${e.key}`
+      const match = visible.find(r => r.shortcut === wanted && r.status === 'live' && r.href)
+      if (!match) return
+      e.preventDefault()
+      openResource(match)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [visible, sessionStatus, activeResource])
+
 
   return (
     <main style={{ backgroundColor: tw.bg, minHeight: '100vh' }}>
@@ -629,7 +659,7 @@ export default function InternalPage() {
           fontSize: '11px', color: tw.inkFaint, letterSpacing: '0.04em',
           fontFamily: ui,
         }}>
-          {session?.user?.email && <span>{session.user.email}</span>}
+          {session?.user?.name && <span>{session.user.name}</span>}
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
             style={{
