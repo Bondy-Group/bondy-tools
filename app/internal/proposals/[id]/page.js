@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import ProposalDocument from '../ProposalDocument'
 import { rowToRenderData } from './_helpers'
+import TranscriptExtract from './TranscriptExtract'
 
 const tw = {
   bg: '#FEFCF9', ink: '#1A1A1A', inkMid: '#3A3530', inkSub: '#5A5550',
@@ -104,6 +105,12 @@ export default function ProposalEditorPage() {
           </div>
           <h1 style={{ margin: '8px 0 0', fontSize: 18, fontWeight: 600 }}>{row.client_name || 'Untitled'}</h1>
         </div>
+
+        {/* Transcript extractor */}
+        <TranscriptExtract
+          row={row}
+          onApply={(patch) => setRow((prev) => ({ ...prev, ...patch }))}
+        />
 
         {/* Status */}
         <Section title="Estado">
