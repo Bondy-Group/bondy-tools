@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import InterviewTab from '@/components/InterviewTab'
 import CulturalFitTab from '@/components/CulturalFitTab'
@@ -34,6 +34,12 @@ const BondyLogo = ({ size = 22 }) => (
 )
 
 /* RESOURCES — sorted by usageRank, top 3 = pinned */
+/**
+ * RESOURCES — metadata estable.
+ * - `staticRank`: orden default cuando el usuario aún no tiene clicks registrados.
+ *   Una vez que hay tracking real, el rank dinámico (click_count desc) lo reemplaza.
+ * - `lastUsed` y `usage` NO se setean acá: se calculan desde tool_usage_30d.
+ */
 const resources = [
   {
     id: 'assistant',
@@ -42,8 +48,7 @@ const resources = [
     desc: 'Screening reports y cultural fit con IA. Scorecard ponderado por posición. El motor que arma los informes que mandás a clientes.',
     descShort: 'Screening + cultural fit con IA. Scorecards.',
     glyph: 'AI',
-    shortcut: '⌘1', usageRank: 1, status: 'live',
-    usage: 'Diaria', lastUsed: 'hoy',
+    shortcut: '⌘1', staticRank: 1, status: 'live',
     href: 'https://interview-report-gen1.vercel.app',
     external: true,
   },
@@ -54,8 +59,7 @@ const resources = [
     desc: 'Pipeline por búsqueda con vistas lista y kanban, quick actions y scorecard integrado.',
     descShort: 'Pipeline por búsqueda. Lista, kanban, scorecard.',
     glyph: 'AT',
-    shortcut: '⌘2', usageRank: 2, status: 'live',
-    usage: 'Diaria', lastUsed: 'hoy',
+    shortcut: '⌘2', staticRank: 2, status: 'live',
     href: '/internal/ats',
   },
   {
@@ -65,8 +69,7 @@ const resources = [
     desc: 'CRUD de búsquedas en wearebondy.com/roles + inbox de aplicaciones con CV.',
     descShort: 'CRUD de roles públicos + inbox de aplicaciones.',
     glyph: 'JB',
-    shortcut: '⌘3', usageRank: 3, status: 'live',
-    usage: 'Diaria', lastUsed: 'hoy',
+    shortcut: '⌘3', staticRank: 3, status: 'live',
     href: '/internal/job-board',
     adminOnly: true,
   },
@@ -77,8 +80,7 @@ const resources = [
     descShort: 'Scoring ICP, contacto verificado y draft de email.',
     desc: 'Scoring ICP, contacto verificado y draft de email personalizado en segundos.',
     glyph: 'LA',
-    shortcut: '⌘4', usageRank: 4, status: 'live',
-    usage: 'Diaria', lastUsed: 'esta semana',
+    shortcut: '⌘4', staticRank: 4, status: 'live',
     href: '/internal/lead-analyzer',
   },
   {
@@ -88,8 +90,7 @@ const resources = [
     descShort: 'Agenda, preguntas por competencia y notas estructuradas.',
     desc: 'Agendá entrevistas, generá preguntas por competencia y tomá notas estructuradas.',
     glyph: 'IH',
-    shortcut: '⌘5', usageRank: 5, status: 'live',
-    usage: 'Semanal', lastUsed: 'esta semana',
+    shortcut: '⌘5', staticRank: 5, status: 'live',
     href: '/interview-hub',
   },
   {
@@ -99,8 +100,7 @@ const resources = [
     descShort: 'Master DB en vivo: candidatos, clientes, performance.',
     desc: 'Historial de candidatos y clientes, performance del equipo, campañas. Master DB en vivo.',
     glyph: 'BI',
-    shortcut: '⌘6', usageRank: 6, status: 'live',
-    usage: 'Semanal', lastUsed: 'esta semana',
+    shortcut: '⌘6', staticRank: 6, status: 'live',
     href: '/internal/intelligence',
   },
   {
@@ -110,8 +110,7 @@ const resources = [
     descShort: 'Qué tecnologías y perfiles contratan en LATAM.',
     desc: 'Señales del mercado tech: qué tecnologías y perfiles están contratando en LATAM.',
     glyph: 'MS',
-    shortcut: '⌘7', usageRank: 7, status: 'live',
-    usage: 'Semanal', lastUsed: 'esta semana',
+    shortcut: '⌘7', staticRank: 7, status: 'live',
     href: '/internal/market-signals',
   },
   {
@@ -121,8 +120,7 @@ const resources = [
     descShort: 'Generador de acuerdos. Form + preview + PDF.',
     desc: 'Generador de acuerdos de servicio. Form + preview live + export PDF. Persistido en Supabase con agreement ID.',
     glyph: 'SP',
-    shortcut: '⌘8', usageRank: 8, status: 'live',
-    usage: 'Semanal', lastUsed: 'esta semana',
+    shortcut: '⌘8', staticRank: 8, status: 'live',
     href: '/internal/proposals',
     adminOnly: true,
   },
@@ -133,8 +131,7 @@ const resources = [
     descShort: 'Comisiones, cobros y envío de invoices.',
     desc: 'Comisiones por búsqueda, estado de cobros y envío de invoices para recruiters y sourcers.',
     glyph: 'PG',
-    shortcut: '⌘9', usageRank: 9, status: 'live',
-    usage: 'Mensual', lastUsed: 'este mes',
+    shortcut: '⌘9', staticRank: 9, status: 'live',
     href: '/internal/seguimiento-pagos',
     adminOnly: true,
   },
@@ -145,8 +142,7 @@ const resources = [
     descShort: 'Capturá perfiles de LinkedIn directo en tu flujo.',
     desc: 'Capturá perfiles de LinkedIn directo en tu flujo. Descargá e instalá.',
     glyph: 'CR',
-    shortcut: '⌘0', usageRank: 10, status: 'live',
-    usage: 'Diaria', lastUsed: 'hoy',
+    shortcut: '⌘0', staticRank: 10, status: 'live',
     href: '/internal/chrome-extension',
   },
   {
@@ -156,8 +152,7 @@ const resources = [
     descShort: 'Libros, guías y materiales del equipo.',
     desc: 'Libros, guías y materiales del equipo. Descargables y organizados por categoría.',
     glyph: 'BL',
-    shortcut: '', usageRank: 99, status: 'soon',
-    usage: 'Pronto', lastUsed: '—',
+    shortcut: '', staticRank: 99, status: 'soon',
     href: null,
   },
 ]
@@ -169,6 +164,79 @@ const categories = [
   { key: 'admin',    label: 'Admin' },
   { key: 'extras',   label: 'Extras' },
 ]
+
+/* ── Usage formatting ── */
+
+function formatLastUsed(iso) {
+  if (!iso) return null
+  const t = new Date(iso).getTime()
+  if (Number.isNaN(t)) return null
+  const diffMs = Date.now() - t
+  const min = Math.round(diffMs / 60000)
+  if (min < 1)        return 'recién'
+  if (min < 60)       return `hace ${min} min`
+  const h = Math.round(min / 60)
+  if (h < 24)         return `hace ${h} h`
+  const d = Math.round(h / 24)
+  if (d === 1)        return 'ayer'
+  if (d < 7)          return `hace ${d} días`
+  if (d < 14)         return 'la semana pasada'
+  if (d < 30)         return `hace ${Math.round(d / 7)} sem`
+  return `hace ${Math.round(d / 30)} mes`
+}
+
+/**
+ * Heurística para mostrar "Diaria" / "Semanal" / "Mensual"
+ * a partir del count de los últimos 30 días.
+ *  - >= 15 clicks/30d  → Diaria  (~todos los días hábiles)
+ *  - >=  4 clicks/30d  → Semanal (~1/sem)
+ *  - >=  1            → Mensual
+ *  -  0               → Sin uso
+ */
+function inferUsage(count) {
+  if (!count)        return 'Sin uso'
+  if (count >= 15)   return 'Diaria'
+  if (count >= 4)    return 'Semanal'
+  return 'Mensual'
+}
+
+/**
+ * Merge de la metadata estática con el usage real del user.
+ * Devuelve resources enriquecidos + ordenados por uso real (rank dinámico).
+ *
+ * - Si el user nunca clickeó nada de un tool, lastUsed = null y count = 0.
+ * - Tools con clicks van primero (ordenados por count desc, ties por last_used desc).
+ * - Tools sin clicks caen al final, ordenados por staticRank.
+ * - Status 'soon' siempre va al final.
+ */
+function enrichWithUsage(staticResources, usageByToolId) {
+  return [...staticResources]
+    .map(r => {
+      const u = usageByToolId.get(r.id)
+      return {
+        ...r,
+        clickCount:    u?.click_count || 0,
+        lastUsedAt:    u?.last_used_at || null,
+        lastUsedLabel: formatLastUsed(u?.last_used_at),
+        usageLabel:    r.status === 'soon' ? 'Pronto' : inferUsage(u?.click_count || 0),
+      }
+    })
+    .sort((a, b) => {
+      // soon al final
+      if (a.status === 'soon' && b.status !== 'soon') return  1
+      if (b.status === 'soon' && a.status !== 'soon') return -1
+      // ambos con uso → por count desc, ties por last_used desc
+      if (a.clickCount && b.clickCount) {
+        if (a.clickCount !== b.clickCount) return b.clickCount - a.clickCount
+        return new Date(b.lastUsedAt) - new Date(a.lastUsedAt)
+      }
+      // sólo uno con uso → ese va primero
+      if (a.clickCount && !b.clickCount) return -1
+      if (b.clickCount && !a.clickCount) return  1
+      // ninguno con uso → staticRank
+      return a.staticRank - b.staticRank
+    })
+}
 
 /* ── small bits ── */
 
@@ -290,7 +358,7 @@ function PinHero({ r, stats, onOpen }) {
         fontFamily: mono, fontSize: '10px', letterSpacing: '0.1em',
         color: tw.inkFaint,
       }}>
-        <span>último: {r.lastUsed} · {r.shortcut}</span>
+        <span>último: {r.lastUsedLabel ?? 'sin uso aún'} · {r.shortcut}</span>
         <span style={{
           fontFamily: mono, fontSize: '10px', letterSpacing: '0.14em',
           textTransform: 'uppercase', color: tw.green, fontWeight: 700,
@@ -346,7 +414,7 @@ function PinCard({ r, isLast, onOpen }) {
           <div style={{
             fontFamily: serif, fontSize: '15px',
             color: tw.inkMid, lineHeight: 1,
-          }}>{r.lastUsed}</div>
+          }}>{r.lastUsedLabel ?? '—'}</div>
           <div style={{
             fontFamily: ui, fontSize: '9px', letterSpacing: '0.14em',
             textTransform: 'uppercase', color: tw.inkFaint, marginTop: '5px',
@@ -407,7 +475,7 @@ function DenseRow({ r, onOpen }) {
         fontFamily: mono, fontSize: '10px', letterSpacing: '0.06em',
         color: tw.inkFaint,
       }}>
-        {r.usage}
+        {r.usageLabel}
       </div>
       <div style={{ textAlign: 'center' }}>
         <Kbd>{r.shortcut || '—'}</Kbd>
@@ -420,27 +488,48 @@ function DenseRow({ r, onOpen }) {
 export default function InternalPage() {
   const [activeResource, setActiveResource] = useState(null)
   const [query, setQuery] = useState('')
-  const { data: session } = useSession()
+  const [usageMap, setUsageMap] = useState(new Map())
+  const { data: session, status: sessionStatus } = useSession()
   const isAdmin = ADMIN_EMAILS.includes(session?.user?.email)
+
+  // Fetch usage del user actual al montar (y cada vez que cambia el email)
+  useEffect(() => {
+    if (sessionStatus !== 'authenticated') return
+    let cancelled = false
+    fetch('/api/internal/tool-usage', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : { usage: [] })
+      .then(data => {
+        if (cancelled) return
+        const m = new Map()
+        for (const u of (data.usage || [])) m.set(u.tool_id, u)
+        setUsageMap(m)
+      })
+      .catch(err => console.error('[tool-usage fetch]', err))
+    return () => { cancelled = true }
+  }, [sessionStatus, session?.user?.email])
 
   const visible = useMemo(
     () => resources.filter(r => !r.adminOnly || isAdmin),
     [isAdmin]
   )
 
+  // Enriched + sorted by real usage (falls back to staticRank if no clicks)
   const sorted = useMemo(
-    () => [...visible].sort((a, b) => a.usageRank - b.usageRank),
-    [visible]
+    () => enrichWithUsage(visible, usageMap),
+    [visible, usageMap]
   )
-  const [hero, pinB, pinC] = sorted
+
+  // Pinned = top-3 EXCLUYENDO 'soon'
+  const pinnedCandidates = sorted.filter(r => r.status !== 'soon').slice(0, 3)
+  const [hero, pinB, pinC] = pinnedCandidates
   const pinnedIds = useMemo(
-    () => new Set([hero?.id, pinB?.id, pinC?.id].filter(Boolean)),
-    [hero, pinB, pinC]
+    () => new Set(pinnedCandidates.map(r => r.id)),
+    [pinnedCandidates]
   )
 
   const filteredRest = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return visible.filter(r => {
+    return sorted.filter(r => {
       if (pinnedIds.has(r.id)) return false
       if (!q) return true
       return (
@@ -450,34 +539,65 @@ export default function InternalPage() {
         r.shortcut.toLowerCase().includes(q)
       )
     })
-  }, [visible, query, pinnedIds])
+  }, [sorted, query, pinnedIds])
 
   const groups = useMemo(
     () => categories
       .map(c => ({
         ...c,
-        items: filteredRest
-          .filter(r => r.catKey === c.key)
-          .sort((a, b) => a.usageRank - b.usageRank),
+        // dentro de cada grupo, mantener el orden global ya calculado
+        items: filteredRest.filter(r => r.catKey === c.key),
       }))
       .filter(g => g.items.length > 0),
     [filteredRest]
   )
 
-  const heroStats = [
-    { val: '—', lbl: 'esta semana' },
-    { val: '—', lbl: 'hoy' },
-    { val: '—', lbl: 'match rate' },
-  ]
+  // Hero stats (placeholder hasta que decidamos qué métricas mostrar)
+  const heroStats = useMemo(() => {
+    if (!hero) return []
+    const total = Array.from(usageMap.values()).reduce((a, b) => a + (b.click_count || 0), 0)
+    return [
+      { val: hero.clickCount || '—',                            lbl: 'aperturas 30d' },
+      { val: total ? Math.round((hero.clickCount / total) * 100) : '—', sup: total ? '%' : null, lbl: 'de tu uso' },
+      { val: total || '—',                                      lbl: 'total tools' },
+    ]
+  }, [hero, usageMap])
+
+  /**
+   * Track + navegar.
+   * - sendBeacon para que no bloquee la navegación (especialmente para externos).
+   * - Fallback a fetch keepalive si sendBeacon no está.
+   */
+  const trackClick = (toolId) => {
+    if (typeof window === 'undefined') return
+    const url = '/api/internal/track-tool-click'
+    const payload = JSON.stringify({ toolId })
+    try {
+      if (navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: 'application/json' })
+        navigator.sendBeacon(url, blob)
+        return
+      }
+    } catch (_) {}
+    // Fallback
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {})
+  }
 
   const openResource = (r) => {
     if (!r.href) return
+    trackClick(r.id)
     if (r.external) {
       window.open(r.href, '_blank', 'noopener,noreferrer')
     } else {
       window.location.href = r.href
     }
   }
+
 
   return (
     <main style={{ backgroundColor: tw.bg, minHeight: '100vh' }}>
