@@ -241,7 +241,11 @@ export default function UsageAdminPage() {
           fontSize: '11px', color: tw.inkFaint, letterSpacing: '0.04em',
           fontFamily: ui,
         }}>
-          {session?.user?.name && <span>{session.user.name}</span>}
+          {sessionStatus === 'authenticated' && (
+            <span style={{ opacity: session?.user?.name ? 1 : 0.4 }}>
+              {session?.user?.name ?? '…'}
+            </span>
+          )}
           <Link href="/internal" style={{
             fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em',
             textTransform: 'uppercase', color: tw.inkFaint,

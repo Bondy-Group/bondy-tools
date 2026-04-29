@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import InterviewTab from '@/components/InterviewTab'
 import CulturalFitTab from '@/components/CulturalFitTab'
@@ -497,6 +498,7 @@ function DenseRow({ r, onOpen }) {
 
 /* ── Page ── */
 export default function InternalPage() {
+  const router = useRouter()
   const [activeResource, setActiveResource] = useState(null)
   const [query, setQuery] = useState('')
   const [usageMap, setUsageMap] = useState(new Map())
@@ -605,7 +607,9 @@ export default function InternalPage() {
     if (r.external) {
       window.open(r.href, '_blank', 'noopener,noreferrer')
     } else {
-      window.location.href = r.href
+      // router.push para preservar session/state client-side y evitar el flash
+      // de email mientras NextAuth re-hidrata.
+      router.push(r.href)
     }
   }
 
@@ -659,7 +663,11 @@ export default function InternalPage() {
           fontSize: '11px', color: tw.inkFaint, letterSpacing: '0.04em',
           fontFamily: ui,
         }}>
-          {session?.user?.name && <span>{session.user.name}</span>}
+          {sessionStatus === 'authenticated' && (
+            <span style={{ opacity: session?.user?.name ? 1 : 0.4 }}>
+              {session?.user?.name ?? '…'}
+            </span>
+          )}
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
             style={{
