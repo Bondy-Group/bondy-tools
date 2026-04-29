@@ -1,8 +1,8 @@
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 
-// Routes that only Mara and Lucía can access (job board admin)
-const RESTRICTED_PREFIXES = ['/internal/job-board', '/internal/applications']
+// Routes that only Mara and Lucía can access
+const RESTRICTED_PREFIXES = ['/internal/job-board', '/internal/applications', '/internal/proposals']
 const JOB_BOARD_ADMINS = ['mara@wearebondy.com', 'lucia@wearebondy.com']
 
 export default withAuth(

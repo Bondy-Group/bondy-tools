@@ -98,6 +98,17 @@ const IconBruno = () => (
     <circle cx="10" cy="33" r="2" fill="#4A8C40"/>
   </svg>
 )
+const IconProposal = () => (
+  <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+    <rect x="6" y="4" width="22" height="30" rx="1.5" stroke="#4A8C40" strokeWidth="1.5"/>
+    <line x1="11" y1="11" x2="23" y2="11" stroke="#4A8C40" strokeWidth="1.5"/>
+    <line x1="11" y1="16" x2="23" y2="16" stroke="#4A8C40" strokeWidth="1.5"/>
+    <line x1="11" y1="21" x2="20" y2="21" stroke="#4A8C40" strokeWidth="1.5"/>
+    <path d="M22 28 Q26 30 30 28" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+    <circle cx="30" cy="34" r="4" fill="rgba(74,140,64,0.15)" stroke="#4A8C40" strokeWidth="1.5"/>
+    <path d="M28 34l1.3 1.3 2.7-2.6" stroke="#4A8C40" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
 const IconATS = () => (
   <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
     <rect x="4" y="6" width="32" height="28" rx="2" stroke="#4A8C40" strokeWidth="1.5"/>
@@ -233,6 +244,17 @@ const resources = [
     cta: 'Abrir',
     available: true,
     href: '/internal/seguimiento-pagos',
+    adminOnly: true,
+  },
+  {
+    id: 'proposals',
+    number: '11',
+    icon: <IconProposal />,
+    title: 'Service Proposals',
+    description: 'Generador de acuerdos de servicio. Form + preview live + export PDF. Persistido en Supabase con agreement ID.',
+    cta: 'Abrir',
+    available: true,
+    href: '/internal/proposals',
     adminOnly: true,
   },
 ]

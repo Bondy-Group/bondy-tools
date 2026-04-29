@@ -1,0 +1,1031 @@
+/* ═══════════════════════════════════════════════════════════
+   BONDY — Colors & Type
+   Brand System v4 · March 2026
+   Typewriter aesthetic on cream notebook paper.
+   One accent: green #4A8C40. Nothing else.
+═══════════════════════════════════════════════════════════ */
+
+/* Plus Jakarta Sans — body/UI/labels (v4 brand) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* ── Fonts ── */
+@font-face {
+  font-family: 'Special Elite';
+  src: url('/fonts/special-elite-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Courier Prime kept for fallback/legacy layouts; current brand uses Plus Jakarta Sans */
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('/fonts/courier-prime-regular-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('/fonts/courier-prime-bold-latin.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('/fonts/courier-prime-italic-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* (Plus Jakarta Sans @import moved to top of file) */
+
+:root {
+  /* ─────────────────────────────────────────────
+     COLORS — one system, three roles
+     ───────────────────────────────────────────── */
+
+  /* Surface */
+  --bondy-bg:          #FEFCF9;  /* cream paper */
+  --bondy-white:       #FFFFFF;  /* cards, content blocks */
+
+  /* Ink — single hue graded into 4 steps */
+  --bondy-ink:         #1A1A1A;  /* body/logo — max contrast */
+  --bondy-ink-mid:     #3A3530;  /* headings */
+  --bondy-ink-sub:     #5A5550;  /* body text */
+  --bondy-ink-faint:   #7A7874;  /* labels, meta, sub */
+
+  /* Rule / dividers */
+  --bondy-rule:        #E8E4DE;
+
+  /* Accent — the only accent. Used for CTAs, labels, URLs, underlines, favicon. */
+  --bondy-green:       #4A8C40;
+  --bondy-green-hover: #3a7030;
+  --bondy-green-tint:  rgba(74, 140, 64, 0.08);
+  --bondy-green-edge:  rgba(74, 140, 64, 0.35);
+
+  /* Notebook paper lines — always present on --bondy-bg */
+  --bondy-margin-line: rgba(210, 100, 80, 0.10);  /* red margin, left */
+  --bondy-notebook-line: rgba(100, 140, 200, 0.09); /* blue rule lines */
+
+  /* ─────────────────────────────────────────────
+     SEMANTIC TEXT TOKENS
+     ───────────────────────────────────────────── */
+  --bondy-fg:          var(--bondy-ink);
+  --bondy-fg1:         var(--bondy-ink-mid);
+  --bondy-fg2:         var(--bondy-ink-sub);
+  --bondy-fg3:         var(--bondy-ink-faint);
+  --bondy-link:        var(--bondy-green);
+
+  /* ─────────────────────────────────────────────
+     TYPE FAMILIES
+     ───────────────────────────────────────────── */
+  --bondy-font-display: 'Special Elite', Georgia, serif;
+  --bondy-font-body:    'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --bondy-font-mono:    'Courier Prime', 'Plus Jakarta Sans', monospace;
+
+  /* ─────────────────────────────────────────────
+     SPACING — generous, editorial
+     ───────────────────────────────────────────── */
+  --bondy-space-1:   4px;
+  --bondy-space-2:   8px;
+  --bondy-space-3:   12px;
+  --bondy-space-4:   16px;
+  --bondy-space-5:   24px;
+  --bondy-space-6:   32px;
+  --bondy-space-7:   48px;
+  --bondy-space-8:   64px;
+  --bondy-space-9:   96px;
+
+  /* Borders & radii */
+  --bondy-border:    1px solid var(--bondy-rule);
+  --bondy-radius-0:  0px;          /* default — no rounding */
+  --bondy-radius-sm: 2.5px;        /* logo seat radius */
+  --bondy-radius-md: 4px;          /* used sparingly in email client chrome */
+
+  /* Elevation — not really used; brand avoids drop shadows */
+  --bondy-shadow-ink:   .4px .4px 0 rgba(0,0,0,0.12);
+  --bondy-shadow-ink-hv: .5px .5px 0 rgba(0,0,0,0.25);
+}
+
+/* ─────────────────────────────────────────────
+   NOTEBOOK PAPER BACKGROUND
+   Apply to body or hero wrappers.
+   ───────────────────────────────────────────── */
+.bondy-notebook-bg {
+  background-color: var(--bondy-bg);
+  background-image:
+    linear-gradient(90deg,
+      transparent 68px,
+      var(--bondy-margin-line) 68px,
+      var(--bondy-margin-line) 69.5px,
+      transparent 69.5px),
+    repeating-linear-gradient(180deg,
+      transparent 0px,
+      transparent 31px,
+      var(--bondy-notebook-line) 31px,
+      var(--bondy-notebook-line) 32px);
+}
+
+/* Simpler notebook (horizontal rules only) for small surfaces like chips/social frames */
+.bondy-notebook-bg-simple {
+  background-color: var(--bondy-bg);
+  background-image:
+    linear-gradient(var(--bondy-margin-line) 1px, transparent 1px),
+    linear-gradient(var(--bondy-notebook-line) 1px, transparent 1px);
+  background-size: 100% 32px;
+}
+
+/* ─────────────────────────────────────────────
+   SEMANTIC TYPOGRAPHY
+   Matches /method, /services, / page hierarchy
+   (html/body reset removed — applied via .proposal-doc-wrapper)
+   ───────────────────────────────────────────── */
+
+.bondy-h1, h1.bondy {
+  font-family: var(--bondy-font-display);
+  font-size: clamp(3.5rem, 9vw, 7rem);
+  line-height: 0.96;
+  color: var(--bondy-ink-mid);
+  opacity: 0.95;
+  text-shadow: var(--bondy-shadow-ink-hv);
+  margin: 0;
+}
+
+/* Only H1 uses the display typewriter. H2+ are Jakarta — quieter, more legible. */
+.bondy-h2, h2.bondy {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+  line-height: 1.1;
+  color: var(--bondy-ink-mid);
+  margin: 0;
+}
+
+.bondy-h3, h3.bondy {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  font-size: clamp(1.25rem, 2vw, 1.625rem);
+  line-height: 1.2;
+  color: var(--bondy-ink-mid);
+  margin: 0;
+}
+
+.bondy-h4, h4.bondy {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  color: var(--bondy-ink-mid);
+  margin: 0;
+}
+
+.bondy-p, p.bondy {
+  font-family: var(--bondy-font-body);
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--bondy-ink-sub);
+  margin: 0;
+}
+
+.bondy-small {
+  font-family: var(--bondy-font-body);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--bondy-ink-sub);
+}
+
+/* Label — the utility workhorse. Uppercase, wide-tracked, 9–11px. */
+.bondy-label {
+  font-family: var(--bondy-font-body);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bondy-green);
+  font-weight: 500;
+}
+
+.bondy-label--faint {
+  color: var(--bondy-ink-faint);
+}
+
+.bondy-meta {
+  font-family: var(--bondy-font-body);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bondy-ink-faint);
+}
+
+/* Ink effects — only on display type */
+.bondy-ink-effect {
+  opacity: 0.88;
+  text-shadow: 0.3px 0.3px 0 rgba(0, 0, 0, 0.15);
+}
+.bondy-ink-heavy {
+  opacity: 0.95;
+  text-shadow: 0.5px 0.5px 0 rgba(0, 0, 0, 0.25);
+}
+/* ─────────────────────────────────────────────────────────
+   Proposal — page chrome & components
+   Designed for both screen review and print (Letter @ 96dpi)
+   Scoped to .proposal-doc-wrapper to avoid leaking into the panel.
+   ───────────────────────────────────────────────────────── */
+
+.proposal-doc-wrapper * { box-sizing: border-box; }
+
+.proposal-doc-wrapper {
+  background: #EFEAE2;
+  font-family: var(--bondy-font-body);
+  color: var(--bondy-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  padding: 48px 24px 96px;
+  min-height: 100%;
+}
+
+/* ── Page ──────────────────────────────────────────────── */
+.page {
+  width: 816px;       /* 8.5in × 96 */
+  min-height: 1056px; /* 11in  × 96 */
+  background: #FDFCFA;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* paper edge — extremely subtle. No drop shadows per brand. */
+  border: 1px solid #E0DBD2;
+  break-after: page;
+}
+
+.page--cover {
+  background: var(--bondy-bg);
+  background-image:
+    linear-gradient(90deg,
+      transparent 68px,
+      var(--bondy-margin-line) 68px,
+      var(--bondy-margin-line) 69.5px,
+      transparent 69.5px),
+    repeating-linear-gradient(180deg,
+      transparent 0px,
+      transparent 31px,
+      var(--bondy-notebook-line) 31px,
+      var(--bondy-notebook-line) 32px);
+}
+
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px 56px 0 88px;
+  font-family: var(--bondy-font-body);
+}
+.page-head-l {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bondy-ink-faint);
+}
+.page-head-name {
+  color: var(--bondy-ink);
+  font-weight: 600;
+}
+.page-head-sep { opacity: 0.5; }
+.page-head-meta { color: var(--bondy-ink-faint); text-transform: none; letter-spacing: 0.02em; font-size: 11px; }
+.page-head-num {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--bondy-green);
+  font-weight: 500;
+}
+
+.page-body {
+  flex: 1;
+  padding: 56px 64px 40px 88px;  /* leave the red margin line breathing space */
+}
+.page-body--cover {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-foot {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 56px 28px 88px;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bondy-ink-faint);
+  border-top: 1px solid var(--bondy-rule);
+  margin: 0 24px;
+}
+
+/* ── Typography helpers ────────────────────────────────── */
+.h1 {
+  font-family: var(--bondy-font-display);
+  font-size: 64px;
+  line-height: 0.96;
+  color: var(--bondy-ink-mid);
+  opacity: 0.95;
+  text-shadow: 0.5px 0.5px 0 rgba(0,0,0,0.25);
+  margin: 0 0 12px;
+  letter-spacing: -0.005em;
+}
+.h2 {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--bondy-ink);
+  margin: 0 0 8px;
+}
+.h3 {
+  font-family: var(--bondy-font-body);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--bondy-ink-mid);
+  margin: 0 0 12px;
+}
+.p {
+  font-family: var(--bondy-font-body);
+  font-size: 14px;
+  line-height: 1.78;
+  color: var(--bondy-ink-sub);
+  margin: 0 0 14px;
+  text-wrap: pretty;
+}
+.p:last-child { margin-bottom: 0; }
+.prose-narrow { max-width: 560px; }
+.prose .p { margin-bottom: 14px; }
+.accent { font-style: normal; color: var(--bondy-green); }
+
+.label {
+  font-family: var(--bondy-font-body);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  font-family: var(--bondy-font-body);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.kicker-rule { width: 22px; height: 1px; }
+
+.section-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--bondy-font-body);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bondy-green);
+  margin-bottom: 18px;
+}
+
+.footnote {
+  font-family: var(--bondy-font-body);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--bondy-ink-faint);
+  margin: 16px 0 0;
+  max-width: 580px;
+  line-height: 1.6;
+}
+
+/* ── Cover ─────────────────────────────────────────────── */
+.cover {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 48px 56px 44px 88px;
+}
+.cover-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.cover-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cover-mark-name {
+  font-family: var(--bondy-font-display);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: var(--bondy-ink);
+}
+.cover-date {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cover-date-val {
+  font-family: var(--bondy-font-body);
+  font-size: 13px;
+  color: var(--bondy-ink-mid);
+}
+
+.cover-mid {
+  margin-top: auto;
+  margin-bottom: 56px;
+}
+.cover-title {
+  font-family: var(--bondy-font-display);
+  font-size: 96px;
+  line-height: 0.94;
+  color: var(--bondy-ink-mid);
+  opacity: 0.95;
+  text-shadow: 0.6px 0.6px 0 rgba(0,0,0,0.28);
+  margin: 0 0 14px;
+  letter-spacing: -0.01em;
+}
+
+.cover-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1.4fr 0.9fr;
+  border-top: 1px solid var(--bondy-rule);
+  border-bottom: 1px solid var(--bondy-rule);
+  background: rgba(255,255,255,0.55);
+}
+.cover-grid-cell {
+  padding: 22px 22px 24px;
+  border-right: 1px solid var(--bondy-rule);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cover-grid-cell:last-child { border-right: none; }
+.cover-grid-h {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.2;
+  color: var(--bondy-ink);
+  letter-spacing: -0.01em;
+  margin-top: 4px;
+}
+.cover-grid-sub {
+  font-family: var(--bondy-font-body);
+  font-size: 12px;
+  color: var(--bondy-ink-sub);
+  line-height: 1.55;
+}
+
+.cover-bottom {
+  margin-top: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.cover-tagline {
+  font-family: var(--bondy-font-body);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bondy-ink-faint);
+}
+
+/* ── Stats strip ───────────────────────────────────────── */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 28px 0 8px;
+  border-top: 1px solid var(--bondy-rule);
+  border-bottom: 1px solid var(--bondy-rule);
+  background: rgba(255,255,255,0.6);
+}
+.stat {
+  padding: 18px 18px 20px;
+  border-right: 1px solid var(--bondy-rule);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stat:last-child { border-right: none; }
+.stat-val {
+  font-family: var(--bondy-font-display);
+  font-size: 44px;
+  line-height: 1;
+  color: var(--bondy-ink-mid);
+  opacity: 0.93;
+  text-shadow: 0.4px 0.4px 0 rgba(0,0,0,0.18);
+}
+.stat-sup {
+  color: var(--bondy-green);
+  font-size: 0.42em;
+  margin-left: 2px;
+  text-shadow: none;
+  opacity: 1;
+}
+.stat-desc {
+  font-family: var(--bondy-font-body);
+  font-size: 12px;
+  color: var(--bondy-ink-sub);
+  line-height: 1.5;
+}
+
+/* ── Bullets ───────────────────────────────────────────── */
+.bullets {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bullets li {
+  display: flex;
+  gap: 10px;
+  font-family: var(--bondy-font-body);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--bondy-ink-sub);
+}
+.bullets-dash {
+  color: var(--bondy-green);
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.bullets li strong {
+  color: var(--bondy-ink-mid);
+  font-weight: 600;
+}
+
+/* ── Roles grid ────────────────────────────────────────── */
+.roles-grid {
+  margin-top: 24px;
+  border-top: 1px solid var(--bondy-rule);
+  background: rgba(255,255,255,0.6);
+}
+.roles-grid-head {
+  display: grid;
+  grid-template-columns: 1.1fr 2.2fr 0.5fr;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--bondy-rule);
+  font-family: var(--bondy-font-body);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bondy-ink-faint);
+}
+.roles-grid-row {
+  display: grid;
+  grid-template-columns: 1.1fr 2.2fr 0.5fr;
+  border-bottom: 1px solid var(--bondy-rule);
+}
+.roles-cell {
+  padding: 18px;
+  border-right: 1px solid var(--bondy-rule);
+}
+.roles-cell:last-child { border-right: none; }
+.roles-title {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--bondy-ink);
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+}
+.roles-qty {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  font-size: 24px;
+  color: var(--bondy-green);
+  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.roles-grid-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: var(--bondy-green-tint);
+  border-bottom: 2px solid var(--bondy-green);
+  font-family: var(--bondy-font-body);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bondy-ink-mid);
+  font-weight: 600;
+}
+.roles-total-num {
+  font-family: var(--bondy-font-body);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--bondy-green);
+  letter-spacing: 0;
+}
+
+/* ── Steps grid ────────────────────────────────────────── */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: 24px;
+  border-top: 1px solid var(--bondy-rule);
+  border-left: 1px solid var(--bondy-rule);
+  background: rgba(255,255,255,0.55);
+}
+.step-cell {
+  padding: 22px 22px 24px;
+  border-right: 1px solid var(--bondy-rule);
+  border-bottom: 1px solid var(--bondy-rule);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.step-title {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--bondy-ink);
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+.step-body { margin: 4px 0 0; font-size: 13.5px; }
+
+/* ── Pull quote ────────────────────────────────────────── */
+.pullquote {
+  margin-top: 28px;
+  display: flex;
+  gap: 24px;
+  background: #fff;
+  padding: 24px;
+  border: 1px solid var(--bondy-rule);
+}
+.pullquote-body {
+  border-left: 2px solid var(--bondy-green-edge);
+  padding-left: 18px;
+}
+.pullquote-q {
+  font-family: var(--bondy-font-body);
+  font-weight: 500;
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--bondy-ink);
+  margin: 0 0 8px;
+  letter-spacing: -0.005em;
+}
+
+/* ── DNA grid ──────────────────────────────────────────── */
+.dna-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: 22px;
+  border-top: 1px solid var(--bondy-rule);
+  border-left: 1px solid var(--bondy-rule);
+}
+.dna-cell {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px 18px;
+  border-right: 1px solid var(--bondy-rule);
+  border-bottom: 1px solid var(--bondy-rule);
+  background: #fff;
+}
+.dna-num {
+  font-family: var(--bondy-font-body);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--bondy-green);
+  flex-shrink: 0;
+  line-height: 1;
+  padding-top: 4px;
+  letter-spacing: 0.02em;
+}
+.dna-title {
+  font-family: var(--bondy-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bondy-ink-mid);
+  margin-bottom: 2px;
+}
+.dna-desc {
+  font-family: var(--bondy-font-body);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--bondy-ink-sub);
+}
+
+/* ── AI Operator vs Architect ──────────────────────────── */
+.ops-vs {
+  display: grid;
+  grid-template-columns: 1fr 40px 1fr;
+  align-items: stretch;
+  margin-top: 18px;
+  gap: 0;
+}
+.ops-col {
+  padding: 18px 20px;
+  border: 1px solid var(--bondy-rule);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ops-col--accent {
+  background: var(--bondy-green-tint);
+  border-color: var(--bondy-green-edge);
+}
+.ops-arrow {
+  font-family: var(--bondy-font-body);
+  font-size: 22px;
+  color: var(--bondy-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ops-h {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--bondy-ink);
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+}
+.ops-desc {
+  font-family: var(--bondy-font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--bondy-ink-sub);
+}
+
+/* ── Fee callout ───────────────────────────────────────── */
+.fee-callout {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  margin: 22px 0 8px;
+  border: 1px solid var(--bondy-rule);
+  background: #fff;
+}
+.fee-callout-l {
+  padding: 22px 24px;
+  border-right: 1px solid var(--bondy-rule);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bondy-green-tint);
+}
+.fee-callout-num {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fee-callout-pct {
+  font-family: var(--bondy-font-body);
+  font-weight: 700;
+  font-size: 60px;
+  line-height: 1;
+  color: var(--bondy-ink);
+  letter-spacing: -0.03em;
+}
+.fee-callout-mod {
+  color: var(--bondy-green);
+  font-size: 0.7em;
+  text-shadow: none;
+  opacity: 1;
+}
+.fee-callout-of {
+  font-family: var(--bondy-font-body);
+  font-size: 12px;
+  color: var(--bondy-ink-sub);
+  margin-top: 6px;
+}
+.fee-callout-r {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fee-callout-formula {
+  font-family: var(--bondy-font-mono);
+  font-size: 13px;
+  color: var(--bondy-ink-mid);
+  background: var(--bondy-bg);
+  padding: 10px 12px;
+  border: 1px dashed var(--bondy-rule);
+  margin-top: 4px;
+}
+
+/* ── Term blocks ───────────────────────────────────────── */
+.term-block {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--bondy-rule);
+}
+.term-block:last-of-type { border-bottom: none; }
+.term-block-h {
+  font-family: var(--bondy-font-body);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bondy-green);
+  font-weight: 600;
+  padding-top: 2px;
+}
+.term-block-body .p { font-size: 13.5px; line-height: 1.7; }
+
+.pay-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 8px;
+  border-top: 1px solid var(--bondy-rule);
+  border-left: 1px solid var(--bondy-rule);
+}
+.pay-row {
+  padding: 10px 12px;
+  border-right: 1px solid var(--bondy-rule);
+  border-bottom: 1px solid var(--bondy-rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  font-family: var(--bondy-font-body);
+  font-size: 12px;
+  color: var(--bondy-ink-sub);
+}
+.pay-val {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--bondy-green);
+}
+
+/* ── Timeline ──────────────────────────────────────────── */
+.timeline {
+  margin-top: 24px;
+  border-top: 1px solid var(--bondy-rule);
+  background: #fff;
+}
+.timeline-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  border-bottom: 1px solid var(--bondy-rule);
+  align-items: stretch;
+}
+.timeline-day {
+  padding: 16px 18px;
+  border-right: 1px solid var(--bondy-rule);
+  background: var(--bondy-green-tint);
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--bondy-ink);
+  letter-spacing: -0.005em;
+  display: flex;
+  align-items: center;
+}
+.timeline-body {
+  padding: 16px 20px;
+  font-family: var(--bondy-font-body);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--bondy-ink-sub);
+}
+
+/* ── Acceptance / sig ──────────────────────────────────── */
+.accept-note {
+  margin-top: 18px;
+  background: var(--bondy-green-tint);
+  border-left: 2px solid var(--bondy-green);
+  padding: 14px 18px;
+}
+.accept-note .p { font-size: 13.5px; margin: 6px 0 0; }
+
+.sig-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-top: 32px;
+}
+.sig-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sig-line {
+  height: 36px;
+  border-bottom: 1px solid var(--bondy-ink-mid);
+  margin-top: 24px;
+}
+.sig-name {
+  font-family: var(--bondy-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bondy-ink);
+  margin-top: 2px;
+}
+.sig-name--placeholder { color: var(--bondy-ink-faint); font-weight: 400; font-style: italic; }
+.sig-role {
+  font-family: var(--bondy-font-body);
+  font-size: 12px;
+  color: var(--bondy-ink-faint);
+}
+.sig-date {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  font-family: var(--bondy-font-body);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bondy-ink-faint);
+  align-items: center;
+}
+.sig-date-line {
+  flex: 1;
+  border-bottom: 1px solid var(--bondy-rule);
+  height: 1px;
+}
+
+.closing {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 56px;
+  padding-top: 22px;
+  border-top: 1px solid var(--bondy-rule);
+  font-family: var(--bondy-font-body);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bondy-ink-faint);
+}
+
+/* ─────────────────────────────────────────────────────────
+   VARIANT B — "Editorial" cover (large ink number)
+   ───────────────────────────────────────────────────────── */
+.variant-b .cover-title {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  font-size: 64px;
+  letter-spacing: -0.02em;
+  text-shadow: none;
+  opacity: 1;
+  color: var(--bondy-ink);
+  line-height: 1;
+}
+.variant-b .cover-grid { background: #fff; }
+.variant-b .h2 {
+  font-family: var(--bondy-font-body);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  font-size: 30px;
+  text-shadow: none;
+  opacity: 1;
+  color: var(--bondy-ink);
+}
+
+/* ─────────────────────────────────────────────────────────
+   VARIANT C — "Memo" minimal (plain paper, no notebook)
+   ───────────────────────────────────────────────────────── */
+.variant-c .page {
+  background: var(--bondy-bg);
+  background-image: none;
+}
+
+/* ─────────────────────────────────────────────────────────
+   PRINT
+   ───────────────────────────────────────────────────────── */
+@media print {
+  @page { size: letter; margin: 0; }
+  html, body { background: #fff; }
+  #root { padding: 0; gap: 0; }
+  .page {
+    border: none;
+    width: 8.5in;
+    min-height: 11in;
+    page-break-after: always;
+  }
+  .tweaks-host, .tweaks-toggle, .tw-panel, [data-tweaks-root] { display: none !important; }
+}
