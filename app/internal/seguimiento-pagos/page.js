@@ -301,7 +301,9 @@ export default function SeguimientoPagos() {
         position: 'sticky', top: 0, zIndex: 50,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontFamily: serif, fontSize: 16, color: '#1A1A1A', letterSpacing: '0.04em' }}>BONDY</span>
+          <Link href="/internal" style={{ textDecoration: 'none' }}>
+            <span style={{ fontFamily: serif, fontSize: 16, color: '#1A1A1A', letterSpacing: '0.04em' }}>BONDY</span>
+          </Link>
           <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: tw.green, border: `1px solid rgba(74,140,64,0.3)`, padding: '3px 8px' }}>
             Internal
           </span>

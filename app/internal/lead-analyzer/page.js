@@ -265,10 +265,12 @@ export default function LeadAnalyzerPage() {
         backdropFilter: 'blur(12px)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-          <BondyLogo size={22} />
-          <span style={{ fontFamily: serif, fontSize: '15px', letterSpacing: '0.04em', color: tw.inkMid }}>
-            BONDY
-          </span>
+          <Link href="/internal" style={{ display: 'flex', alignItems: 'center', gap: '9px', textDecoration: 'none', color: 'inherit' }}>
+            <BondyLogo size={22} />
+            <span style={{ fontFamily: serif, fontSize: '15px', letterSpacing: '0.04em', color: tw.inkMid }}>
+              BONDY
+            </span>
+          </Link>
           <span style={{ fontFamily: mono, fontSize: '11px', color: tw.inkFaint, marginLeft: '4px' }}>
             / Lead Analyzer
           </span>

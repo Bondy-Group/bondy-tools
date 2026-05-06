@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 // Logo 4 asientos (SVG exacto del brand system v4)
 function BondyLogo({ size = 32 }) {
@@ -214,8 +215,10 @@ function GmailConnectContent() {
       <div style={styles.card}>
         {/* Header */}
         <div style={styles.header}>
-          <BondyLogo size={26} />
-          <span style={styles.wordmark}>BONDY</span>
+          <Link href="/internal" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
+            <BondyLogo size={26} />
+            <span style={styles.wordmark}>BONDY</span>
+          </Link>
         </div>
 
         {/* Label + Title */}

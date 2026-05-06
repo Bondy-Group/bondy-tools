@@ -300,8 +300,10 @@ export default function MarketSignalsPage() {
         backdropFilter: 'blur(8px)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <BondyLogo />
-          <span style={{ fontFamily: "'Special Elite', Georgia, serif", fontSize: '17px', color: '#1A1A1A', letterSpacing: '0.04em' }}>BONDY</span>
+          <Link href="/internal" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'inherit' }}>
+            <BondyLogo />
+            <span style={{ fontFamily: "'Special Elite', Georgia, serif", fontSize: '17px', color: '#1A1A1A', letterSpacing: '0.04em' }}>BONDY</span>
+          </Link>
           <span className="font-mono-bondy" style={{
             fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase',
             color: '#4A8C40', background: 'rgba(74,140,64,0.08)',
