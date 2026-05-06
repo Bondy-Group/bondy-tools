@@ -168,6 +168,17 @@ const resources = [
     href: '/internal/usage-admin',
     adminOnly: true,
   },
+  {
+    id: 'data-explorer',
+    name: 'Data Explorer',
+    cat: 'Datos', catKey: 'datos',
+    descShort: 'Visor multi-tabla de Supabase. Filtros, sort, FK navegables.',
+    desc: 'Explorador estilo Airtable/Metabase sobre los proyectos Supabase de Bondy. Listá tablas, filtrá, ordená, saltá entre foreign keys. Read-only en v1.',
+    glyph: 'DE',
+    shortcut: '', staticRank: 11, status: 'live',
+    href: '/internal/data-explorer',
+    adminOnly: true,
+  },
 ]
 
 const categories = [
