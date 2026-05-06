@@ -832,8 +832,8 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
         )}
       </main>
 
-      {/* Subscribe */}
-      <SubscribeForm areas={areas} modalities={modalities} seniorities={seniorities} />
+      {/* Subscribe — temporarily hidden until Resend account + env vars are set up. Re-enable by uncommenting. */}
+      {/* <SubscribeForm areas={areas} modalities={modalities} seniorities={seniorities} /> */}
 
       <footer className="bondy-footer">
         <span>© 2026 Bondy Group</span>
