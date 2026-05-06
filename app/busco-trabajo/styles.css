@@ -77,9 +77,29 @@
 
 /* ───────────────────────────── Hero ───────────────────────────── */
 .bt-root .hero { padding: 56px 32px 32px; border-bottom: 1px solid var(--bondy-rule); max-width: 1400px; margin: 0 auto; }
-.bt-root .hero__kicker { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.bt-root .hero__kicker { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
 .bt-root .hero__kicker-rule { width: 22px; height: 1px; background: var(--bondy-green); }
 .bt-root .hero__kicker-text { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--bondy-green); }
+.bt-root .hero__kicker-sep { font-size: 10px; color: var(--bondy-ink-faint); }
+.bt-root .hero__live {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--bondy-ink-faint);
+}
+.bt-root .hero__live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--bondy-green);
+  box-shadow: 0 0 0 0 rgba(74,140,64,0.6);
+  animation: bt-pulse 2s ease-out infinite;
+}
+@keyframes bt-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(74,140,64,0.55); }
+  70%  { box-shadow: 0 0 0 8px rgba(74,140,64,0); }
+  100% { box-shadow: 0 0 0 0 rgba(74,140,64,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bt-root .hero__live-dot { animation: none; }
+}
 .bt-root .hero__title { font-family: var(--bondy-font-display); font-size: clamp(2.5rem, 5vw, 4rem); line-height: 0.98; color: var(--bondy-ink-mid); opacity: 0.95; text-shadow: 0.5px 0.5px 0 rgba(0,0,0,0.18); margin: 0 0 20px; max-width: 900px; }
 .bt-root .hero__title em { font-style: italic; color: var(--bondy-green); }
 .bt-root .hero__sub { font-size: 16px; line-height: 1.7; color: var(--bondy-ink-sub); max-width: 600px; margin: 0; }

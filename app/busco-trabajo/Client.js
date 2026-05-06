@@ -473,7 +473,7 @@ function ApplyModal({ role, onClose }) {
 // ─────────────────────────────────────────────────────────────
 // Main App
 // ─────────────────────────────────────────────────────────────
-export default function BuscoTrabajoClient({ initialRoles, areas, modalities, seniorities, sources, locations }) {
+export default function BuscoTrabajoClient({ initialRoles, updateLabel, areas, modalities, seniorities, sources, locations }) {
   const [roles, setRoles] = useState(initialRoles)
   const [filters, setFilters] = useState({ areas: [], modalities: [], seniorities: [], sources: [], locations: [] })
   const [search, setSearch] = useState('')
@@ -564,6 +564,15 @@ export default function BuscoTrabajoClient({ initialRoles, areas, modalities, se
         <div className="hero__kicker">
           <div className="hero__kicker-rule" />
           <span className="hero__kicker-text">Bondy · Roles abiertos</span>
+          {updateLabel && (
+            <>
+              <span className="hero__kicker-sep">·</span>
+              <span className="hero__live">
+                <span className="hero__live-dot" aria-hidden="true" />
+                Actualizado {updateLabel}
+              </span>
+            </>
+          )}
         </div>
         <h1 className="hero__title">
           Roles tech en LATAM,
