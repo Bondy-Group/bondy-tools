@@ -89,12 +89,15 @@ export default function DataExplorerPage() {
   const [rowsError, setRowsError] = useState(null)
 
   const [drawerRow, setDrawerRow] = useState(null)
+  const [introWarning, setIntroWarning] = useState(null)
+  const [schemaLoading, setSchemaLoading] = useState(false)
 
   // Fetch tables when project changes
   useEffect(() => {
     let cancel = false
     setTablesLoading(true)
     setTablesError(null)
+    setIntroWarning(null)
     fetch(`/api/data-explorer/tables?project=${project}`)
       .then((r) => r.json())
       .then((j) => {
@@ -104,6 +107,7 @@ export default function DataExplorerPage() {
           setTables([])
         } else {
           setTables(j.tables || [])
+          if (j.introspectionWarning) setIntroWarning(j.introspectionWarning)
         }
       })
       .catch((e) => !cancel && setTablesError(String(e)))
@@ -113,7 +117,7 @@ export default function DataExplorerPage() {
     }
   }, [project])
 
-  // Reset state when table changes
+  // Reset state when table changes + hydrate schema if missing
   useEffect(() => {
     setPage(1)
     setSort({ col: null, dir: 'desc' })
@@ -121,6 +125,27 @@ export default function DataExplorerPage() {
     setDraftFilter({ col: '', op: 'ilike', val: '' })
     setRows([])
     setTotalCount(null)
+
+    if (selectedTable && (!selectedTable.columns || selectedTable.columns.length === 0)) {
+      let cancel = false
+      setSchemaLoading(true)
+      fetch(`/api/data-explorer/schema?project=${project}&table=${encodeURIComponent(selectedTable.name)}`)
+        .then((r) => r.json())
+        .then((j) => {
+          if (cancel) return
+          if (j.columns && j.columns.length > 0) {
+            const updated = { ...selectedTable, columns: j.columns }
+            setSelectedTable(updated)
+            // also update the cached table list so we don't refetch
+            setTables((prev) => prev.map((t) => (t.name === updated.name ? updated : t)))
+          }
+        })
+        .catch(() => {})
+        .finally(() => !cancel && setSchemaLoading(false))
+      return () => {
+        cancel = true
+      }
+    }
   }, [selectedTable, project])
 
   // Fetch rows
@@ -307,6 +332,24 @@ export default function DataExplorerPage() {
               {tablesError}
             </div>
           )}
+          {introWarning && (
+            <div
+              style={{
+                margin: '0 12px 12px',
+                padding: '8px 10px',
+                fontFamily: mono,
+                fontSize: 10,
+                color: tw.amber,
+                background: 'rgba(168,122,42,0.08)',
+                border: `1px dashed ${tw.amber}`,
+                borderRadius: 3,
+                lineHeight: 1.4,
+              }}
+              title={introWarning}
+            >
+              modo fallback · sin <code>service_role</code> · schema on-demand
+            </div>
+          )}
 
           {groupedTables.map((group) => (
             <div key={group.name} style={{ marginBottom: 12 }}>
@@ -376,6 +419,31 @@ export default function DataExplorerPage() {
               <div style={{ fontFamily: mono, fontSize: 11 }}>
                 {tables.length} tablas disponibles · {tables.reduce((a, b) => a + (b.rowCount || 0), 0).toLocaleString('es-AR')} filas totales
               </div>
+            </div>
+          ) : selectedTable.columns.length === 0 ? (
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: 8,
+                color: tw.inkFaint,
+                fontFamily: mono,
+                fontSize: 12,
+              }}
+            >
+              {schemaLoading ? (
+                <span>descubriendo schema de <b style={{ color: tw.ink }}>{selectedTable.name}</b>…</span>
+              ) : (
+                <>
+                  <span>tabla vacía o sin acceso de lectura</span>
+                  <span style={{ fontSize: 10 }}>
+                    no se puede inferir schema sin <code>service_role</code> ni datos
+                  </span>
+                </>
+              )}
             </div>
           ) : (
             <>
