@@ -4,8 +4,8 @@ import { authOptions } from '@/lib/auth'
 
 /**
  * Data Explorer — endpoint de introspección de tablas.
- * Lee el OpenAPI spec que Supabase expone en /rest/v1/ para descubrir
- * tablas + columnas sin necesidad de queries SQL directas.
+ * Usa la RPC `bondy_data_explorer_meta()` que existe en cada proyecto.
+ * Funciona con anon key (no requiere service_role).
  */
 
 const PROJECTS = {
@@ -13,7 +13,7 @@ const PROJECTS = {
     label: 'CRM (datos de negocio)',
     url:
       (process.env.SUPABASE_CRM_URL || 'https://tchppyxhapxtjemxrbqm.supabase.co').trim(),
-    serviceKey: (
+    key: (
       process.env.SUPABASE_CRM_SERVICE_KEY ||
       process.env.SUPABASE_CRM_ANON_KEY ||
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjaHBweXhoYXB4dGplbXhyYnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzE5NTUsImV4cCI6MjA4NzUwNzk1NX0.GwH_UZV_62cOkd8x1UknkajQVk1eDosLL0DkV8hsjhw'
@@ -22,11 +22,10 @@ const PROJECTS = {
   tools: {
     label: 'Bondy Tools (app)',
     url: (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim(),
-    serviceKey: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
+    key: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
   },
 }
 
-// Agrupación visual de tablas del CRM (criterio de Dana)
 const CRM_GROUPS = {
   'Bondy Master DB': [
     'bondy_clients',
@@ -91,71 +90,64 @@ export async function GET(request) {
   if (!project) {
     return NextResponse.json({ error: 'Invalid project' }, { status: 400 })
   }
-  if (!project.url || !project.serviceKey) {
+  if (!project.url || !project.key) {
     return NextResponse.json(
       { error: `Project "${projectKey}" missing env vars` },
       { status: 500 }
     )
   }
 
-  // Supabase expone OpenAPI 2.0 en /rest/v1/?
-  const specRes = await fetch(`${project.url}/rest/v1/`, {
+  // RPC: bondy_data_explorer_meta()
+  const rpcRes = await fetch(`${project.url}/rest/v1/rpc/bondy_data_explorer_meta`, {
+    method: 'POST',
     headers: {
-      apikey: project.serviceKey,
-      Authorization: `Bearer ${project.serviceKey}`,
-      Accept: 'application/openapi+json',
+      apikey: project.key,
+      Authorization: `Bearer ${project.key}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
     },
+    body: '{}',
     cache: 'no-store',
   })
-  if (!specRes.ok) {
-    const txt = await specRes.text()
+
+  if (!rpcRes.ok) {
+    const txt = await rpcRes.text()
     return NextResponse.json(
-      { error: `OpenAPI fetch failed: ${specRes.status}`, detail: txt.slice(0, 200) },
+      { error: `RPC failed: ${rpcRes.status}`, detail: txt.slice(0, 300) },
       { status: 500 }
     )
   }
-  const spec = await specRes.json()
 
-  // spec.definitions tiene cada tabla; cada definición tiene `properties`
-  const defs = spec.definitions || {}
-  const tableNames = Object.keys(defs).sort()
+  const meta = await rpcRes.json()
+  const rawTables = Array.isArray(meta) ? meta : []
 
+  // Para cada tabla: conteo exacto via Range header
   const tables = await Promise.all(
-    tableNames.map(async (name) => {
-      const def = defs[name]
-      const props = def.properties || {}
-      const columns = Object.entries(props).map(([colName, meta]) => {
-        // meta.format viene de pg (e.g. "uuid", "timestamp with time zone")
-        // meta.type es el tipo OpenAPI (string, integer, etc.)
-        const description = meta.description || ''
-        // FK detection: descripción suele incluir "Note:\nThis is a Foreign Key to `table.col`"
-        const fkMatch = description.match(/Foreign Key to `([^.]+)\.([^`]+)`/)
-        return {
-          name: colName,
-          type: meta.format || meta.type || 'unknown',
-          nullable: !(def.required || []).includes(colName),
-          isPrimaryKey: /<pk\/>/.test(description),
-          fk: fkMatch ? { table: fkMatch[1], column: fkMatch[2] } : null,
-          enum: meta.enum || null,
-        }
-      })
+    rawTables.map(async (t) => {
+      const tableName = t.table_name
+      const columns = (t.columns || []).map((c) => ({
+        name: c.name,
+        type: c.type || c.data_type || 'unknown',
+        nullable: !!c.nullable,
+        isPrimaryKey: !!c.is_pk,
+        fk: c.fk && c.fk.table ? { table: c.fk.table, column: c.fk.column } : null,
+      }))
 
-      // Conteo exacto via count head
       let rowCount = null
       try {
         const countRes = await fetch(
-          `${project.url}/rest/v1/${encodeURIComponent(name)}?select=*&limit=1`,
+          `${project.url}/rest/v1/${encodeURIComponent(tableName)}?select=*&limit=1`,
           {
             headers: {
-              apikey: project.serviceKey,
-              Authorization: `Bearer ${project.serviceKey}`,
+              apikey: project.key,
+              Authorization: `Bearer ${project.key}`,
               Prefer: 'count=exact',
               Range: '0-0',
             },
             cache: 'no-store',
           }
         )
-        const cr = countRes.headers.get('content-range') // "0-0/123"
+        const cr = countRes.headers.get('content-range')
         if (cr) {
           const parts = cr.split('/')
           if (parts[1] && parts[1] !== '*') rowCount = parseInt(parts[1])
@@ -165,10 +157,11 @@ export async function GET(request) {
       }
 
       return {
-        name,
+        name: tableName,
+        comment: t.comment || null,
         columns,
         rowCount,
-        group: projectKey === 'crm' ? groupForCrm(name) : 'Tools',
+        group: projectKey === 'crm' ? groupForCrm(tableName) : 'Tools',
       }
     })
   )
