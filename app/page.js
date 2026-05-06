@@ -42,6 +42,13 @@ const sections = [
     description: 'Guías para hiring managers y fondos planeando su estrategia en LATAM.',
     available: false,
   },
+  {
+    href: '/candidates',
+    number: '04',
+    title: 'Busco Trabajo',
+    description: 'Roles tech abiertos en LATAM y worldwide, actualizados a diario. Filtrá por categoría, modalidad, seniority y tecnología.',
+    available: true,
+  },
 ]
 
 export default function HomePage() {
@@ -91,7 +98,7 @@ export default function HomePage() {
       </section>
 
       {/* Grid */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: `1px solid ${tw.rule}` }}>
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: `1px solid ${tw.rule}` }}>
         {sections.map((s, i) => (
           s.available ? (
             <Link key={s.href} href={s.href} style={{
