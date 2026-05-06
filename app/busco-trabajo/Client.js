@@ -230,7 +230,10 @@ function Row({ role, onSelect, selected, onToggleSave }) {
     <div className={`row ${selected ? 'row--selected' : ''}`} onClick={() => onSelect(role)}>
       <div className="row__date">{formatRelativeDate(role.date)}</div>
       <div>
-        <div className="row__title">{role.title}</div>
+        <div className="row__title">
+          {role.isNew && <span className="row__new" aria-label="Nuevo">Nuevo</span>}
+          {role.title}
+        </div>
         <div className="row__company" style={{ marginTop: 4 }}>
           <span className="row__company-logo">{initials}</span>
           {role.company}
@@ -473,7 +476,7 @@ function ApplyModal({ role, onClose }) {
 // ─────────────────────────────────────────────────────────────
 // Main App
 // ─────────────────────────────────────────────────────────────
-export default function BuscoTrabajoClient({ initialRoles, updateLabel, areas, modalities, seniorities, sources, locations }) {
+export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLabel, newToday = 0, areas, modalities, seniorities, sources, locations }) {
   const [roles, setRoles] = useState(initialRoles)
   const [filters, setFilters] = useState({ areas: [], modalities: [], seniorities: [], sources: [], locations: [] })
   const [search, setSearch] = useState('')
@@ -529,9 +532,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, areas, m
     const total = roles.length
     const remote = roles.filter((r) => r.modality === 'Remote').length
     const withSalary = roles.filter((r) => r.salary).length
-    const todayIso = new Date().toISOString().slice(0, 10)
-    const yIso = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-    const today = roles.filter((r) => r.date === todayIso || r.date === yIso).length
+    const today = roles.filter((r) => r.isNew).length
     return { total, remote, withSalary, today }
   }, [roles])
 
@@ -579,6 +580,19 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, areas, m
           <br />
           actualizados <em>a diario.</em>
         </h1>
+        {todayLabel && (
+          <div className="hero__today">
+            <span className="hero__today-date">Hoy · {todayLabel}</span>
+            {newToday > 0 && (
+              <>
+                <span className="hero__today-sep">·</span>
+                <span className="hero__today-count">
+                  <em>{newToday}</em> {newToday === 1 ? 'rol nuevo' : 'roles nuevos'} en las últimas 24h
+                </span>
+              </>
+            )}
+          </div>
+        )}
         <p className="hero__sub">
           Agregamos posiciones de {sourcesCount} fuentes todos los días. Sin login, sin fricción. Curados con el mismo
           criterio que aplicamos a nuestras búsquedas embebidas. Si no pasa nuestro filtro, no lo listamos.

@@ -102,6 +102,16 @@
 }
 .bt-root .hero__title { font-family: var(--bondy-font-display); font-size: clamp(2.5rem, 5vw, 4rem); line-height: 0.98; color: var(--bondy-ink-mid); opacity: 0.95; text-shadow: 0.5px 0.5px 0 rgba(0,0,0,0.18); margin: 0 0 20px; max-width: 900px; }
 .bt-root .hero__title em { font-style: italic; color: var(--bondy-green); }
+.bt-root .hero__today {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin: -8px 0 18px;
+  font-family: var(--bondy-font-mono);
+  font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--bondy-ink-faint);
+}
+.bt-root .hero__today-date { color: var(--bondy-ink-mid); }
+.bt-root .hero__today-sep { color: var(--bondy-rule); }
+.bt-root .hero__today-count em { font-style: italic; color: var(--bondy-green); font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 500; }
 .bt-root .hero__sub { font-size: 16px; line-height: 1.7; color: var(--bondy-ink-sub); max-width: 600px; margin: 0; }
 
 /* ───────────────────────────── Stats (minimal style — locked in) ───────── */
@@ -178,6 +188,18 @@
 .bt-root .row--selected { background: var(--bondy-green-tint); border-color: var(--bondy-green-edge); }
 .bt-root .row__date { font-family: var(--bondy-font-mono); font-size: 12px; letter-spacing: 0.05em; color: var(--bondy-ink-faint); text-transform: uppercase; }
 .bt-root .row__title { font-size: 17px; font-weight: 600; color: var(--bondy-ink); letter-spacing: -0.005em; }
+.bt-root .row__new {
+  display: inline-block;
+  font-family: var(--bondy-font-mono);
+  font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 500;
+  color: var(--bondy-green);
+  background: var(--bondy-green-tint);
+  border: 1px solid var(--bondy-green-edge);
+  padding: 2px 6px 1px;
+  margin-right: 8px;
+  vertical-align: 2px;
+  line-height: 1;
+}
 .bt-root .row__company { font-size: 14px; color: var(--bondy-ink-sub); }
 .bt-root .row__company-logo { display: inline-block; width: 18px; height: 18px; background: var(--bondy-rule); border-radius: 2px; vertical-align: middle; margin-right: 8px; font-family: var(--bondy-font-display); font-size: 9px; color: var(--bondy-ink-mid); text-align: center; line-height: 18px; }
 .bt-root .row__meta { font-size: 13px; color: var(--bondy-ink-sub); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
