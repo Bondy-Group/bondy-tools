@@ -476,6 +476,138 @@ function ApplyModal({ role, onClose }) {
 // ─────────────────────────────────────────────────────────────
 // Main App
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// SubscribeForm — captures email + optional preferences, posts to
+// /api/job-subscribe. Three states: idle → submitting → done | error.
+// Preferences stay collapsed until the user clicks "Filtrá lo que recibís".
+// ─────────────────────────────────────────────────────────────
+function SubscribeForm({ areas, modalities, seniorities }) {
+  const [email, setEmail] = useState('')
+  const [showPrefs, setShowPrefs] = useState(false)
+  const [prefs, setPrefs] = useState({ areas: [], modalities: [], seniorities: [] })
+  const [state, setState] = useState('idle') // idle | submitting | done | error
+  const [errorMsg, setErrorMsg] = useState('')
+
+  const togglePref = (key, value) => {
+    setPrefs((p) => {
+      const arr = p[key]
+      return { ...p, [key]: arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value] }
+    })
+  }
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (state === 'submitting') return
+    setState('submitting')
+    setErrorMsg('')
+    try {
+      const res = await fetch('/api/job-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, preferences: prefs }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        const msg =
+          data.error === 'invalid_email'
+            ? 'Ese email no parece válido.'
+            : data.error === 'rate_limited'
+            ? 'Probaste varias veces seguidas. Esperá un minuto.'
+            : 'Algo falló. Probá de nuevo en un rato.'
+        setErrorMsg(msg)
+        setState('error')
+        return
+      }
+      setState('done')
+    } catch {
+      setErrorMsg('No pudimos conectar. Revisá tu conexión y probá de nuevo.')
+      setState('error')
+    }
+  }
+
+  if (state === 'done') {
+    return (
+      <section className="subscribe subscribe--done">
+        <div>
+          <h3 className="subscribe__title">
+            Listo. <em>Te sumamos.</em>
+          </h3>
+          <p className="subscribe__sub">
+            Vas a recibir el primer mail el lunes que viene a las 10am de Argentina. Si no aparece, fijate en spam y marcalo como “no es spam” — así llega bien las próximas semanas.
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="subscribe">
+      <div>
+        <h3 className="subscribe__title">
+          Recibí los nuevos roles <em>cada lunes.</em>
+        </h3>
+        <p className="subscribe__sub">
+          Un solo mail por semana, los lunes 10am ART, con los roles que entraron en los últimos 7 días. Sin afiliados, sin spam. Cancelás con un click.
+        </p>
+
+        {showPrefs && (
+          <div className="subscribe__prefs">
+            <PrefRow label="Áreas" options={areas} selected={prefs.areas} onToggle={(v) => togglePref('areas', v)} />
+            <PrefRow label="Modalidad" options={modalities} selected={prefs.modalities} onToggle={(v) => togglePref('modalities', v)} />
+            <PrefRow label="Seniority" options={seniorities} selected={prefs.seniorities} onToggle={(v) => togglePref('seniorities', v)} />
+            <p className="subscribe__prefs-help">
+              Si no marcás nada, recibís todos los roles nuevos de la semana.
+            </p>
+          </div>
+        )}
+
+        <button type="button" className="subscribe__toggle" onClick={() => setShowPrefs((v) => !v)}>
+          {showPrefs ? '− Ocultar preferencias' : '+ Filtrá lo que recibís (opcional)'}
+        </button>
+      </div>
+
+      <form className="subscribe__form" onSubmit={submit}>
+        <input
+          type="email"
+          placeholder="tu@email.com"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={state === 'submitting'}
+          autoComplete="email"
+        />
+        <button type="submit" className="btn btn--primary" disabled={state === 'submitting' || !email}>
+          {state === 'submitting' ? 'Enviando…' : 'Suscribirme →'}
+        </button>
+        {state === 'error' && <div className="subscribe__error">{errorMsg}</div>}
+      </form>
+    </section>
+  )
+}
+
+function PrefRow({ label, options, selected, onToggle }) {
+  return (
+    <div className="subscribe__prefs-row">
+      <span className="subscribe__prefs-label">{label}</span>
+      <div className="subscribe__prefs-chips">
+        {options.map((opt) => {
+          const active = selected.includes(opt)
+          return (
+            <button
+              key={opt}
+              type="button"
+              className={`chip ${active ? 'chip--active' : ''}`}
+              onClick={() => onToggle(opt)}
+            >
+              {opt}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLabel, newToday = 0, areas, modalities, seniorities, sources, locations }) {
   const [roles, setRoles] = useState(initialRoles)
   const [filters, setFilters] = useState({ areas: [], modalities: [], seniorities: [], sources: [], locations: [] })
@@ -701,20 +833,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
       </main>
 
       {/* Subscribe */}
-      <section className="subscribe">
-        <div>
-          <h3 className="subscribe__title">
-            Recibí los nuevos roles <em>cada lunes.</em>
-          </h3>
-          <p className="subscribe__sub">Solo los que pasan nuestro filtro. Sin afiliados, sin spam. Cancelás con un click.</p>
-        </div>
-        <form className="subscribe__form" onSubmit={(e) => e.preventDefault()}>
-          <input type="email" placeholder="tu@email.com" />
-          <button type="submit" className="btn btn--primary">
-            Suscribirme →
-          </button>
-        </form>
-      </section>
+      <SubscribeForm areas={areas} modalities={modalities} seniorities={seniorities} />
 
       <footer className="bondy-footer">
         <span>© 2026 Bondy Group</span>
