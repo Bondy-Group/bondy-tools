@@ -283,6 +283,7 @@ export default function CandidatesPage() {
           <option value="sysadmin-devops-qa">DevOps / QA</option>
           <option value="design">Design</option>
           <option value="product">Product</option>
+          <option value="recruiting">Talent & Recruiting</option>
         </Select>
         <Select value={modality} onChange={setModality}>
           <option value="">Modalidad</option>
