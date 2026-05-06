@@ -84,7 +84,8 @@ export default function DataExplorerPage() {
   const [pageSize, setPageSize] = useState(50)
   const [sort, setSort] = useState({ col: null, dir: 'desc' })
   const [filters, setFilters] = useState([])
-  const [draftFilter, setDraftFilter] = useState({ col: '', op: 'ilike', val: '' })
+  const [headerFilterCol, setHeaderFilterCol] = useState(null) // column.name being edited
+  const [headerFilterDraft, setHeaderFilterDraft] = useState({ op: 'ilike', val: '' })
   const [rowsLoading, setRowsLoading] = useState(false)
   const [rowsError, setRowsError] = useState(null)
 
@@ -122,7 +123,8 @@ export default function DataExplorerPage() {
     setPage(1)
     setSort({ col: null, dir: 'desc' })
     setFilters([])
-    setDraftFilter({ col: '', op: 'ilike', val: '' })
+    setHeaderFilterCol(null)
+    setHeaderFilterDraft({ op: 'ilike', val: '' })
     setRows([])
     setTotalCount(null)
 
@@ -224,10 +226,61 @@ export default function DataExplorerPage() {
     setPage(1)
   }
 
-  const addFilter = () => {
-    if (!draftFilter.col || !draftFilter.op) return
-    setFilters((prev) => [...prev, draftFilter])
-    setDraftFilter({ col: '', op: 'ilike', val: '' })
+  const defaultOpForType = (type) => {
+    if (!type) return 'ilike'
+    if (type === 'integer' || type === 'numeric') return 'eq'
+    if (type === 'timestamp' || type === 'date') return 'gte'
+    if (type === 'boolean') return 'is'
+    return 'ilike'
+  }
+
+  const opsForType = (type) => {
+    if (type === 'integer' || type === 'numeric') {
+      return FILTER_OPS.filter((o) => ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'is'].includes(o.val))
+    }
+    if (type === 'timestamp' || type === 'date') {
+      return FILTER_OPS.filter((o) => ['gte', 'lte', 'gt', 'lt', 'eq', 'is'].includes(o.val))
+    }
+    if (type === 'boolean') {
+      return FILTER_OPS.filter((o) => ['is', 'eq', 'neq'].includes(o.val))
+    }
+    if (type === 'uuid') {
+      return FILTER_OPS.filter((o) => ['eq', 'neq', 'is'].includes(o.val))
+    }
+    return FILTER_OPS
+  }
+
+  const openHeaderFilter = (col) => {
+    // pre-load existing filter if any
+    const existingIdx = filters.findIndex((f) => f.col === col.name)
+    if (existingIdx >= 0) {
+      const f = filters[existingIdx]
+      setHeaderFilterDraft({ op: f.op, val: f.val })
+    } else {
+      setHeaderFilterDraft({ op: defaultOpForType(col.type), val: '' })
+    }
+    setHeaderFilterCol(col.name)
+  }
+
+  const applyHeaderFilter = (colName) => {
+    const draft = headerFilterDraft
+    if (!draft.op) return
+    if (draft.op !== 'is' && (draft.val === '' || draft.val == null)) {
+      // empty value with non-`is` op = remove filter
+      setFilters((prev) => prev.filter((f) => f.col !== colName))
+    } else {
+      setFilters((prev) => {
+        const without = prev.filter((f) => f.col !== colName)
+        return [...without, { col: colName, op: draft.op, val: draft.val }]
+      })
+    }
+    setHeaderFilterCol(null)
+    setPage(1)
+  }
+
+  const clearHeaderFilter = (colName) => {
+    setFilters((prev) => prev.filter((f) => f.col !== colName))
+    setHeaderFilterCol(null)
     setPage(1)
   }
 
@@ -481,8 +534,13 @@ export default function DataExplorerPage() {
                   </span>
                 </div>
 
-                {/* Filters bar */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                {/* Active filter chips + page size */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', minHeight: 26 }}>
+                  {filters.length === 0 && (
+                    <span style={{ fontFamily: mono, fontSize: 11, color: tw.inkFaint }}>
+                      sin filtros · click en el header de columna para filtrar
+                    </span>
+                  )}
                   {filters.map((f, i) => (
                     <span
                       key={i}
@@ -501,65 +559,25 @@ export default function DataExplorerPage() {
                     >
                       <span>
                         <b>{f.col}</b> {FILTER_OPS.find((o) => o.val === f.op)?.label || f.op}{' '}
-                        <code style={{ background: tw.white, padding: '0 4px' }}>{f.val}</code>
+                        <code style={{ background: tw.white, padding: '0 4px' }}>{String(f.val)}</code>
                       </span>
                       <button
                         onClick={() => removeFilter(i)}
-                        style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: tw.inkSub, padding: 0, fontSize: 14 }}
+                        style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: tw.inkSub, padding: 0, fontSize: 14, lineHeight: 1 }}
+                        title="quitar filtro"
                       >
                         ×
                       </button>
                     </span>
                   ))}
-
-                  <select
-                    value={draftFilter.col}
-                    onChange={(e) => setDraftFilter({ ...draftFilter, col: e.target.value })}
-                    style={{ fontFamily: mono, fontSize: 11, padding: '3px 6px', border: `1px solid ${tw.rule}`, borderRadius: 3 }}
-                  >
-                    <option value="">+ filtro · columna</option>
-                    {selectedTable.columns.map((c) => (
-                      <option key={c.name} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={draftFilter.op}
-                    onChange={(e) => setDraftFilter({ ...draftFilter, op: e.target.value })}
-                    style={{ fontFamily: mono, fontSize: 11, padding: '3px 6px', border: `1px solid ${tw.rule}`, borderRadius: 3 }}
-                  >
-                    {FILTER_OPS.map((o) => (
-                      <option key={o.val} value={o.val}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="valor"
-                    value={draftFilter.val}
-                    onChange={(e) => setDraftFilter({ ...draftFilter, val: e.target.value })}
-                    onKeyDown={(e) => e.key === 'Enter' && addFilter()}
-                    style={{ fontFamily: mono, fontSize: 11, padding: '3px 6px', border: `1px solid ${tw.rule}`, borderRadius: 3, width: 140 }}
-                  />
-                  <button
-                    onClick={addFilter}
-                    disabled={!draftFilter.col}
-                    style={{
-                      fontFamily: mono,
-                      fontSize: 11,
-                      padding: '3px 10px',
-                      border: `1px solid ${tw.green}`,
-                      background: tw.green,
-                      color: tw.white,
-                      borderRadius: 3,
-                      cursor: draftFilter.col ? 'pointer' : 'not-allowed',
-                      opacity: draftFilter.col ? 1 : 0.4,
-                    }}
-                  >
-                    add
-                  </button>
+                  {filters.length > 0 && (
+                    <button
+                      onClick={() => { setFilters([]); setPage(1) }}
+                      style={{ fontFamily: mono, fontSize: 10, padding: '2px 6px', border: `1px solid ${tw.rule}`, background: tw.white, color: tw.inkSub, borderRadius: 3, cursor: 'pointer' }}
+                    >
+                      limpiar todo
+                    </button>
+                  )}
 
                   <div style={{ flex: 1 }} />
 
@@ -620,33 +638,205 @@ export default function DataExplorerPage() {
                 >
                   <thead>
                     <tr style={{ background: tw.white, position: 'sticky', top: 0, zIndex: 2 }}>
-                      {selectedTable.columns.map((c) => (
-                        <th
-                          key={c.name}
-                          onClick={() => toggleSort(c.name)}
-                          style={{
-                            padding: '8px 12px',
-                            borderBottom: `1px solid ${tw.rule}`,
-                            borderRight: `1px solid ${tw.ruleSoft}`,
-                            textAlign: 'left',
-                            color: tw.inkSub,
-                            fontWeight: 'normal',
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap',
-                            userSelect: 'none',
-                            background: tw.white,
-                          }}
-                          title={`${c.type}${c.fk ? ` → ${c.fk.table}.${c.fk.column}` : ''}`}
-                        >
-                          <span style={{ color: c.isPrimaryKey ? tw.green : tw.inkSub }}>
-                            {c.name}
-                          </span>
-                          <span style={{ color: tw.inkFaint, marginLeft: 4 }}>
-                            {sort.col === c.name ? (sort.dir === 'asc' ? '↑' : '↓') : ''}
-                          </span>
-                          {c.fk && <span style={{ color: tw.green, marginLeft: 4 }}>↗</span>}
-                        </th>
-                      ))}
+                      {selectedTable.columns.map((c) => {
+                        const activeFilter = filters.find((f) => f.col === c.name)
+                        const isOpen = headerFilterCol === c.name
+                        return (
+                          <th
+                            key={c.name}
+                            style={{
+                              padding: '6px 10px',
+                              borderBottom: `1px solid ${tw.rule}`,
+                              borderRight: `1px solid ${tw.ruleSoft}`,
+                              textAlign: 'left',
+                              color: tw.inkSub,
+                              fontWeight: 'normal',
+                              whiteSpace: 'nowrap',
+                              userSelect: 'none',
+                              background: activeFilter ? tw.greenTint : tw.white,
+                              position: 'relative',
+                            }}
+                            title={`${c.type}${c.fk ? ` → ${c.fk.table}.${c.fk.column}` : ''}`}
+                          >
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <button
+                                onClick={() => toggleSort(c.name)}
+                                style={{
+                                  border: 'none',
+                                  background: 'transparent',
+                                  padding: 0,
+                                  cursor: 'pointer',
+                                  fontFamily: mono,
+                                  fontSize: 11,
+                                  color: c.isPrimaryKey ? tw.green : tw.inkSub,
+                                }}
+                                title="ordenar"
+                              >
+                                {c.name}
+                                <span style={{ color: tw.inkFaint, marginLeft: 4 }}>
+                                  {sort.col === c.name ? (sort.dir === 'asc' ? '↑' : '↓') : ''}
+                                </span>
+                                {c.fk && <span style={{ color: tw.green, marginLeft: 4 }}>↗</span>}
+                              </button>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (isOpen) setHeaderFilterCol(null)
+                                  else openHeaderFilter(c)
+                                }}
+                                style={{
+                                  border: `1px solid ${activeFilter ? tw.green : tw.rule}`,
+                                  background: activeFilter ? tw.green : tw.white,
+                                  color: activeFilter ? tw.white : tw.inkFaint,
+                                  borderRadius: 3,
+                                  padding: '0 5px',
+                                  fontSize: 10,
+                                  fontFamily: mono,
+                                  cursor: 'pointer',
+                                  lineHeight: '14px',
+                                  height: 16,
+                                }}
+                                title={activeFilter ? `filtro: ${activeFilter.op} ${activeFilter.val}` : 'filtrar'}
+                              >
+                                ▾
+                              </button>
+                            </div>
+
+                            {isOpen && (
+                              <>
+                                {/* Click outside overlay */}
+                                <div
+                                  onClick={() => setHeaderFilterCol(null)}
+                                  style={{
+                                    position: 'fixed',
+                                    inset: 0,
+                                    zIndex: 50,
+                                    background: 'transparent',
+                                  }}
+                                />
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    left: 0,
+                                    marginTop: 2,
+                                    zIndex: 60,
+                                    background: tw.white,
+                                    border: `1px solid ${tw.green}`,
+                                    borderRadius: 4,
+                                    padding: 10,
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                    minWidth: 240,
+                                    fontFamily: mono,
+                                    fontSize: 11,
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div style={{ color: tw.inkFaint, fontSize: 10, marginBottom: 6 }}>
+                                    filtrar <b style={{ color: tw.ink }}>{c.name}</b>{' '}
+                                    <span style={{ color: tw.inkFaint }}>· {c.type}</span>
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    <select
+                                      value={headerFilterDraft.op}
+                                      onChange={(e) =>
+                                        setHeaderFilterDraft({ ...headerFilterDraft, op: e.target.value })
+                                      }
+                                      style={{ fontFamily: mono, fontSize: 11, padding: '4px 6px', border: `1px solid ${tw.rule}`, borderRadius: 3 }}
+                                    >
+                                      {opsForType(c.type).map((o) => (
+                                        <option key={o.val} value={o.val}>
+                                          {o.label}
+                                        </option>
+                                      ))}
+                                    </select>
+
+                                    {headerFilterDraft.op === 'is' ? (
+                                      <select
+                                        value={headerFilterDraft.val}
+                                        onChange={(e) =>
+                                          setHeaderFilterDraft({ ...headerFilterDraft, val: e.target.value })
+                                        }
+                                        style={{ fontFamily: mono, fontSize: 11, padding: '4px 6px', border: `1px solid ${tw.rule}`, borderRadius: 3 }}
+                                      >
+                                        <option value="">— elegir —</option>
+                                        <option value="null">null</option>
+                                        <option value="not.null">not null</option>
+                                        <option value="true">true</option>
+                                        <option value="false">false</option>
+                                      </select>
+                                    ) : c.type === 'boolean' ? (
+                                      <select
+                                        value={headerFilterDraft.val}
+                                        onChange={(e) =>
+                                          setHeaderFilterDraft({ ...headerFilterDraft, val: e.target.value })
+                                        }
+                                        style={{ fontFamily: mono, fontSize: 11, padding: '4px 6px', border: `1px solid ${tw.rule}`, borderRadius: 3 }}
+                                      >
+                                        <option value="">— elegir —</option>
+                                        <option value="true">true</option>
+                                        <option value="false">false</option>
+                                      </select>
+                                    ) : (
+                                      <input
+                                        type={c.type === 'integer' || c.type === 'numeric' ? 'number' : c.type === 'date' ? 'date' : 'text'}
+                                        autoFocus
+                                        placeholder="valor"
+                                        value={headerFilterDraft.val}
+                                        onChange={(e) =>
+                                          setHeaderFilterDraft({ ...headerFilterDraft, val: e.target.value })
+                                        }
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') applyHeaderFilter(c.name)
+                                          if (e.key === 'Escape') setHeaderFilterCol(null)
+                                        }}
+                                        style={{ fontFamily: mono, fontSize: 11, padding: '4px 6px', border: `1px solid ${tw.rule}`, borderRadius: 3 }}
+                                      />
+                                    )}
+
+                                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                                      <button
+                                        onClick={() => applyHeaderFilter(c.name)}
+                                        style={{
+                                          flex: 1,
+                                          fontFamily: mono,
+                                          fontSize: 11,
+                                          padding: '4px 8px',
+                                          border: `1px solid ${tw.green}`,
+                                          background: tw.green,
+                                          color: tw.white,
+                                          borderRadius: 3,
+                                          cursor: 'pointer',
+                                        }}
+                                      >
+                                        aplicar
+                                      </button>
+                                      {activeFilter && (
+                                        <button
+                                          onClick={() => clearHeaderFilter(c.name)}
+                                          style={{
+                                            fontFamily: mono,
+                                            fontSize: 11,
+                                            padding: '4px 8px',
+                                            border: `1px solid ${tw.rule}`,
+                                            background: tw.white,
+                                            color: tw.inkSub,
+                                            borderRadius: 3,
+                                            cursor: 'pointer',
+                                          }}
+                                        >
+                                          quitar
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </th>
+                        )
+                      })}
                     </tr>
                   </thead>
                   <tbody>
