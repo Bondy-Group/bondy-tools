@@ -43,7 +43,7 @@ const sections = [
     available: false,
   },
   {
-    href: '/candidates',
+    href: '/busco-trabajo',
     number: '04',
     title: 'Busco Trabajo',
     description: 'Roles tech abiertos en LATAM y worldwide, actualizados a diario. Filtrá por categoría, modalidad, seniority y tecnología.',
