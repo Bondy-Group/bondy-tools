@@ -188,6 +188,7 @@ const resources = [
     glyph: 'SC',
     shortcut: '', staticRank: 13, status: 'live',
     href: '/internal/job-scraper-source',
+    adminOnly: true,
   },
 ]
 
