@@ -1,15 +1,14 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-const notebookBg = [
-  'linear-gradient(90deg, transparent 68px, rgba(210,100,80,0.10) 68px, rgba(210,100,80,0.10) 69.5px, transparent 69.5px)',
-  'repeating-linear-gradient(180deg, transparent 0px, transparent 31px, rgba(100,140,200,0.09) 31px, rgba(100,140,200,0.09) 32px)',
-].join(',')
-
-const tw = { bg: '#FEFCF9', inkMid: '#3A3530', inkSub: '#5A5550', inkFaint: '#7A7874', rule: '#E8E4DE', white: '#FFFFFF', green: '#4A8C40' }
-const serif = "'Special Elite', Georgia, serif"
-const mono  = "'Courier Prime', Courier, monospace"
+/* ═══════════════════════════════════════════════════════════════════
+   Bondy Tools landing — v2 (Brand v4)
+   Spec: design_handoff_bondy_tools_landing/README.md
+   Implementation target: final-landing.{jsx,css} + Pressed-Paper CardB
+   Scoped under .btl-root in globals.css to avoid leaking globals.
+   ═══════════════════════════════════════════════════════════════════ */
 
 const BondyLogo = ({ size = 22 }) => (
   <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
@@ -20,136 +19,301 @@ const BondyLogo = ({ size = 22 }) => (
   </svg>
 )
 
-const sections = [
-  {
-    href: '/internal',
-    number: '01',
-    title: 'Equipo Bondy',
-    description: 'Asistente de informes, extensión de Chrome, scorecard y recursos del equipo.',
-    available: true,
+const BondyUnderline = ({ width = 420, color = '#4A8C40' }) => {
+  const mid = width / 2
+  return (
+    <svg width={width} height="8" viewBox={`0 0 ${width} 8`} fill="none" style={{ display: 'block', maxWidth: '100%' }}>
+      <path d={`M0 4 Q${mid * 0.5} 1 ${mid} 4 Q${mid * 1.5} 7 ${width} 4`} stroke={color} strokeWidth="2" fill="none" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+const CONTENT = {
+  es: {
+    backToSite: '← wearebondy.com',
+    kicker: 'tools.wearebondy.com · v2',
+    titleLeft: 'Bondy ',
+    titleEm: 'Tools.',
+    ledeStrong: 'Cuatro puertas. Una sola obsesión:',
+    ledeRest: ' hacer mejor el trabajo de contratar y de buscar trabajo. Algunas piezas son para nuestro equipo, otras para los recruiters y hiring managers, y otras para cualquiera buscando un próximo paso.',
+    metaTools: 'herramientas',
+    metaAudiences: 'audiencias',
+    metaSince: 'desde',
+    pillsAll: 'Todas',
+    pillsLive: 'Activas',
+    pillsSoon: 'Próximamente',
+    sectionLeft: '— Las cuatro puertas',
+    sectionRight: 'mostrando',
+    footLeft: '© 2026 Bondy Group · Buenos Aires',
+    footRight: 'wearebondy.com ↗',
+    audiences: [
+      {
+        num: '01',
+        kicker: 'Equipo · Bondy',
+        title: 'Equipo Bondy',
+        titleEm: 'Bondy',
+        desc: 'Plataforma interna del equipo. Acceso con login.',
+        tools: ['Asistente de informes', 'Extensión de Chrome', 'Scorecards', 'Recursos del equipo'],
+        cta: 'Entrar →',
+        href: '/internal',
+        status: 'live',
+        statusLabel: 'Activo · Login',
+      },
+      {
+        num: '02',
+        kicker: 'Recruiters',
+        title: 'Recursos para Recruiters',
+        titleEm: 'Recruiters',
+        desc: 'Herramientas y materiales gratuitos para equipos de talent acquisition en LATAM.',
+        tools: ['Plantillas de outreach', 'Calibradores de búsqueda', 'Guías de scorecard'],
+        cta: 'Próximamente',
+        href: '#',
+        status: 'soon',
+        statusLabel: 'Próximamente',
+      },
+      {
+        num: '03',
+        kicker: 'Hiring Managers · VPs · CEOs',
+        title: 'Hiring Strategy',
+        titleEm: 'Strategy',
+        desc: 'Guías para hiring managers y fondos planeando su estrategia de contratación en LATAM.',
+        tools: ['Modelos de planning', 'Benchmarks de comp.', 'Frameworks de calibración'],
+        cta: 'Próximamente',
+        href: '#',
+        status: 'soon',
+        statusLabel: 'Próximamente',
+      },
+      {
+        num: '04',
+        kicker: 'Candidatos · Talento',
+        title: 'Busco Trabajo',
+        titleEm: 'Trabajo',
+        desc: 'Roles tech abiertos en LATAM y worldwide, actualizados a diario. Filtrá por categoría, modalidad, seniority y tecnología.',
+        tools: ['Roles abiertos', 'Filtros por modalidad', 'Salarios publicados', 'Aplicación guiada'],
+        cta: 'Entrar →',
+        href: '/busco-trabajo',
+        status: 'live',
+        statusLabel: 'Activo · Sin login',
+      },
+    ],
   },
-  {
-    href: '/recruitment',
-    number: '02',
-    title: 'Recursos para Recruiters',
-    description: 'Herramientas y materiales gratuitos para equipos de talent acquisition.',
-    available: false,
+  en: {
+    backToSite: '← wearebondy.com',
+    kicker: 'tools.wearebondy.com · v2',
+    titleLeft: 'Bondy ',
+    titleEm: 'Tools.',
+    ledeStrong: 'Four doors. One obsession:',
+    ledeRest: ' make hiring and being hired better. Some pieces are for our team, others for recruiters and hiring managers, and others for anyone looking for a next step.',
+    metaTools: 'tools',
+    metaAudiences: 'audiences',
+    metaSince: 'since',
+    pillsAll: 'All',
+    pillsLive: 'Live',
+    pillsSoon: 'Coming soon',
+    sectionLeft: '— The four doors',
+    sectionRight: 'showing',
+    footLeft: '© 2026 Bondy Group · Buenos Aires',
+    footRight: 'wearebondy.com ↗',
+    audiences: [
+      {
+        num: '01',
+        kicker: 'Team · Bondy',
+        title: 'Bondy Team',
+        titleEm: 'Team',
+        desc: 'Internal team platform. Login required.',
+        tools: ['Report assistant', 'Chrome extension', 'Scorecards', 'Team resources'],
+        cta: 'Enter →',
+        href: '/internal',
+        status: 'live',
+        statusLabel: 'Live · Login',
+      },
+      {
+        num: '02',
+        kicker: 'Recruiters',
+        title: 'Recruiter Resources',
+        titleEm: 'Resources',
+        desc: 'Free tools and materials for LATAM talent acquisition teams.',
+        tools: ['Outreach templates', 'Search calibrators', 'Scorecard guides'],
+        cta: 'Coming soon',
+        href: '#',
+        status: 'soon',
+        statusLabel: 'Coming soon',
+      },
+      {
+        num: '03',
+        kicker: 'Hiring Managers · VPs · CEOs',
+        title: 'Hiring Strategy',
+        titleEm: 'Strategy',
+        desc: 'Playbooks for hiring managers and funds planning their LATAM hiring strategy.',
+        tools: ['Planning models', 'Comp. benchmarks', 'Calibration frameworks'],
+        cta: 'Coming soon',
+        href: '#',
+        status: 'soon',
+        statusLabel: 'Coming soon',
+      },
+      {
+        num: '04',
+        kicker: 'Candidates · Talent',
+        title: 'Busco Trabajo',
+        titleEm: 'Trabajo',
+        desc: 'Open tech roles in LATAM and worldwide, updated daily. Filter by category, modality, seniority and stack.',
+        tools: ['Open roles', 'Modality filters', 'Published salaries', 'Guided apply'],
+        cta: 'Enter →',
+        href: '/busco-trabajo',
+        status: 'live',
+        statusLabel: 'Live · No login',
+      },
+    ],
   },
-  {
-    href: '/hiring',
-    number: '03',
-    title: 'Hiring Strategy',
-    description: 'Guías para hiring managers y fondos planeando su estrategia en LATAM.',
-    available: false,
-  },
-  {
-    href: '/busco-trabajo',
-    number: '04',
-    title: 'Busco Trabajo',
-    description: 'Roles tech abiertos en LATAM y worldwide, actualizados a diario. Filtrá por categoría, modalidad, seniority y tecnología.',
-    available: true,
-  },
-]
+}
+
+function Card({ a }) {
+  const isSoon = a.status === 'soon'
+  // Replace last word in title with the em wrap
+  const titleHead = a.title.replace(new RegExp(`${a.titleEm}$`), '').trim()
+
+  const inner = (
+    <>
+      <div className="btl-card__top">
+        <span className="btl-card__num">{a.num}</span>
+        <span className={`btl-card__stamp ${isSoon ? 'is-soon' : ''}`}>{a.statusLabel}</span>
+      </div>
+      <div className="btl-card__kicker">— {a.kicker}</div>
+      <h3 className="btl-card__title">
+        {titleHead} <em>{a.titleEm}.</em>
+      </h3>
+      <p className="btl-card__desc">{a.desc}</p>
+      <div className="btl-card__bottom">
+        <div className="btl-card__tools">
+          {a.tools.slice(0, 3).map((t, j) => (
+            <span key={j} className="btl-card__tool">{t}</span>
+          ))}
+        </div>
+        <span className="btl-card__cta">{a.cta}</span>
+      </div>
+    </>
+  )
+
+  if (isSoon) {
+    return <div className="btl-card is-soon" aria-disabled="true">{inner}</div>
+  }
+  return <Link href={a.href} className="btl-card">{inner}</Link>
+}
 
 export default function HomePage() {
+  const [lang, setLang] = useState('es')
+  const [filter, setFilter] = useState('all')
+  const [mounted, setMounted] = useState(false)
+
+  // Hydrate language from localStorage after mount
+  useEffect(() => {
+    setMounted(true)
+    try {
+      const saved = window.localStorage.getItem('bondy_tools_lang')
+      if (saved === 'es' || saved === 'en') setLang(saved)
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    if (mounted) {
+      try { window.localStorage.setItem('bondy_tools_lang', lang) } catch {}
+    }
+  }, [lang, mounted])
+
+  const c = CONTENT[lang]
+  const all = c.audiences
+  const liveCount = all.filter(a => a.status === 'live').length
+  const soonCount = all.filter(a => a.status === 'soon').length
+  const filtered = filter === 'live' ? all.filter(a => a.status === 'live')
+    : filter === 'soon' ? all.filter(a => a.status === 'soon')
+    : all
+
   return (
-    <main style={{ backgroundColor: tw.bg, backgroundImage: notebookBg, minHeight: '100vh' }}>
-
-      {/* Nav */}
-      <nav style={{
-        borderBottom: `1px solid ${tw.rule}`,
-        padding: '0 clamp(1.25rem,5vw,4rem)',
-        height: '60px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: 'rgba(254,252,249,0.97)',
-        backgroundImage: notebookBg,
-        position: 'sticky', top: 0, zIndex: 50,
-        backdropFilter: 'blur(12px)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-          <Link href="/internal" style={{ display: 'flex', alignItems: 'center', gap: '9px', textDecoration: 'none', color: 'inherit' }}>
-            <BondyLogo size={22} />
-            <span style={{ fontFamily: serif, fontSize: '17px', color: '#1A1A1A', letterSpacing: '0.04em' }}>BONDY</span>
-          </Link>
-          <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: tw.green, border: `1px solid rgba(74,140,64,0.3)`, padding: '3px 8px' }}>
-            Tools
-          </span>
+    <main className="btl-root">
+      {/* Top bar */}
+      <header className="btl-bar">
+        <Link href="/" className="btl-bar__brand">
+          <BondyLogo size={22} />
+          <span className="btl-bar__brand-name">Bondy Tools</span>
+        </Link>
+        <div className="btl-bar__right">
+          <a href="https://wearebondy.com" className="btl-bar__back">{c.backToSite}</a>
+          <span className="btl-bar__sep" />
+          <div className="btl-lang">
+            <span
+              className={lang === 'es' ? 'is-active' : ''}
+              onClick={() => setLang('es')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setLang('es') }}
+            >ES</span>
+            <i>/</i>
+            <span
+              className={lang === 'en' ? 'is-active' : ''}
+              onClick={() => setLang('en')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setLang('en') }}
+            >EN</span>
+          </div>
         </div>
-        <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: tw.inkFaint }}>
-          tools.wearebondy.com
-        </span>
-      </nav>
+      </header>
 
-      {/* Header */}
-      <section style={{ padding: '4rem clamp(1.25rem,5vw,4rem) 3rem', borderBottom: `1px solid ${tw.rule}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2rem' }}>
-          <div style={{ width: '22px', height: '1px', background: tw.green }} />
-          <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: tw.green }}>
-            Bondy Tools
-          </span>
-        </div>
-        <h1 style={{ fontFamily: serif, fontSize: 'clamp(2.5rem,5vw,4rem)', lineHeight: 0.96, color: tw.inkMid, marginBottom: '0.5rem' }} className="tw-ink-heavy">
-          Todo en un<br />solo lugar.
-        </h1>
-        <svg width="240" height="8" viewBox="0 0 240 8" fill="none" style={{ display: 'block', marginBottom: '1.5rem' }}>
-          <path d="M0 4 Q60 1 120 4 Q180 7 240 4" stroke="#4A8C40" strokeWidth="2" fill="none" strokeLinecap="round"/>
-        </svg>
-        <p style={{ fontFamily: mono, fontSize: '14px', color: tw.inkFaint, maxWidth: '480px', lineHeight: 1.7 }}>
-          Plataforma de recursos para el equipo Bondy, recruiters y equipos de hiring en LATAM.
-        </p>
-      </section>
-
-      {/* Grid */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: `1px solid ${tw.rule}` }}>
-        {sections.map((s, i) => (
-          s.available ? (
-            <Link key={s.href} href={s.href} style={{
-              borderRight: i < sections.length - 1 ? `1px solid ${tw.rule}` : 'none',
-              padding: '3rem clamp(1rem,3vw,2.5rem)',
-              display: 'flex', flexDirection: 'column',
-              textDecoration: 'none', color: 'inherit',
-              background: i % 2 === 0 ? tw.white : tw.bg,
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(74,140,64,0.04)'}
-            onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? tw.white : tw.bg}
-            >
-              <div style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: tw.inkFaint, marginBottom: '2rem' }}>{s.number}</div>
-              <h2 style={{ fontFamily: serif, fontSize: '1.4rem', color: tw.inkMid, marginBottom: '1rem', lineHeight: 1.2 }} className="tw-ink">{s.title}</h2>
-              <p style={{ fontFamily: mono, fontSize: '13px', color: tw.inkSub, lineHeight: 1.7, marginBottom: '2rem', flex: 1 }}>{s.description}</p>
-              <div style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: tw.green }}>
-                Entrar →
-              </div>
-            </Link>
-          ) : (
-            <div key={s.href} style={{
-              borderRight: i < sections.length - 1 ? `1px solid ${tw.rule}` : 'none',
-              padding: '3rem clamp(1rem,3vw,2.5rem)',
-              display: 'flex', flexDirection: 'column',
-              opacity: 0.4,
-            }}>
-              <div style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: tw.inkFaint, marginBottom: '2rem' }}>{s.number}</div>
-              <h2 style={{ fontFamily: serif, fontSize: '1.4rem', color: tw.inkMid, marginBottom: '1rem', lineHeight: 1.2 }}>{s.title}</h2>
-              <p style={{ fontFamily: mono, fontSize: '13px', color: tw.inkSub, lineHeight: 1.7, marginBottom: '2rem', flex: 1 }}>{s.description}</p>
-              <div style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: tw.inkFaint, border: `1px solid ${tw.rule}`, padding: '4px 10px', display: 'inline-block' }}>
-                Próximamente
-              </div>
+      <div className="btl-content">
+        {/* Hero */}
+        <section className="btl-hero">
+          <div className="btl-kicker">
+            <div className="btl-kicker__rule" />
+            <span className="btl-kicker__text">{c.kicker}</span>
+          </div>
+          <h1 className="btl-hero__title">
+            {c.titleLeft}
+            <span className="btl-hero__title-tools">
+              <em>{c.titleEm}</em>
+              <span className="btl-hero__under"><BondyUnderline width={420} /></span>
+            </span>
+          </h1>
+          <div className="btl-hero__row">
+            <p className="btl-hero__lede">
+              <strong>{c.ledeStrong}</strong>{c.ledeRest}
+            </p>
+            <div className="btl-hero__meta">
+              <div><strong>04</strong> · {c.metaTools}</div>
+              <div><strong>03</strong> · {c.metaAudiences}</div>
+              <div>{c.metaSince} <strong>2008</strong></div>
             </div>
-          )
-        ))}
-      </section>
+          </div>
+        </section>
 
-      {/* Footer */}
-      <div style={{ padding: '1.25rem clamp(1.25rem,5vw,4rem)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.10em', color: tw.inkFaint }}>
-          © {new Date().getFullYear()} Bondy Group
-        </span>
-        <a href="https://wearebondy.com" target="_blank" rel="noopener noreferrer"
-          style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.10em', color: tw.green, textDecoration: 'none' }}>
-          wearebondy.com ↗
-        </a>
+        {/* Filter pills */}
+        <div className="btl-pills">
+          <button type="button" className={`btl-pill ${filter === 'all' ? 'is-active' : ''}`} onClick={() => setFilter('all')}>
+            {c.pillsAll} <span className="btl-pill__count">{all.length}</span>
+          </button>
+          <button type="button" className={`btl-pill ${filter === 'live' ? 'is-active' : ''}`} onClick={() => setFilter('live')}>
+            {c.pillsLive} <span className="btl-pill__count">{liveCount}</span>
+          </button>
+          <button type="button" className={`btl-pill ${filter === 'soon' ? 'is-active' : ''}`} onClick={() => setFilter('soon')}>
+            {c.pillsSoon} <span className="btl-pill__count">{soonCount}</span>
+          </button>
+        </div>
+
+        <div className="btl-sec-label">
+          <span className="btl-sec-label__l">{c.sectionLeft}</span>
+          <span className="btl-sec-label__r">{filtered.length} {c.sectionRight}</span>
+        </div>
+
+        {/* Grid */}
+        <div className="btl-grid">
+          {filtered.map((a) => <Card key={a.num} a={a} />)}
+        </div>
+
+        {/* Footer */}
+        <footer className="btl-foot">
+          <span>{c.footLeft}</span>
+          <a href="https://wearebondy.com">{c.footRight}</a>
+        </footer>
       </div>
-
     </main>
   )
 }
