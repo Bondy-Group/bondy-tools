@@ -112,6 +112,20 @@
 .bt-root .hero__today-date { color: var(--bondy-ink-mid); }
 .bt-root .hero__today-sep { color: var(--bondy-rule); }
 .bt-root .hero__today-count em { font-style: italic; color: var(--bondy-green); font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+.bt-root .hero__window {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin: 0 0 22px;
+  font-family: var(--bondy-font-mono);
+  font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--bondy-ink-mid);
+}
+.bt-root .hero__window-rule {
+  width: 22px; height: 1px; background: var(--bondy-green); display: inline-block;
+}
+.bt-root .hero__window-text em {
+  font-style: italic; color: var(--bondy-green); font-size: 13px;
+  letter-spacing: 0; text-transform: none; font-weight: 500;
+}
 .bt-root .hero__sub { font-size: 16px; line-height: 1.7; color: var(--bondy-ink-sub); max-width: 600px; margin: 0; }
 
 /* ───────────────────────────── Stats (minimal style — locked in) ───────── */

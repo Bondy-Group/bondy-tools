@@ -784,9 +784,16 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
             )}
           </div>
         )}
+        <div className="hero__window" aria-label="Ventana de publicación">
+          <span className="hero__window-rule" aria-hidden="true" />
+          <span className="hero__window-text">
+            Mostramos solo roles publicados en los <em>últimos 3 días</em>
+          </span>
+        </div>
         <p className="hero__sub">
-          Agregamos posiciones de {sourcesCount} fuentes todos los días. Sin login, sin fricción. Curados con el mismo
-          criterio que aplicamos a nuestras búsquedas embebidas. Si no pasa nuestro filtro, no lo listamos.
+          Sin avisos viejos: agregamos posiciones de {sourcesCount} fuentes todos los días y solo dejamos a la vista lo
+          publicado en las últimas 72 horas. Volvé mañana, vas a ver otras. Sin login, sin fricción. Curados con el
+          mismo criterio que aplicamos a nuestras búsquedas embebidas — si no pasa nuestro filtro, no lo listamos.
         </p>
       </section>
 
