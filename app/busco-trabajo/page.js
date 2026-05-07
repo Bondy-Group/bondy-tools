@@ -11,9 +11,12 @@ export const metadata = {
 export const revalidate = 1800 // 30 min
 
 export default async function BuscoTrabajoPage() {
-  const { roles, lastUpdate, newToday } = await fetchOpenRoles({ days: 60, limit: 500 })
+  const { roles, lastUpdate, newToday, activeSources } = await fetchOpenRoles({ days: 60, limit: 500 })
   const updateLabel = formatUpdateLabel(lastUpdate)
   const todayLabel = formatTodayLabel()
+  // If the catalog gave us an active-sources list, use it; otherwise fall back to
+  // the static SOURCES export so the filter never shows up empty.
+  const visibleSources = (activeSources && activeSources.length > 0) ? activeSources : SOURCES
 
   return (
     <BuscoTrabajoClient
@@ -24,7 +27,7 @@ export default async function BuscoTrabajoPage() {
       areas={AREAS}
       modalities={MODALITIES}
       seniorities={SENIORITIES}
-      sources={SOURCES}
+      sources={visibleSources}
       locations={LOCATIONS}
     />
   )
