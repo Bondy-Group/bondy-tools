@@ -11,7 +11,7 @@ export const metadata = {
 export const revalidate = 1800 // 30 min
 
 export default async function BuscoTrabajoPage() {
-  const { roles, lastUpdate, newToday, activeSources } = await fetchOpenRoles({ days: 60, limit: 500 })
+  const { roles, lastUpdate, newToday, activeSources } = await fetchOpenRoles({ days: 3, limit: 500 })
   const updateLabel = formatUpdateLabel(lastUpdate)
   const todayLabel = formatTodayLabel()
   // If the catalog gave us an active-sources list, use it; otherwise fall back to
