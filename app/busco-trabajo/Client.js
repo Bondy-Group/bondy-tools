@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SPANISH_SOURCES } from '@/lib/scraper-jobs'
+import { trackEvent } from '@/lib/analytics'
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -518,6 +519,12 @@ function SubscribeForm({ areas, modalities, seniorities }) {
         setState('error')
         return
       }
+      trackEvent('newsletter_subscribe', {
+        with_preferences: !!(prefs.areas.length || prefs.modalities.length || prefs.seniorities.length),
+        areas: prefs.areas.join(',') || '(all)',
+        seniorities: prefs.seniorities.join(',') || '(all)',
+        modalities: prefs.modalities.join(',') || '(all)',
+      })
       setState('done')
     } catch {
       setErrorMsg('No pudimos conectar. Revisá tu conexión y probá de nuevo.')
@@ -660,6 +667,52 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
     if (selected && selected.id === id) setSelected({ ...selected, saved: !selected.saved })
   }
 
+  // ─── Analytics handlers ───────────────────────────────────────
+  const handleSelectRole = (role) => {
+    if (role) {
+      trackEvent('job_card_click', {
+        job_id: role.id,
+        job_title: role.title,
+        company: role.company,
+        area: role.area,
+        seniority: role.seniority,
+        modality: role.modality,
+        source: role.source,
+        salary_disclosed: !!role.salary,
+      })
+    }
+    setSelected(role)
+  }
+
+  const handleApplyClick = (role) => {
+    trackEvent('job_apply_click', {
+      job_id: role.id,
+      job_title: role.title,
+      company: role.company,
+      source: role.source,
+    })
+    setApplying(role)
+  }
+
+  const handleFiltersChange = (next) => {
+    // Track sólo cuando hay cambio real (evitamos ruido de re-renders)
+    const changed = Object.keys(next).find((k) => next[k]?.length !== filters[k]?.length)
+    if (changed) {
+      trackEvent('filter_change', {
+        filter_type: changed,
+        active_values: (next[changed] || []).join(',') || '(cleared)',
+        total_active_filters:
+          (next.areas?.length || 0) +
+          (next.modalities?.length || 0) +
+          (next.seniorities?.length || 0) +
+          (next.sources?.length || 0) +
+          (next.locations?.length || 0),
+      })
+    }
+    setFilters(next)
+  }
+  // ──────────────────────────────────────────────────────────────
+
   const stats = useMemo(() => {
     const total = roles.length
     const remote = roles.filter((r) => r.modality === 'Remote').length
@@ -687,7 +740,13 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
           <span className="tools-bar__sep">/</span>
           <span className="tools-bar__crumb">Busco Trabajo</span>
         </div>
-        <a className="tools-bar__cta" href="https://wearebondy.com" target="_blank" rel="noopener noreferrer">
+        <a
+          className="tools-bar__cta"
+          href="https://wearebondy.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent('cta_sumar_perfil_click', { location: 'header' })}
+        >
           Sumar mi perfil →
         </a>
       </header>
@@ -761,7 +820,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
       {/* Filters */}
       <FiltersBar
         filters={filters}
-        setFilters={setFilters}
+        setFilters={handleFiltersChange}
         search={search}
         setSearch={setSearch}
         areas={areas}
@@ -827,7 +886,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
           </div>
         ) : (
           filtered.map((r) => (
-            <Row key={r.id} role={r} selected={selected && selected.id === r.id} onSelect={setSelected} onToggleSave={toggleSave} />
+            <Row key={r.id} role={r} selected={selected && selected.id === r.id} onSelect={handleSelectRole} onToggleSave={toggleSave} />
           ))
         )}
       </main>
@@ -837,12 +896,17 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
 
       <footer className="bondy-footer">
         <span>© 2026 Bondy Group</span>
-        <a href="https://wearebondy.com" target="_blank" rel="noopener noreferrer">
+        <a
+          href="https://wearebondy.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent('cta_sumar_perfil_click', { location: 'footer' })}
+        >
           wearebondy.com ↗
         </a>
       </footer>
 
-      <DetailPanel role={selected} onClose={() => setSelected(null)} onToggleSave={toggleSave} onApply={(r) => setApplying(r)} />
+      <DetailPanel role={selected} onClose={() => setSelected(null)} onToggleSave={toggleSave} onApply={handleApplyClick} />
       <ApplyModal role={applying} onClose={() => setApplying(null)} />
     </div>
   )
