@@ -179,6 +179,16 @@ const resources = [
     href: '/internal/data-explorer',
     adminOnly: true,
   },
+  {
+    id: 'job-scraper-source',
+    name: 'Job Scraper Sources',
+    cat: 'Datos', catKey: 'datos',
+    desc: 'Salud de cada fuente del scraper: jobs en DB, volumen vs target semanal, última corrida. Base para decidir cuándo rotar o reemplazar una fuente.',
+    descShort: 'Salud del scraper por fuente. Volumen, alertas, última corrida.',
+    glyph: 'SC',
+    shortcut: '', staticRank: 13, status: 'live',
+    href: '/internal/job-scraper-source',
+  },
 ]
 
 const categories = [
