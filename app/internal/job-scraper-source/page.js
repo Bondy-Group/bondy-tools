@@ -157,6 +157,13 @@ export default function JobScraperSourcePage() {
   const [error, setError]     = useState(null)
   const [savingId, setSavingId] = useState(null)
 
+  // "+ Agregar" modal
+  const [requestSource, setRequestSource] = useState(null)  // source row | null
+  const [requestNotes, setRequestNotes] = useState('')
+  const [requestSubmitting, setRequestSubmitting] = useState(false)
+  const [requestError, setRequestError] = useState(null)
+  const [requestDone, setRequestDone] = useState(null)       // {name, slackPosted} | null
+
   const [search, setSearch] = useState('')
   const [method, setMethod] = useState('Todos')
   const [latam,  setLatam]  = useState('Todos')
@@ -239,6 +246,41 @@ export default function JobScraperSourcePage() {
     navigator.clipboard.writeText(text)
     setCopied(id)
     setTimeout(() => setCopied(null), 1500)
+  }
+
+  const openRequest = (s) => {
+    setRequestSource(s)
+    setRequestNotes('')
+    setRequestError(null)
+    setRequestDone(null)
+  }
+  const closeRequest = () => {
+    if (requestSubmitting) return
+    setRequestSource(null)
+  }
+  const submitRequest = async () => {
+    if (!requestSource) return
+    setRequestSubmitting(true)
+    setRequestError(null)
+    try {
+      const r = await fetch('/api/internal/job-sources/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceId: requestSource.id, notes: requestNotes }),
+      })
+      const j = await r.json().catch(() => ({}))
+      if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`)
+      // Refresh source row in place so the badge updates immediately.
+      setSources(prev => prev.map(x => x.id === requestSource.id
+        ? { ...x, integration_requested_at: j.source.integration_requested_at, integration_request_notes: requestNotes || null }
+        : x
+      ))
+      setRequestDone({ name: requestSource.name, slackPosted: j.slackPosted })
+    } catch (e) {
+      setRequestError(String(e.message || e))
+    } finally {
+      setRequestSubmitting(false)
+    }
   }
 
   return (
@@ -329,6 +371,7 @@ export default function JobScraperSourcePage() {
                     count={counts[s.id] || 0}
                     saving={savingId === s.id}
                     onToggle={() => toggleActive(s)}
+                    onRequest={() => openRequest(s)}
                   />
                 ))}
               </div>
@@ -383,6 +426,19 @@ export default function JobScraperSourcePage() {
           </div>
         )}
       </div>
+
+      {requestSource && (
+        <RequestModal
+          source={requestSource}
+          notes={requestNotes}
+          setNotes={setRequestNotes}
+          submitting={requestSubmitting}
+          error={requestError}
+          done={requestDone}
+          onClose={closeRequest}
+          onSubmit={submitRequest}
+        />
+      )}
     </div>
   )
 }
@@ -465,11 +521,12 @@ function Toggle({ on, onClick, disabled }) {
   )
 }
 
-function SourceRow({ s, count, saving, onToggle }) {
+function SourceRow({ s, count, saving, onToggle, onRequest }) {
   const health = healthOf(s)
   const target = s.target_per_run
   const last = s.last_run_count
   const volPct = (target && last != null) ? Math.min(100, Math.round((last / target) * 100)) : null
+  const requested = !s.in_scraper && !!s.integration_requested_at
 
   return (
     <div style={{
@@ -541,14 +598,128 @@ function SourceRow({ s, count, saving, onToggle }) {
             <span style={{ fontFamily: mono, fontSize: 10, color: tw.inkFaint }}>{s.active ? 'on' : 'off'}</span>
             <Toggle on={s.active} onClick={onToggle} disabled={saving} />
           </>
+        ) : requested ? (
+          <span title={s.integration_request_notes || ''} style={{
+            padding: '5px 10px', borderRadius: 6, border: `1px solid #2563eb`,
+            background: 'rgba(37,99,235,0.08)', color: '#2563eb',
+            fontFamily: mono, fontSize: 10, fontWeight: 700,
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            whiteSpace: 'nowrap',
+          }}>🔵 Pedido · {relTime(s.integration_requested_at)}</span>
         ) : (
-          <button
-            onClick={() => alert(`"+ Agregar" entra en fase 2.\n\nPara integrar ${s.name}:\n1. Mateo Dev escribe el módulo del scraper\n2. Lo prueba localmente\n3. Hace push y marca in_scraper=true en job_sources`)}
-            style={{
-              padding: '5px 10px', borderRadius: 6, border: `1px solid ${tw.amber}`,
-              background: tw.amberTint, color: tw.amber,
-              fontFamily: mono, fontSize: 10, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-            }}>+ Agregar</button>
+          <button onClick={onRequest} style={{
+            padding: '5px 10px', borderRadius: 6, border: `1px solid ${tw.amber}`,
+            background: tw.amberTint, color: tw.amber,
+            fontFamily: mono, fontSize: 10, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+          }}>+ Agregar</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function RequestModal({ source, notes, setNotes, submitting, error, done, onClose, onSubmit }) {
+  const isDone = !!done
+  return (
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(26,26,26,0.55)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 1000, padding: 20, fontFamily: ui,
+      }}>
+      <div style={{
+        background: tw.bg, borderRadius: 12, maxWidth: 520, width: '100%',
+        border: `1px solid ${tw.rule}`, boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
+        overflow: 'hidden',
+      }}>
+        {!isDone ? (
+          <>
+            <div style={{ padding: '18px 22px 12px', borderBottom: `1px solid ${tw.rule}` }}>
+              <div style={{ fontFamily: mono, fontSize: 11, color: tw.inkFaint, letterSpacing: 1, textTransform: 'uppercase' }}>
+                Pedir integración al scraper
+              </div>
+              <div style={{ fontFamily: serif, fontSize: 22, color: tw.ink, marginTop: 4 }}>
+                {source.name}
+              </div>
+              <div style={{ fontFamily: mono, fontSize: 11, color: tw.inkFaint, marginTop: 4 }}>
+                {source.url} · {source.method} · LATAM {source.latam_coverage} · {source.tipo}
+              </div>
+            </div>
+
+            <div style={{ padding: '16px 22px' }}>
+              <div style={{ fontFamily: ui, fontSize: 13, color: tw.inkSub, lineHeight: 1.55, marginBottom: 14 }}>
+                Esto marca la fuente como pedida en el catálogo y avisa a Mateo Dev en
+                <code style={{ background: tw.ruleSoft, padding: '1px 5px', borderRadius: 3, margin: '0 4px' }}>#agentes-bondy</code>.
+                En la próxima sesión Mateo escribe el módulo, lo prueba y la integra.
+              </div>
+
+              <label style={{ display: 'block', marginBottom: 6, fontFamily: mono, fontSize: 11, color: tw.inkSub }}>
+                Contexto opcional (prioridad, qué query querés priorizar, etc.)
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Ej: priorizá Ashby porque queremos las búsquedas de Deel y Lemon"
+                rows={4}
+                disabled={submitting}
+                style={{
+                  width: '100%', boxSizing: 'border-box', padding: '10px 12px',
+                  fontFamily: ui, fontSize: 13, color: tw.ink, background: tw.white,
+                  border: `1px solid ${tw.rule}`, borderRadius: 6,
+                  outline: 'none', resize: 'vertical', minHeight: 80,
+                }}
+              />
+
+              {error && (
+                <div style={{
+                  marginTop: 12, padding: '8px 12px', borderRadius: 6,
+                  background: tw.redTint, color: tw.red, border: `1px solid ${tw.red}`,
+                  fontFamily: mono, fontSize: 11,
+                }}>{error}</div>
+              )}
+            </div>
+
+            <div style={{
+              padding: '12px 22px 18px', display: 'flex', justifyContent: 'flex-end', gap: 8,
+              borderTop: `1px solid ${tw.ruleSoft}`,
+            }}>
+              <button onClick={onClose} disabled={submitting} style={{
+                padding: '7px 14px', borderRadius: 6, border: `1px solid ${tw.rule}`,
+                background: tw.white, color: tw.inkSub,
+                fontFamily: mono, fontSize: 12, cursor: submitting ? 'wait' : 'pointer',
+              }}>Cancelar</button>
+              <button onClick={onSubmit} disabled={submitting} style={{
+                padding: '7px 14px', borderRadius: 6, border: `1px solid ${tw.green}`,
+                background: tw.green, color: tw.white,
+                fontFamily: mono, fontSize: 12, fontWeight: 600,
+                cursor: submitting ? 'wait' : 'pointer',
+                opacity: submitting ? 0.65 : 1,
+              }}>{submitting ? '· Enviando' : 'Pedir integración'}</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ padding: '24px 22px 8px', textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🔵</div>
+              <div style={{ fontFamily: serif, fontSize: 22, color: tw.ink, marginBottom: 6 }}>
+                Pedido enviado
+              </div>
+              <div style={{ fontFamily: ui, fontSize: 13, color: tw.inkSub, lineHeight: 1.55 }}>
+                <strong>{done.name}</strong> quedó marcada como pedida.{' '}
+                {done.slackPosted
+                  ? <>Avisé a Mateo Dev en <code style={{ background: tw.ruleSoft, padding: '1px 5px', borderRadius: 3 }}>#agentes-bondy</code>.</>
+                  : <span style={{ color: tw.amber }}>(Slack no respondió, pero el pedido quedó guardado.)</span>}
+              </div>
+            </div>
+            <div style={{ padding: '16px 22px 18px', display: 'flex', justifyContent: 'center' }}>
+              <button onClick={onClose} style={{
+                padding: '7px 14px', borderRadius: 6, border: `1px solid ${tw.green}`,
+                background: tw.green, color: tw.white,
+                fontFamily: mono, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              }}>Listo</button>
+            </div>
+          </>
         )}
       </div>
     </div>
