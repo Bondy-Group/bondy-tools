@@ -24,15 +24,27 @@ const AGENTES_BONDY_CHANNEL = 'C0AL153UN8K'
 
 async function postSlack(text) {
   const token = process.env.SLACK_BOT_TOKEN
-  if (!token) return { ok: false, skipped: 'no_token' }
-  try {
+  if (!token) return { ok: false, error: 'no_token' }
+  const post = async () => {
     const r = await fetch('https://slack.com/api/chat.postMessage', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ channel: AGENTES_BONDY_CHANNEL, text }),
     })
-    const j = await r.json()
-    return { ok: !!j.ok, raw: j }
+    return r.json()
+  }
+  try {
+    let j = await post()
+    // If the bot isn't in the channel yet, try to join it once and retry.
+    if (!j.ok && j.error === 'not_in_channel') {
+      await fetch('https://slack.com/api/conversations.join', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: AGENTES_BONDY_CHANNEL }),
+      }).catch(() => {})
+      j = await post()
+    }
+    return { ok: !!j.ok, error: j.ok ? undefined : (j.error || 'unknown'), raw: j }
   } catch (e) {
     return { ok: false, error: String(e) }
   }
@@ -98,5 +110,6 @@ export async function POST(req) {
     ok: true,
     source: { id: row.id, name: row.name, integration_requested_at: row.integration_requested_at },
     slackPosted: slack.ok,
+    slackError: slack.ok ? undefined : slack.error,
   })
 }
