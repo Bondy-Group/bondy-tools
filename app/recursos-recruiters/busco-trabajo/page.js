@@ -40,9 +40,9 @@ export const metadata = {
 export const revalidate = 1800 // 30 min
 
 export default async function BuscoTrabajoRecruitersPage() {
-  // Wider window than candidates (90d vs 3d): recruiting roles are scarcer in
-  // the scraped pool, so showing the last 90 days keeps the listing alive.
-  const { roles, lastUpdate, newToday, activeSources } = await fetchRecruitingRoles({ days: 90, limit: 500 })
+  // Same FOMO window as /busco-trabajo: only roles published in the last 3 days.
+  // Will appear empty until the scraper runs with the HR expansion patch applied.
+  const { roles, lastUpdate, newToday, activeSources } = await fetchRecruitingRoles({ days: 3, limit: 500 })
   const updateLabel = formatUpdateLabel(lastUpdate)
   const todayLabel = formatTodayLabel()
   const visibleSources = (activeSources && activeSources.length > 0) ? activeSources : SOURCES

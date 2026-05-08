@@ -746,8 +746,8 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
         crumb: 'Recursos para Recruiters / Busco Trabajo',
         kicker: 'Bondy · Roles para recruiters',
         h1Line1: 'Roles de recruiting & talent en LATAM,',
-        windowText: <>Mostramos roles publicados en los <em>últimos 90 días</em></>,
-        sub: `Posiciones para recruiters, sourcers, talent acquisition, people ops y talent development. Agregamos avisos de ${sourcesCount} fuentes todos los días y mantenemos la lista en una ventana ancha porque estos roles son más escasos. Sin login, sin fricción. Curados con el mismo criterio que aplicamos a nuestras búsquedas embebidas.`,
+        windowText: <>Mostramos solo roles publicados en los <em>últimos 3 días</em></>,
+        sub: `Posiciones para recruiters, sourcers, talent acquisition, people ops y talent development. Sin avisos viejos: agregamos avisos de ${sourcesCount} fuentes todos los días y solo dejamos a la vista lo publicado en las últimas 72 horas. Sin login, sin fricción. Curados con el mismo criterio que aplicamos a nuestras búsquedas embebidas.`,
       }
     : {
         crumb: 'Busco Trabajo',
