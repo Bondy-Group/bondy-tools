@@ -615,7 +615,7 @@ function PrefRow({ label, options, selected, onToggle }) {
   )
 }
 
-export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLabel, newToday = 0, areas, modalities, seniorities, sources, locations }) {
+export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLabel, newToday = 0, areas, modalities, seniorities, sources, locations, audience = 'candidates' }) {
   const [roles, setRoles] = useState(initialRoles)
   const [filters, setFilters] = useState({ areas: [], modalities: [], seniorities: [], sources: [], locations: [] })
   const [search, setSearch] = useState('')
@@ -730,6 +730,24 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
     filters.locations.length ||
     search
 
+  // Audience-aware copy. Defaults preserve the legacy "candidates" wording so
+  // /busco-trabajo stays unchanged. Recruiters get a tightened-up variant.
+  const COPY = audience === 'recruiters'
+    ? {
+        crumb: 'Recursos para Recruiters / Busco Trabajo',
+        kicker: 'Bondy · Roles para recruiters',
+        h1Line1: 'Roles de recruiting & talent en LATAM,',
+        windowText: <>Mostramos roles publicados en los <em>últimos 90 días</em></>,
+        sub: `Posiciones para recruiters, sourcers, talent acquisition, people ops y talent development. Agregamos avisos de ${sourcesCount} fuentes todos los días y mantenemos la lista en una ventana ancha porque estos roles son más escasos. Sin login, sin fricción. Curados con el mismo criterio que aplicamos a nuestras búsquedas embebidas.`,
+      }
+    : {
+        crumb: 'Busco Trabajo',
+        kicker: 'Bondy · Roles abiertos',
+        h1Line1: 'Roles tech en LATAM,',
+        windowText: <>Mostramos solo roles publicados en los <em>últimos 3 días</em></>,
+        sub: `Sin avisos viejos: agregamos posiciones de ${sourcesCount} fuentes todos los días y solo dejamos a la vista lo publicado en las últimas 72 horas. Volvé mañana, vas a ver otras. Sin login, sin fricción. Curados con el mismo criterio que aplicamos a nuestras búsquedas embebidas — si no pasa nuestro filtro, no lo listamos.`,
+      }
+
   return (
     <div className="bt-root">
       {/* Top bar */}
@@ -738,7 +756,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
           <BondyLogo size={20} />
           <span className="tools-bar__brand-name">BONDY</span>
           <span className="tools-bar__sep">/</span>
-          <span className="tools-bar__crumb">Busco Trabajo</span>
+          <span className="tools-bar__crumb">{COPY.crumb}</span>
         </div>
         <a
           className="tools-bar__cta"
@@ -755,7 +773,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
       <section className="hero">
         <div className="hero__kicker">
           <div className="hero__kicker-rule" />
-          <span className="hero__kicker-text">Bondy · Roles abiertos</span>
+          <span className="hero__kicker-text">{COPY.kicker}</span>
           {updateLabel && (
             <>
               <span className="hero__kicker-sep">·</span>
@@ -767,7 +785,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
           )}
         </div>
         <h1 className="hero__title">
-          Roles tech en LATAM,
+          {COPY.h1Line1}
           <br />
           actualizados <em>a diario.</em>
         </h1>
@@ -787,13 +805,11 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
         <div className="hero__window" aria-label="Ventana de publicación">
           <span className="hero__window-rule" aria-hidden="true" />
           <span className="hero__window-text">
-            Mostramos solo roles publicados en los <em>últimos 3 días</em>
+            {COPY.windowText}
           </span>
         </div>
         <p className="hero__sub">
-          Sin avisos viejos: agregamos posiciones de {sourcesCount} fuentes todos los días y solo dejamos a la vista lo
-          publicado en las últimas 72 horas. Volvé mañana, vas a ver otras. Sin login, sin fricción. Curados con el
-          mismo criterio que aplicamos a nuestras búsquedas embebidas — si no pasa nuestro filtro, no lo listamos.
+          {COPY.sub}
         </p>
       </section>
 
