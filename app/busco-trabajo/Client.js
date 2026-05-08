@@ -170,7 +170,7 @@ function FilterChip({ label, options, selected, onChange, allLabel = 'Todas' }) 
 // ─────────────────────────────────────────────────────────────
 // FiltersBar
 // ─────────────────────────────────────────────────────────────
-function FiltersBar({ filters, setFilters, search, setSearch, areas, modalities, seniorities, sources, locations }) {
+function FiltersBar({ filters, setFilters, search, setSearch, areas, modalities, seniorities, sources, locations, languages }) {
   const setF = (key) => (vals) => setFilters({ ...filters, [key]: vals })
   const anyActive =
     filters.areas.length ||
@@ -178,6 +178,7 @@ function FiltersBar({ filters, setFilters, search, setSearch, areas, modalities,
     filters.seniorities.length ||
     filters.sources.length ||
     filters.locations.length ||
+    filters.languages.length ||
     search
 
   return (
@@ -195,6 +196,7 @@ function FiltersBar({ filters, setFilters, search, setSearch, areas, modalities,
           <FilterChip label="Área" options={areas} selected={filters.areas} onChange={setF('areas')} />
           <FilterChip label="Modalidad" options={modalities} selected={filters.modalities} onChange={setF('modalities')} />
           <FilterChip label="Ubicación" options={locations} selected={filters.locations} onChange={setF('locations')} />
+          <FilterChip label="Idioma" options={languages} selected={filters.languages} onChange={setF('languages')} />
           <FilterChip label="Seniority" options={seniorities} selected={filters.seniorities} onChange={setF('seniorities')} />
           <FilterChip label="Fuente" options={sources} selected={filters.sources} onChange={setF('sources')} />
         </div>
@@ -204,7 +206,7 @@ function FiltersBar({ filters, setFilters, search, setSearch, areas, modalities,
             <div
               className="filters__clear"
               onClick={() => {
-                setFilters({ areas: [], modalities: [], seniorities: [], sources: [], locations: [] })
+                setFilters({ areas: [], modalities: [], seniorities: [], sources: [], locations: [], languages: [] })
                 setSearch('')
               }}
             >
@@ -615,9 +617,9 @@ function PrefRow({ label, options, selected, onToggle }) {
   )
 }
 
-export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLabel, newToday = 0, areas, modalities, seniorities, sources, locations, audience = 'candidates' }) {
+export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLabel, newToday = 0, areas, modalities, seniorities, sources, locations, languages = [], audience = 'candidates' }) {
   const [roles, setRoles] = useState(initialRoles)
-  const [filters, setFilters] = useState({ areas: [], modalities: [], seniorities: [], sources: [], locations: [] })
+  const [filters, setFilters] = useState({ areas: [], modalities: [], seniorities: [], sources: [], locations: [], languages: [] })
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(null)
   const [applying, setApplying] = useState(null)
@@ -640,6 +642,11 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
     if (filters.seniorities.length) r = r.filter((x) => filters.seniorities.includes(x.seniority))
     if (filters.sources.length) r = r.filter((x) => filters.sources.includes(x.source))
     if (filters.locations.length) r = r.filter((x) => filters.locations.includes(locationBucket(x.location)))
+    if (filters.languages.length) {
+      // 'Sin detectar' is a label; when the user picks it explicitly, also
+      // include rows where language is null (legacy pre-detection).
+      r = r.filter((x) => filters.languages.includes(x.language || 'Sin detectar'))
+    }
     if (search) {
       const q = search.toLowerCase()
       r = r.filter(
@@ -706,7 +713,8 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
           (next.modalities?.length || 0) +
           (next.seniorities?.length || 0) +
           (next.sources?.length || 0) +
-          (next.locations?.length || 0),
+          (next.locations?.length || 0) +
+          (next.languages?.length || 0),
       })
     }
     setFilters(next)
@@ -728,6 +736,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
     filters.seniorities.length ||
     filters.sources.length ||
     filters.locations.length ||
+    filters.languages.length ||
     search
 
   // Audience-aware copy. Defaults preserve the legacy "candidates" wording so
@@ -851,6 +860,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
         seniorities={seniorities}
         sources={sources}
         locations={locations}
+        languages={languages}
       />
 
       {/* Result count + sort */}
@@ -900,7 +910,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
             <button
               className="btn btn--ghost"
               onClick={() => {
-                setFilters({ areas: [], modalities: [], seniorities: [], sources: [], locations: [] })
+                setFilters({ areas: [], modalities: [], seniorities: [], sources: [], locations: [], languages: [] })
                 setSearch('')
               }}
             >

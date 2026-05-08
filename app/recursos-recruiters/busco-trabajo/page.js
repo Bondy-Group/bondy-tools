@@ -1,4 +1,4 @@
-import { fetchRecruitingRoles, formatUpdateLabel, formatTodayLabel, RECRUITING_AREAS, MODALITIES, SENIORITIES, SOURCES, LOCATIONS } from '@/lib/scraper-jobs'
+import { fetchRecruitingRoles, formatUpdateLabel, formatTodayLabel, RECRUITING_AREAS, MODALITIES, SENIORITIES, SOURCES, LOCATIONS, LANGUAGES } from '@/lib/scraper-jobs'
 import BuscoTrabajoClient from '../../busco-trabajo/Client'
 import '../../busco-trabajo/styles.css'
 
@@ -58,6 +58,7 @@ export default async function BuscoTrabajoRecruitersPage() {
       seniorities={SENIORITIES}
       sources={visibleSources}
       locations={LOCATIONS}
+      languages={LANGUAGES}
       audience="recruiters"
     />
   )

@@ -1,4 +1,4 @@
-import { fetchOpenRoles, formatUpdateLabel, formatTodayLabel, AREAS, MODALITIES, SENIORITIES, SOURCES, LOCATIONS } from '@/lib/scraper-jobs'
+import { fetchOpenRoles, formatUpdateLabel, formatTodayLabel, AREAS, MODALITIES, SENIORITIES, SOURCES, LOCATIONS, LANGUAGES } from '@/lib/scraper-jobs'
 import BuscoTrabajoClient from './Client'
 import './styles.css'
 
@@ -58,6 +58,7 @@ export default async function BuscoTrabajoPage() {
       seniorities={SENIORITIES}
       sources={visibleSources}
       locations={LOCATIONS}
+      languages={LANGUAGES}
     />
   )
 }
