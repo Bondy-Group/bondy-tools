@@ -193,7 +193,7 @@
 .bt-root .list { max-width: 1400px; margin: 0 auto; padding: 0 32px 80px; }
 .bt-root .row {
   display: grid;
-  grid-template-columns: 56px 1fr 1.2fr 1fr 0.9fr 0.8fr 80px 36px;
+  grid-template-columns: 56px 1fr 1.2fr 1fr 0.9fr 0.8fr 80px 72px;
   gap: 16px; align-items: center; padding: 18px 0;
   border-top: 1px solid var(--bondy-rule); cursor: pointer; transition: background 0.15s;
 }
@@ -225,9 +225,54 @@
 .bt-root .row__save:hover { border-color: var(--bondy-green); color: var(--bondy-green); }
 .bt-root .row__save--saved { background: var(--bondy-green); color: var(--bondy-white); border-color: var(--bondy-green); }
 
+/* Row actions wrapper (share + save) */
+.bt-root .row__actions { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+
+/* ──────────── Share menu (used in Row + DetailPanel) ──────────── */
+.bt-root .share { position: relative; display: inline-block; }
+.bt-root .share__trigger {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 28px; padding: 0 10px;
+  border: 1px solid var(--bondy-rule); background: var(--bondy-white);
+  font-family: var(--bondy-font-body); font-size: 12px; color: var(--bondy-ink-faint);
+  cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.bt-root .share__trigger:hover { border-color: var(--bondy-green); color: var(--bondy-green); }
+.bt-root .share__trigger--compact { width: 28px; padding: 0; justify-content: center; }
+.bt-root .share__trigger svg { display: block; }
+.bt-root .share__trigger-label { font-weight: 500; letter-spacing: 0.02em; }
+.bt-root .share__menu {
+  position: absolute; right: 0; top: calc(100% + 6px);
+  min-width: 168px; background: var(--bondy-white);
+  border: 1px solid var(--bondy-rule);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  z-index: 50;
+  display: flex; flex-direction: column;
+  padding: 4px;
+}
+.bt-root .share__item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  font-family: var(--bondy-font-body); font-size: 13px; color: var(--bondy-ink);
+  background: transparent; border: 0; text-align: left;
+  text-decoration: none; cursor: pointer;
+}
+.bt-root .share__item:hover { background: var(--bondy-green-tint); color: var(--bondy-green); }
+.bt-root .share__item-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; font-size: 13px; line-height: 1;
+}
+
+/* Detail panel cta row for save + share alongside */
+.bt-root .detail__cta-row { display: flex; gap: 10px; margin-top: 10px; }
+.bt-root .detail__cta-half { flex: 1; }
+.bt-root .detail__cta-half .share { width: 100%; }
+.bt-root .detail__cta-half .share__trigger { width: 100%; justify-content: center; height: 38px; }
+.bt-root .detail__share-wrap { position: relative; }
+
 .bt-root .head-row {
   display: grid;
-  grid-template-columns: 56px 1fr 1.2fr 1fr 0.9fr 0.8fr 80px 36px;
+  grid-template-columns: 56px 1fr 1.2fr 1fr 0.9fr 0.8fr 80px 72px;
   gap: 16px; padding: 10px 0;
   font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--bondy-ink-faint);

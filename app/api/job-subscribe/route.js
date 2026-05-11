@@ -45,21 +45,27 @@ function rateLimited(ip) {
   return arr.length > LIMIT
 }
 
-async function fireWelcomeEmail({ email, preferences, unsubscribeToken }) {
+async function fireWelcomeEmail({ email, preferences, unsubscribeToken, audience = 'candidates' }) {
   try {
     const unsubscribeUrl = `${HOST}/api/newsletter/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`
-    const html = renderWelcomeEmail({ unsubscribeUrl, preferences })
-    const text = renderWelcomeEmailText({ unsubscribeUrl, preferences })
+    const html = renderWelcomeEmail({ unsubscribeUrl, preferences, audience })
+    const text = renderWelcomeEmailText({ unsubscribeUrl, preferences, audience })
+    const subject = audience === 'recruiters'
+      ? 'Listo. Te sumamos al digest de recruiting de Bondy.'
+      : 'Listo. Te sumamos al digest semanal de Bondy.'
     const res = await sendEmail({
       to: email,
-      subject: 'Listo. Te sumamos al digest semanal de Bondy.',
+      subject,
       html,
       text,
       headers: {
         'List-Unsubscribe': `<${unsubscribeUrl}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       },
-      tags: [{ name: 'campaign', value: 'welcome' }],
+      tags: [
+        { name: 'campaign', value: 'welcome' },
+        { name: 'audience', value: audience },
+      ],
     })
     if (res.skipped) {
       console.warn('[subscribe] welcome email skipped:', res.reason)
@@ -96,10 +102,15 @@ export async function POST(request) {
       return NextResponse.json({ ok: false, error: 'invalid_email' }, { status: 400 })
     }
 
+    // Audience-aware source. Defaults to candidates board.
+    // Anything other than 'recruiters' falls back to the tech board.
+    const audience = body.audience === 'recruiters' ? 'recruiters' : 'candidates'
+    const source = audience === 'recruiters' ? 'busco-trabajo-recruiters' : 'busco-trabajo'
+
     const result = await upsertSubscriber({
       email,
       preferences: body.preferences || {},
-      source: 'busco-trabajo',
+      source,
     })
 
     if (!result.ok) {
@@ -114,6 +125,7 @@ export async function POST(request) {
         email,
         preferences: body.preferences || {},
         unsubscribeToken: result.subscriber.unsubscribe_token,
+        audience,
       })
     }
 

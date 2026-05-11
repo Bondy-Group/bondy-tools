@@ -17,7 +17,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { fetchOpenRoles } from '@/lib/scraper-jobs'
+import { fetchOpenRoles, fetchRecruitingRoles } from '@/lib/scraper-jobs'
 import { listActiveSubscribers, markSent } from '@/lib/subscribers'
 import { sendEmail } from '@/lib/resend'
 import { renderWeeklyDigest, renderWeeklyDigestText } from '@/lib/email/weekly-digest'
@@ -75,25 +75,30 @@ async function run(request) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   }
 
-  // Pull the last 7 days of roles. fetchOpenRoles already filters out
-  // rejected jobs and unmapped categories.
-  const { roles } = await fetchOpenRoles({ days: 7, limit: 500 })
-
-  // Sort newest first by collected_at (when WE saw it) — falls back to published_at.
-  roles.sort((a, b) => {
-    const ka = a.collectedAt || a.date || ''
-    const kb = b.collectedAt || b.date || ''
-    return kb.localeCompare(ka)
-  })
+  // Pull the last 7 days of roles from BOTH pools. Tech pool feeds the
+  // `busco-trabajo` subscribers; recruiting pool feeds the
+  // `busco-trabajo-recruiters` ones. We don't mix them — a tech subscriber
+  // never sees recruiter roles and vice-versa.
+  const [techRes, recRes] = await Promise.all([
+    fetchOpenRoles({ days: 7, limit: 500 }),
+    fetchRecruitingRoles({ days: 7, limit: 500 }),
+  ])
+  const techRoles = sortNewest(techRes.roles || [])
+  const recRoles = sortNewest(recRes.roles || [])
 
   const subscribers = await listActiveSubscribers()
   const week = weekLabel()
 
-  const results = { sent: 0, skippedEmpty: 0, skippedNoKey: 0, failed: 0 }
+  const results = { sent: 0, skippedEmpty: 0, skippedNoKey: 0, failed: 0, byAudience: { candidates: 0, recruiters: 0 } }
 
   for (const sub of subscribers) {
     try {
-      const filtered = filterRolesForSubscriber(roles, sub.preferences).slice(0, MAX_ROLES_PER_EMAIL)
+      // Pick the role pool based on the subscriber's source.
+      const isRecruiters = sub.source === 'busco-trabajo-recruiters'
+      const audience = isRecruiters ? 'recruiters' : 'candidates'
+      const pool = isRecruiters ? recRoles : techRoles
+
+      const filtered = filterRolesForSubscriber(pool, sub.preferences).slice(0, MAX_ROLES_PER_EMAIL)
       const unsubscribeUrl = `${HOST}/api/newsletter/unsubscribe?token=${encodeURIComponent(sub.unsubscribe_token)}`
 
       // Don't send empty digests — wait for next week.
@@ -102,9 +107,12 @@ async function run(request) {
         continue
       }
 
-      const html = renderWeeklyDigest({ roles: filtered, unsubscribeUrl, weekLabel: week })
-      const text = renderWeeklyDigestText({ roles: filtered, unsubscribeUrl, weekLabel: week })
-      const subject = `${filtered.length} ${filtered.length === 1 ? 'rol tech nuevo' : 'roles tech nuevos'} · Bondy`
+      const html = renderWeeklyDigest({ roles: filtered, unsubscribeUrl, weekLabel: week, audience })
+      const text = renderWeeklyDigestText({ roles: filtered, unsubscribeUrl, weekLabel: week, audience })
+      const noun = isRecruiters
+        ? (filtered.length === 1 ? 'rol de recruiting nuevo' : 'roles de recruiting nuevos')
+        : (filtered.length === 1 ? 'rol tech nuevo' : 'roles tech nuevos')
+      const subject = `${filtered.length} ${noun} · Bondy`
 
       const send = await sendEmail({
         to: sub.email,
@@ -115,7 +123,10 @@ async function run(request) {
           'List-Unsubscribe': `<${unsubscribeUrl}>`,
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
-        tags: [{ name: 'campaign', value: 'weekly-digest' }],
+        tags: [
+          { name: 'campaign', value: 'weekly-digest' },
+          { name: 'audience', value: audience },
+        ],
       })
 
       if (send.skipped) {
@@ -129,20 +140,36 @@ async function run(request) {
 
       await markSent(sub.id)
       results.sent++
+      results.byAudience[audience] = (results.byAudience[audience] || 0) + 1
     } catch (err) {
       console.error('[cron] subscriber failed', sub.email, err)
       results.failed++
     }
   }
 
-  console.log('[cron] weekly digest done', { totalRoles: roles.length, subscribers: subscribers.length, ...results })
+  console.log('[cron] weekly digest done', {
+    totalTechRoles: techRoles.length,
+    totalRecruitingRoles: recRoles.length,
+    subscribers: subscribers.length,
+    ...results,
+  })
 
   return NextResponse.json({
     ok: true,
     week,
-    totalRoles: roles.length,
+    totalTechRoles: techRoles.length,
+    totalRecruitingRoles: recRoles.length,
     subscribers: subscribers.length,
     ...results,
+  })
+}
+
+// Sort newest first by collected_at (when WE saw it), fallback to published_at.
+function sortNewest(roles) {
+  return [...roles].sort((a, b) => {
+    const ka = a.collectedAt || a.date || ''
+    const kb = b.collectedAt || b.date || ''
+    return kb.localeCompare(ka)
   })
 }
 

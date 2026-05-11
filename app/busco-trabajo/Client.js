@@ -44,6 +44,27 @@ function buildApplyUrl(role) {
   return base + (base.includes('?') ? '&' : '?') + params.toString()
 }
 
+// Share URL — same base as apply but with a "share" campaign tag so we can
+// distinguish in analytics traffic from word-of-mouth vs direct discovery.
+function buildShareUrl(role) {
+  const base = role.applyUrl
+  if (!base) return ''
+  const params = new URLSearchParams({
+    utm_source: 'bondy',
+    utm_medium: 'share',
+    utm_campaign: 'busco-trabajo',
+    utm_content: `role-${role.id}`,
+    ref: 'bondy.tools',
+  })
+  return base + (base.includes('?') ? '&' : '?') + params.toString()
+}
+
+function shareTextFor(role) {
+  const company = role.company || ''
+  const title = role.title || 'Esta posición'
+  return `${title} — ${company} (vía Bondy)`
+}
+
 function attributionCopy(lang) {
   if (lang === 'en') {
     return `I found this role through Bondy (wearebondy.com), a technical recruiting group focused on engineering teams across LATAM.`
@@ -222,6 +243,132 @@ function FiltersBar({ filters, setFilters, search, setSearch, areas, modalities,
 // ─────────────────────────────────────────────────────────────
 // Row
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// ShareMenu — popover with link/whatsapp/email/linkedin options.
+// `compact` variant is used on Row cards (icon only). Default variant
+// (used inside DetailPanel) labels the trigger.
+// ─────────────────────────────────────────────────────────────
+function ShareMenu({ role, compact = false, location = 'row' }) {
+  const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const url = buildShareUrl(role)
+  const text = shareTextFor(role)
+
+  const fire = (channel) => {
+    trackEvent('job_share', {
+      job_id: role.id,
+      job_title: role.title,
+      company: role.company,
+      source: role.source,
+      channel,
+      location,
+    })
+  }
+
+  const onToggle = (e) => {
+    e.stopPropagation()
+    setOpen((v) => !v)
+  }
+
+  const onCopy = async (e) => {
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // Fallback: select-and-copy fails silently. Users on ancient browsers
+      // can still right-click the WhatsApp/Email links.
+    }
+    fire('copy_link')
+  }
+
+  const wa = `https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`
+  const mailto = `mailto:?subject=${encodeURIComponent(text)}&body=${encodeURIComponent(`${text}\n\n${url}`)}`
+  const li = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+
+  return (
+    <div className="share" ref={ref} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className={`share__trigger ${compact ? 'share__trigger--compact' : ''}`}
+        onClick={onToggle}
+        aria-label="Compartir esta posición"
+        aria-expanded={open}
+        title="Compartir"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M18 8a3 3 0 1 0-2.83-4H15a3 3 0 0 0 .17 1.97L8.83 9.03A3 3 0 1 0 6 13a3 3 0 0 0 2.83-1.97l6.34 3.06A3 3 0 1 0 18 16a3 3 0 0 0-2.83 1.97L8.83 14.9A3.03 3.03 0 0 0 9 13a3 3 0 0 0-.17-1.97l6.34-3.06A3 3 0 0 0 18 8Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+          />
+        </svg>
+        {!compact && <span className="share__trigger-label">Compartir</span>}
+      </button>
+
+      {open && (
+        <div className="share__menu" role="menu">
+          <button type="button" className="share__item" onClick={onCopy} role="menuitem">
+            <span className="share__item-icon" aria-hidden="true">🔗</span>
+            <span>{copied ? 'Link copiado' : 'Copiar link'}</span>
+          </button>
+          <a
+            className="share__item"
+            href={wa}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => { fire('whatsapp'); setOpen(false) }}
+            role="menuitem"
+          >
+            <span className="share__item-icon" aria-hidden="true">💬</span>
+            <span>WhatsApp</span>
+          </a>
+          <a
+            className="share__item"
+            href={mailto}
+            onClick={() => { fire('email'); setOpen(false) }}
+            role="menuitem"
+          >
+            <span className="share__item-icon" aria-hidden="true">✉</span>
+            <span>Email</span>
+          </a>
+          <a
+            className="share__item"
+            href={li}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => { fire('linkedin'); setOpen(false) }}
+            role="menuitem"
+          >
+            <span className="share__item-icon" aria-hidden="true">in</span>
+            <span>LinkedIn</span>
+          </a>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Row({ role, onSelect, selected, onToggleSave }) {
   const initials = (role.company || '')
     .split(' ')
@@ -252,16 +399,19 @@ function Row({ role, onSelect, selected, onToggleSave }) {
       <div className={`row__salary ${!role.salary ? 'row__salary--empty' : ''}`}>{role.salary || '—'}</div>
       <div className="row__source">{role.area.split(' / ')[0]}</div>
       <div className="row__source">{role.source}</div>
-      <button
-        className={`row__save ${role.saved ? 'row__save--saved' : ''}`}
-        onClick={(e) => {
-          e.stopPropagation()
-          onToggleSave(role.id)
-        }}
-        aria-label={role.saved ? 'Quitar de guardados' : 'Guardar'}
-      >
-        {role.saved ? '★' : '☆'}
-      </button>
+      <div className="row__actions" onClick={(e) => e.stopPropagation()}>
+        <ShareMenu role={role} compact location="row" />
+        <button
+          className={`row__save ${role.saved ? 'row__save--saved' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleSave(role.id)
+          }}
+          aria-label={role.saved ? 'Quitar de guardados' : 'Guardar'}
+        >
+          {role.saved ? '★' : '☆'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -351,9 +501,14 @@ function DetailPanel({ role, onClose, onToggleSave, onApply }) {
               <button className="btn btn--primary btn--block" onClick={() => onApply(r)}>
                 Aplicar en {r.source} →
               </button>
-              <button className="btn btn--ghost" onClick={() => onToggleSave(r.id)}>
-                {r.saved ? 'Guardado ★' : 'Guardar ☆'}
-              </button>
+              <div className="detail__cta-row">
+                <button className="btn btn--ghost detail__cta-half" onClick={() => onToggleSave(r.id)}>
+                  {r.saved ? 'Guardado ★' : 'Guardar ☆'}
+                </button>
+                <div className="detail__cta-half detail__share-wrap">
+                  <ShareMenu role={r} location="detail" />
+                </div>
+              </div>
             </div>
           </>
         )}
@@ -493,13 +648,19 @@ function ApplyModal({ role, onClose }) {
 // email updates prefs and returns isNew=false, which means the welcome email
 // does NOT re-fire. Safe to call twice.
 // ─────────────────────────────────────────────────────────────
-function SubscribeBanner({ areas = [], modalities = [], seniorities = [] }) {
+function SubscribeBanner({ areas = [], modalities = [], seniorities = [], audience = 'candidates' }) {
   const [email, setEmail] = useState('')
   // idle | submitting | pick_filters | saving_filters | done | error | dismissed | hidden
   const [state, setState] = useState('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [hpField, setHpField] = useState('')
   const [prefs, setPrefs] = useState({ areas: [], modalities: [], seniorities: [] })
+
+  const isRecruiters = audience === 'recruiters'
+  const subscribeSource = isRecruiters ? 'busco-trabajo-recruiters' : 'busco-trabajo'
+  const bannerCopy = isRecruiters
+    ? 'Los nuevos roles de recruiting/HR en LATAM, un mail cada lunes. Sin spam.'
+    : 'Los nuevos roles tech LATAM, un mail cada lunes. Sin spam.'
 
   // On mount, check if user dismissed recently (or already subscribed).
   useEffect(() => {
@@ -535,7 +696,7 @@ function SubscribeBanner({ areas = [], modalities = [], seniorities = [] }) {
       const res = await fetch('/api/job-subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, preferences: {}, hp_field: hpField }),
+        body: JSON.stringify({ email, preferences: {}, hp_field: hpField, audience }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.ok) {
@@ -552,7 +713,7 @@ function SubscribeBanner({ areas = [], modalities = [], seniorities = [] }) {
       try {
         localStorage.setItem('bondy_subscribed', '1')
       } catch {}
-      trackEvent('newsletter_subscribe', { location: 'sticky_banner', with_preferences: false })
+      trackEvent('newsletter_subscribe', { location: 'sticky_banner', with_preferences: false, audience })
       // Step 2: invite optional preferences. Skip if we have no filter
       // options available (shouldn't happen, but defensive).
       if (areas.length || modalities.length || seniorities.length) {
@@ -590,7 +751,7 @@ function SubscribeBanner({ areas = [], modalities = [], seniorities = [] }) {
       const res = await fetch('/api/job-subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, preferences: prefs, hp_field: hpField }),
+        body: JSON.stringify({ email, preferences: prefs, hp_field: hpField, audience }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.ok) {
@@ -605,6 +766,7 @@ function SubscribeBanner({ areas = [], modalities = [], seniorities = [] }) {
         areas: prefs.areas.length,
         modalities: prefs.modalities.length,
         seniorities: prefs.seniorities.length,
+        audience,
       })
       setState('done')
       setTimeout(() => setState('hidden'), 4500)
@@ -743,7 +905,7 @@ function SubscribeBanner({ areas = [], modalities = [], seniorities = [] }) {
           <div className="subscribe-banner__copy">
             <span className="subscribe-banner__kicker">📬 Newsletter Bondy</span>
             <span className="subscribe-banner__msg">
-              Los nuevos roles tech LATAM, un mail cada lunes. Sin spam.
+              {bannerCopy}
             </span>
           </div>
           <form className="subscribe-banner__form" onSubmit={submit}>
@@ -787,7 +949,7 @@ function SubscribeBanner({ areas = [], modalities = [], seniorities = [] }) {
 // /api/job-subscribe. Three states: idle → submitting → done | error.
 // Preferences stay collapsed until the user clicks "Filtrá lo que recibís".
 // ─────────────────────────────────────────────────────────────
-function SubscribeForm({ areas, modalities, seniorities }) {
+function SubscribeForm({ areas, modalities, seniorities, audience = 'candidates' }) {
   const [email, setEmail] = useState('')
   const [showPrefs, setShowPrefs] = useState(false)
   const [prefs, setPrefs] = useState({ areas: [], modalities: [], seniorities: [] })
@@ -796,6 +958,8 @@ function SubscribeForm({ areas, modalities, seniorities }) {
   // Honeypot: hidden field that real users never see. Bots that fill every
   // input get silently dropped server-side.
   const [hpField, setHpField] = useState('')
+
+  const isRecruiters = audience === 'recruiters'
 
   const togglePref = (key, value) => {
     setPrefs((p) => {
@@ -813,7 +977,7 @@ function SubscribeForm({ areas, modalities, seniorities }) {
       const res = await fetch('/api/job-subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, preferences: prefs, hp_field: hpField }),
+        body: JSON.stringify({ email, preferences: prefs, hp_field: hpField, audience }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.ok) {
@@ -832,6 +996,7 @@ function SubscribeForm({ areas, modalities, seniorities }) {
         areas: prefs.areas.join(',') || '(all)',
         seniorities: prefs.seniorities.join(',') || '(all)',
         modalities: prefs.modalities.join(',') || '(all)',
+        audience,
       })
       setState('done')
     } catch {
@@ -859,10 +1024,16 @@ function SubscribeForm({ areas, modalities, seniorities }) {
     <section className="subscribe">
       <div>
         <h3 className="subscribe__title">
-          Recibí los nuevos roles <em>cada lunes.</em>
+          {isRecruiters
+            ? <>Recibí los nuevos roles de recruiting/HR <em>cada lunes.</em></>
+            : <>Recibí los nuevos roles <em>cada lunes.</em></>
+          }
         </h3>
         <p className="subscribe__sub">
-          Un solo mail por semana, los lunes 10am ART, con los roles que entraron en los últimos 7 días. Sin afiliados, sin spam. Cancelás con un click.
+          {isRecruiters
+            ? 'Un solo mail por semana, los lunes 10am ART, con los roles de recruiting, talent y people ops que entraron en los últimos 7 días. Sin afiliados, sin spam. Cancelás con un click.'
+            : 'Un solo mail por semana, los lunes 10am ART, con los roles que entraron en los últimos 7 días. Sin afiliados, sin spam. Cancelás con un click.'
+          }
         </p>
 
         {showPrefs && (
@@ -1242,7 +1413,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
       </main>
 
       {/* Full subscribe form with preferences (bottom of page, for users who want filters) */}
-      <SubscribeForm areas={areas} modalities={modalities} seniorities={seniorities} />
+      <SubscribeForm areas={areas} modalities={modalities} seniorities={seniorities} audience={audience} />
 
       <footer className="bondy-footer">
         <span>© 2026 Bondy Group</span>
@@ -1262,7 +1433,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
       {/* Sticky-bottom banner: low-friction email-only signup, dismissible.
           After signup, offers optional filter chips inline (areas/seniority/modality).
           Always rendered last so it overlays everything else. */}
-      <SubscribeBanner areas={areas} modalities={modalities} seniorities={seniorities} />
+      <SubscribeBanner areas={areas} modalities={modalities} seniorities={seniorities} audience={audience} />
     </div>
   )
 }
