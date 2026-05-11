@@ -391,3 +391,145 @@
   .bt-root .subscribe { grid-template-columns: 1fr; }
   .bt-root .subscribe__form { min-width: 0; }
 }
+
+/* ───────────────────────────── Sticky subscribe banner ─────────────────────── */
+.bt-root .subscribe-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 18px 14px 24px;
+  background: var(--bondy-ink, #1A1A1A);
+  color: var(--bondy-white, #FFFFFF);
+  border: 1px solid var(--bondy-ink, #1A1A1A);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18);
+  max-width: 760px;
+  margin: 0 auto;
+  animation: subscribe-banner-in 0.32s ease-out;
+}
+@keyframes subscribe-banner-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.bt-root .subscribe-banner__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.bt-root .subscribe-banner__kicker {
+  font-family: var(--bondy-font-mono, 'Courier New', monospace);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bondy-green, #4A8C40);
+}
+.bt-root .subscribe-banner__msg {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--bondy-white, #FFFFFF);
+}
+.bt-root .subscribe-banner__form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.bt-root .subscribe-banner__form input[type="email"] {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: var(--bondy-white, #FFFFFF);
+  padding: 9px 12px;
+  font-family: var(--bondy-font-body, inherit);
+  font-size: 13px;
+  min-width: 220px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.bt-root .subscribe-banner__form input[type="email"]::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+.bt-root .subscribe-banner__form input[type="email"]:focus {
+  border-color: var(--bondy-green, #4A8C40);
+}
+.bt-root .subscribe-banner__submit {
+  background: var(--bondy-green, #4A8C40);
+  color: var(--bondy-white, #FFFFFF);
+  border: 1px solid var(--bondy-green, #4A8C40);
+  padding: 9px 16px;
+  font-family: var(--bondy-font-body, inherit);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.bt-root .subscribe-banner__submit:hover:not(:disabled) {
+  background: #3a7030;
+  border-color: #3a7030;
+}
+.bt-root .subscribe-banner__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.bt-root .subscribe-banner__close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.15s;
+}
+.bt-root .subscribe-banner__close:hover {
+  color: var(--bondy-white, #FFFFFF);
+}
+.bt-root .subscribe-banner__done {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.bt-root .subscribe-banner__error {
+  position: absolute;
+  bottom: -22px;
+  right: 0;
+  font-size: 11px;
+  color: #ff8a80;
+  font-family: var(--bondy-font-mono, 'Courier New', monospace);
+}
+
+/* Banner responsive: stack on mobile */
+@media (max-width: 720px) {
+  .bt-root .subscribe-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+  }
+  .bt-root .subscribe-banner__form {
+    width: 100%;
+  }
+  .bt-root .subscribe-banner__form input[type="email"] {
+    flex: 1;
+    min-width: 0;
+  }
+  .bt-root .subscribe-banner__msg {
+    font-size: 12px;
+    padding-right: 24px; /* leave room for close button */
+  }
+}
