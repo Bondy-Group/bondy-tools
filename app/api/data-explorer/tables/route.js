@@ -99,7 +99,28 @@ function groupForTable(projectKey, tableName) {
 
 const ADMIN_EMAILS = ['mara@wearebondy.com', 'lucia@wearebondy.com']
 
-async function countRows(project, tableName) {
+async function countRows(project, tableName, projectKey) {
+  // Intento 1: RPC bypass-RLS (sólo CRM)
+  if (projectKey === 'crm') {
+    try {
+      const res = await fetch(`${project.url}/rest/v1/rpc/data_explorer_count`, {
+        method: 'POST',
+        headers: {
+          apikey: project.serviceKey,
+          Authorization: `Bearer ${project.serviceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ p_table: tableName }),
+        cache: 'no-store',
+      })
+      if (res.ok) {
+        const n = await res.json()
+        if (typeof n === 'number') return n
+      }
+    } catch {}
+  }
+
+  // Intento 2: REST con Prefer count=exact (falla con RLS para anon)
   try {
     const res = await fetch(
       `${project.url}/rest/v1/${encodeURIComponent(tableName)}?select=*&limit=1`,
@@ -154,7 +175,7 @@ async function tryOpenApiIntrospection(project, projectKey) {
           enum: meta.enum || null,
         }
       })
-      const rowCount = await countRows(project, name)
+      const rowCount = await countRows(project, name, projectKey)
       return {
         name,
         columns,
@@ -178,7 +199,7 @@ async function buildFallbackCatalog(project, projectKey) {
   }
   const tables = await Promise.all(
     allTables.map(async ({ name, group }) => {
-      const rowCount = await countRows(project, name)
+      const rowCount = await countRows(project, name, projectKey)
       return {
         name,
         columns: [],

@@ -4,8 +4,12 @@ import { authOptions } from '@/lib/auth'
 
 /**
  * Data Explorer — endpoint de query de filas.
- * Soporta filtros, sort y paginación a través del REST API de Supabase
- * (PostgREST), por lo que cualquier columna y operador estándar funciona.
+ *
+ * Estrategia:
+ *  1) RPC `data_explorer_rows` (sólo CRM): bypassa RLS via SECURITY DEFINER,
+ *     valida tabla y columnas contra information_schema. Soporta filtros,
+ *     sort y paginación.
+ *  2) Fallback PostgREST: para `tools` project o si la RPC falla.
  */
 
 const PROJECTS = {
@@ -39,39 +43,31 @@ const ALLOWED_OPS = new Set([
 
 const ADMIN_EMAILS = ['mara@wearebondy.com', 'lucia@wearebondy.com']
 
-export async function GET(request) {
-  const session = await getServerSession(authOptions)
-  const email = session?.user?.email?.toLowerCase()
-  if (!email || !ADMIN_EMAILS.includes(email)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+async function queryViaRpc(project, { table, page, pageSize, sortCol, sortDir, filters }) {
+  const res = await fetch(`${project.url}/rest/v1/rpc/data_explorer_rows`, {
+    method: 'POST',
+    headers: {
+      apikey: project.serviceKey,
+      Authorization: `Bearer ${project.serviceKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      p_table: table,
+      p_page: page,
+      p_page_size: pageSize,
+      p_sort_col: sortCol,
+      p_sort_dir: sortDir,
+      p_filters: filters,
+    }),
+    cache: 'no-store',
+  })
+  if (!res.ok) return null
+  const json = await res.json()
+  if (!json || typeof json !== 'object') return null
+  return json
+}
 
-  const { searchParams } = new URL(request.url)
-  const projectKey = searchParams.get('project') || 'crm'
-  const table = searchParams.get('table')
-  const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-  const pageSize = Math.min(200, Math.max(10, parseInt(searchParams.get('pageSize') || '50')))
-  const sortCol = searchParams.get('sort') || null
-  const sortDir = (searchParams.get('dir') || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc'
-
-  // filters viene como JSON [{col, op, val}]
-  let filters = []
-  const filtersRaw = searchParams.get('filters')
-  if (filtersRaw) {
-    try {
-      filters = JSON.parse(filtersRaw)
-    } catch {}
-  }
-
-  if (!table) {
-    return NextResponse.json({ error: 'Missing table' }, { status: 400 })
-  }
-  const project = PROJECTS[projectKey]
-  if (!project?.url || !project?.serviceKey) {
-    return NextResponse.json({ error: 'Invalid project' }, { status: 400 })
-  }
-
-  // Construir URL PostgREST
+async function queryViaRest(project, { table, page, pageSize, sortCol, sortDir, filters }) {
   const params = new URLSearchParams()
   params.set('select', '*')
   if (sortCol) params.set('order', `${sortCol}.${sortDir}.nullslast`)
@@ -101,25 +97,78 @@ export async function GET(request) {
 
   if (!res.ok) {
     const detail = await res.text()
-    return NextResponse.json(
-      { error: `Query failed: ${res.status}`, detail: detail.slice(0, 400) },
-      { status: 500 }
-    )
+    return { error: `Query failed: ${res.status}`, detail: detail.slice(0, 400) }
   }
 
   const data = await res.json()
-  const cr = res.headers.get('content-range') // "0-49/12345"
+  const cr = res.headers.get('content-range')
   let totalCount = null
   if (cr) {
     const parts = cr.split('/')
     if (parts[1] && parts[1] !== '*') totalCount = parseInt(parts[1])
   }
 
+  return { data, totalCount }
+}
+
+export async function GET(request) {
+  const session = await getServerSession(authOptions)
+  const email = session?.user?.email?.toLowerCase()
+  if (!email || !ADMIN_EMAILS.includes(email)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(request.url)
+  const projectKey = searchParams.get('project') || 'crm'
+  const table = searchParams.get('table')
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+  const pageSize = Math.min(200, Math.max(10, parseInt(searchParams.get('pageSize') || '50')))
+  const sortCol = searchParams.get('sort') || null
+  const sortDir = (searchParams.get('dir') || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc'
+
+  let filters = []
+  const filtersRaw = searchParams.get('filters')
+  if (filtersRaw) {
+    try {
+      filters = JSON.parse(filtersRaw)
+    } catch {}
+  }
+
+  if (!table) return NextResponse.json({ error: 'Missing table' }, { status: 400 })
+  const project = PROJECTS[projectKey]
+  if (!project?.url || !project?.serviceKey) {
+    return NextResponse.json({ error: 'Invalid project' }, { status: 400 })
+  }
+
+  const args = { table, page, pageSize, sortCol, sortDir, filters }
+
+  // Intento 1: RPC bypass-RLS (sólo proyecto CRM).
+  if (projectKey === 'crm') {
+    const rpc = await queryViaRpc(project, args)
+    if (rpc && Array.isArray(rpc.data)) {
+      const totalCount = typeof rpc.totalCount === 'number' ? rpc.totalCount : null
+      return NextResponse.json({
+        data: rpc.data,
+        totalCount,
+        page,
+        pageSize,
+        totalPages: totalCount != null ? Math.ceil(totalCount / pageSize) : null,
+        source: 'rpc',
+      })
+    }
+  }
+
+  // Intento 2: PostgREST estándar
+  const rest = await queryViaRest(project, args)
+  if (rest.error) {
+    return NextResponse.json({ error: rest.error, detail: rest.detail }, { status: 500 })
+  }
   return NextResponse.json({
-    data,
-    totalCount,
+    data: rest.data,
+    totalCount: rest.totalCount,
     page,
     pageSize,
-    totalPages: totalCount != null ? Math.ceil(totalCount / pageSize) : null,
+    totalPages: rest.totalCount != null ? Math.ceil(rest.totalCount / pageSize) : null,
+    source: 'rest',
   })
 }
