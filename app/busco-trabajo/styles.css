@@ -533,3 +533,110 @@
     padding-right: 24px; /* leave room for close button */
   }
 }
+
+/* ───── Subscribe banner: filters step (expanded card) ───── */
+.bt-root .subscribe-banner--filters {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  padding: 18px 22px 18px 24px;
+  max-width: 760px;
+}
+.bt-root .subscribe-banner__filters-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 32px; /* room for close button */
+}
+.bt-root .subscribe-banner__filters-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.bt-root .subscribe-banner__filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bt-root .subscribe-banner__filter-label {
+  font-family: var(--bondy-font-mono, 'Courier New', monospace);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.bt-root .subscribe-banner__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bt-root .subscribe-banner__chip {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--bondy-white, #FFFFFF);
+  padding: 5px 12px;
+  font-family: var(--bondy-font-body, inherit);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.bt-root .subscribe-banner__chip:hover {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.bt-root .subscribe-banner__chip.is-active {
+  background: var(--bondy-green, #4A8C40);
+  border-color: var(--bondy-green, #4A8C40);
+  color: var(--bondy-white, #FFFFFF);
+}
+.bt-root .subscribe-banner__filters-foot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+  margin-top: 4px;
+  padding-top: 12px;
+}
+.bt-root .subscribe-banner__skip {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--bondy-font-body, inherit);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 8px 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
+}
+.bt-root .subscribe-banner__skip:hover {
+  color: var(--bondy-white, #FFFFFF);
+}
+.bt-root .subscribe-banner__skip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .bt-root .subscribe-banner--filters {
+    padding: 16px 16px 16px 18px;
+    max-height: 75vh;
+  }
+  .bt-root .subscribe-banner__filters-body {
+    max-height: 45vh;
+  }
+  .bt-root .subscribe-banner__filters-foot {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .bt-root .subscribe-banner__filters-foot .subscribe-banner__submit {
+    width: 100%;
+  }
+  .bt-root .subscribe-banner__skip {
+    text-align: center;
+  }
+}
