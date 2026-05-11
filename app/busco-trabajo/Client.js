@@ -480,6 +480,147 @@ function ApplyModal({ role, onClose }) {
 // Main App
 // ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
+// SubscribeBanner — sticky bottom bar that nudges signup without
+// blocking the page. Dismissible (X). Once dismissed, persists in
+// localStorage for 30 days so we don't pester the same person.
+//
+// Email-only path (no preferences). When the user is interested in
+// filtering by area/seniority, they can scroll to the full SubscribeForm
+// at the bottom of the page.
+// ─────────────────────────────────────────────────────────────
+function SubscribeBanner() {
+  const [email, setEmail] = useState('')
+  const [state, setState] = useState('idle') // idle | submitting | done | error | dismissed | hidden
+  const [errorMsg, setErrorMsg] = useState('')
+  const [hpField, setHpField] = useState('')
+
+  // On mount, check if user dismissed recently (or already subscribed).
+  useEffect(() => {
+    try {
+      const dismissed = localStorage.getItem('bondy_subscribe_banner_dismissed')
+      if (dismissed) {
+        const ts = parseInt(dismissed, 10)
+        // 30-day cooldown
+        if (!Number.isNaN(ts) && Date.now() - ts < 30 * 24 * 60 * 60 * 1000) {
+          setState('hidden')
+          return
+        }
+      }
+      const subscribed = localStorage.getItem('bondy_subscribed')
+      if (subscribed === '1') setState('hidden')
+    } catch {}
+  }, [])
+
+  const dismiss = () => {
+    try {
+      localStorage.setItem('bondy_subscribe_banner_dismissed', String(Date.now()))
+    } catch {}
+    setState('dismissed')
+    trackEvent('subscribe_banner_dismissed')
+  }
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (state === 'submitting') return
+    setState('submitting')
+    setErrorMsg('')
+    try {
+      const res = await fetch('/api/job-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, preferences: {}, hp_field: hpField }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        setErrorMsg(
+          data.error === 'invalid_email'
+            ? 'Email inválido.'
+            : data.error === 'rate_limited'
+            ? 'Esperá un minuto y probá de nuevo.'
+            : 'Falló. Probá de nuevo.'
+        )
+        setState('error')
+        return
+      }
+      try {
+        localStorage.setItem('bondy_subscribed', '1')
+      } catch {}
+      trackEvent('newsletter_subscribe', { location: 'sticky_banner', with_preferences: false })
+      setState('done')
+      // Auto-hide after success so it doesn't linger
+      setTimeout(() => setState('hidden'), 4500)
+    } catch {
+      setErrorMsg('No pudimos conectar.')
+      setState('error')
+    }
+  }
+
+  if (state === 'hidden' || state === 'dismissed') return null
+
+  return (
+    <div className="subscribe-banner" role="region" aria-label="Suscripción al newsletter de Bondy">
+      <button
+        type="button"
+        className="subscribe-banner__close"
+        onClick={dismiss}
+        aria-label="Cerrar"
+        title="Cerrar"
+      >
+        ×
+      </button>
+
+      {state === 'done' ? (
+        <div className="subscribe-banner__done">
+          <span className="subscribe-banner__kicker">✓ Listo.</span>
+          <span className="subscribe-banner__msg">
+            Te sumamos. Revisá tu inbox — te mandamos un mail de bienvenida ahora.
+          </span>
+        </div>
+      ) : (
+        <>
+          <div className="subscribe-banner__copy">
+            <span className="subscribe-banner__kicker">📬 Newsletter Bondy</span>
+            <span className="subscribe-banner__msg">
+              Los nuevos roles tech LATAM, un mail cada lunes. Sin spam.
+            </span>
+          </div>
+          <form className="subscribe-banner__form" onSubmit={submit}>
+            <input
+              type="text"
+              name="hp_field"
+              tabIndex={-1}
+              autoComplete="off"
+              value={hpField}
+              onChange={(e) => setHpField(e.target.value)}
+              style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+              aria-hidden="true"
+            />
+            <input
+              type="email"
+              placeholder="tu@email.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={state === 'submitting'}
+              autoComplete="email"
+              aria-label="Tu email"
+            />
+            <button
+              type="submit"
+              className="subscribe-banner__submit"
+              disabled={state === 'submitting' || !email}
+            >
+              {state === 'submitting' ? '…' : 'Suscribirme'}
+            </button>
+          </form>
+          {state === 'error' && <div className="subscribe-banner__error">{errorMsg}</div>}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
 // SubscribeForm — captures email + optional preferences, posts to
 // /api/job-subscribe. Three states: idle → submitting → done | error.
 // Preferences stay collapsed until the user clicks "Filtrá lo que recibís".
@@ -938,8 +1079,8 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
         )}
       </main>
 
-      {/* Subscribe — temporarily hidden until Resend account + env vars are set up. Re-enable by uncommenting. */}
-      {/* <SubscribeForm areas={areas} modalities={modalities} seniorities={seniorities} /> */}
+      {/* Full subscribe form with preferences (bottom of page, for users who want filters) */}
+      <SubscribeForm areas={areas} modalities={modalities} seniorities={seniorities} />
 
       <footer className="bondy-footer">
         <span>© 2026 Bondy Group</span>
@@ -955,6 +1096,10 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
 
       <DetailPanel role={selected} onClose={() => setSelected(null)} onToggleSave={toggleSave} onApply={handleApplyClick} />
       <ApplyModal role={applying} onClose={() => setApplying(null)} />
+
+      {/* Sticky-bottom banner: low-friction email-only signup, dismissible.
+          Always rendered last so it overlays everything else. */}
+      <SubscribeBanner />
     </div>
   )
 }
