@@ -70,6 +70,22 @@ function detectPK(columns) {
   return columns[0]?.name
 }
 
+/**
+ * Fetch wrapper que detecta sesión expirada (401) y redirige a /login
+ * preservando la URL actual como callback. Devuelve null si redirigió.
+ */
+async function fetchAuth(url) {
+  const r = await fetch(url)
+  if (r.status === 401) {
+    if (typeof window !== 'undefined') {
+      const cb = encodeURIComponent(window.location.pathname + window.location.search)
+      window.location.href = `/login?callbackUrl=${cb}`
+    }
+    return null
+  }
+  return r.json()
+}
+
 export default function DataExplorerPage() {
   const [project, setProject] = useState('crm')
   const [tables, setTables] = useState([])
@@ -99,10 +115,9 @@ export default function DataExplorerPage() {
     setTablesLoading(true)
     setTablesError(null)
     setIntroWarning(null)
-    fetch(`/api/data-explorer/tables?project=${project}`)
-      .then((r) => r.json())
+    fetchAuth(`/api/data-explorer/tables?project=${project}`)
       .then((j) => {
-        if (cancel) return
+        if (cancel || !j) return
         if (j.error) {
           setTablesError(j.error + (j.detail ? ` — ${j.detail}` : ''))
           setTables([])
@@ -131,10 +146,9 @@ export default function DataExplorerPage() {
     if (selectedTable && (!selectedTable.columns || selectedTable.columns.length === 0)) {
       let cancel = false
       setSchemaLoading(true)
-      fetch(`/api/data-explorer/schema?project=${project}&table=${encodeURIComponent(selectedTable.name)}`)
-        .then((r) => r.json())
+      fetchAuth(`/api/data-explorer/schema?project=${project}&table=${encodeURIComponent(selectedTable.name)}`)
         .then((j) => {
-          if (cancel) return
+          if (cancel || !j) return
           if (j.columns && j.columns.length > 0) {
             const updated = { ...selectedTable, columns: j.columns }
             setSelectedTable(updated)
@@ -168,10 +182,9 @@ export default function DataExplorerPage() {
     }
     if (filters.length > 0) params.set('filters', JSON.stringify(filters))
 
-    fetch(`/api/data-explorer/query?${params.toString()}`)
-      .then((r) => r.json())
+    fetchAuth(`/api/data-explorer/query?${params.toString()}`)
       .then((j) => {
-        if (cancel) return
+        if (cancel || !j) return
         if (j.error) {
           setRowsError(j.error + (j.detail ? ` — ${j.detail}` : ''))
           setRows([])
