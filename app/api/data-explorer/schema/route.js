@@ -46,6 +46,35 @@ function inferType(value) {
   return 'unknown'
 }
 
+/**
+ * Intento 1: RPC public.data_explorer_columns(p_table) — lee information_schema
+ * con SECURITY DEFINER. Funciona aún si la tabla está vacía o RLS bloquea SELECT.
+ * Disponible sólo en el proyecto CRM (no en tools).
+ */
+async function fetchColumnsViaRpc(project, table) {
+  const res = await fetch(`${project.url}/rest/v1/rpc/data_explorer_columns`, {
+    method: 'POST',
+    headers: {
+      apikey: project.serviceKey,
+      Authorization: `Bearer ${project.serviceKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ p_table: table }),
+    cache: 'no-store',
+  })
+  if (!res.ok) return null
+  const rows = await res.json()
+  if (!Array.isArray(rows) || rows.length === 0) return null
+  return rows.map((r) => ({
+    name: r.column_name,
+    type: r.udt_name || r.data_type || 'unknown',
+    nullable: r.is_nullable === 'YES',
+    isPrimaryKey: !!r.is_primary_key,
+    fk: r.fk_table ? { table: r.fk_table, column: r.fk_column } : null,
+    enum: null,
+  }))
+}
+
 export async function GET(request) {
   const session = await getServerSession(authOptions)
   const email = session?.user?.email?.toLowerCase()
@@ -63,7 +92,15 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Invalid project' }, { status: 400 })
   }
 
-  // Pedir 1 fila para inferir columnas
+  // Intento 1: RPC contra information_schema (sólo proyecto CRM).
+  if (projectKey === 'crm') {
+    const columns = await fetchColumnsViaRpc(project, table)
+    if (columns && columns.length > 0) {
+      return NextResponse.json({ columns, empty: false, source: 'information_schema' })
+    }
+  }
+
+  // Intento 2: sample de 1 fila e inferencia heurística.
   const res = await fetch(
     `${project.url}/rest/v1/${encodeURIComponent(table)}?select=*&limit=1`,
     {
@@ -85,11 +122,10 @@ export async function GET(request) {
 
   const data = await res.json()
   if (!Array.isArray(data) || data.length === 0) {
-    // Tabla vacía → no podemos inferir
     return NextResponse.json({
       columns: [],
       empty: true,
-      note: 'Tabla vacía, no se puede inferir schema sin service_role.',
+      note: 'Tabla vacía o sin acceso de lectura, y la RPC information_schema no devolvió columnas.',
     })
   }
 
@@ -97,11 +133,11 @@ export async function GET(request) {
   const columns = Object.entries(sample).map(([name, value]) => ({
     name,
     type: inferType(value),
-    nullable: true, // no podemos saberlo sin OpenAPI
-    isPrimaryKey: name === 'id' || name === 'uuid', // heurística mínima
+    nullable: true,
+    isPrimaryKey: name === 'id' || name === 'uuid',
     fk: null,
     enum: null,
   }))
 
-  return NextResponse.json({ columns, empty: false, sampledFromRow: true })
+  return NextResponse.json({ columns, empty: false, source: 'sample' })
 }
