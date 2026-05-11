@@ -484,15 +484,22 @@ function ApplyModal({ role, onClose }) {
 // blocking the page. Dismissible (X). Once dismissed, persists in
 // localStorage for 30 days so we don't pester the same person.
 //
-// Email-only path (no preferences). When the user is interested in
-// filtering by area/seniority, they can scroll to the full SubscribeForm
-// at the bottom of the page.
+// Two-step flow:
+//   1. email-only (low friction) → POST /api/job-subscribe
+//   2. after success, offer optional filter chips (areas/seniority/modality);
+//      if the user picks any, PATCH the same email with preferences.
+//
+// The backend's upsertSubscriber is idempotent: a second POST with the same
+// email updates prefs and returns isNew=false, which means the welcome email
+// does NOT re-fire. Safe to call twice.
 // ─────────────────────────────────────────────────────────────
-function SubscribeBanner() {
+function SubscribeBanner({ areas = [], modalities = [], seniorities = [] }) {
   const [email, setEmail] = useState('')
-  const [state, setState] = useState('idle') // idle | submitting | done | error | dismissed | hidden
+  // idle | submitting | pick_filters | saving_filters | done | error | dismissed | hidden
+  const [state, setState] = useState('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [hpField, setHpField] = useState('')
+  const [prefs, setPrefs] = useState({ areas: [], modalities: [], seniorities: [] })
 
   // On mount, check if user dismissed recently (or already subscribed).
   useEffect(() => {
@@ -546,16 +553,171 @@ function SubscribeBanner() {
         localStorage.setItem('bondy_subscribed', '1')
       } catch {}
       trackEvent('newsletter_subscribe', { location: 'sticky_banner', with_preferences: false })
-      setState('done')
-      // Auto-hide after success so it doesn't linger
-      setTimeout(() => setState('hidden'), 4500)
+      // Step 2: invite optional preferences. Skip if we have no filter
+      // options available (shouldn't happen, but defensive).
+      if (areas.length || modalities.length || seniorities.length) {
+        setState('pick_filters')
+      } else {
+        setState('done')
+        setTimeout(() => setState('hidden'), 4500)
+      }
     } catch {
       setErrorMsg('No pudimos conectar.')
       setState('error')
     }
   }
 
+  const togglePref = (key, value) => {
+    setPrefs((p) => {
+      const arr = p[key] || []
+      const next = arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
+      return { ...p, [key]: next }
+    })
+  }
+
+  const totalPrefs = prefs.areas.length + prefs.modalities.length + prefs.seniorities.length
+
+  const saveFilters = async () => {
+    if (state === 'saving_filters') return
+    if (totalPrefs === 0) {
+      // Nothing picked — treat as "skip"
+      finishWithoutFilters()
+      return
+    }
+    setState('saving_filters')
+    setErrorMsg('')
+    try {
+      const res = await fetch('/api/job-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, preferences: prefs, hp_field: hpField }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        setErrorMsg('No pudimos guardar los filtros. Tu suscripción está OK igual.')
+        setState('error')
+        // Still complete: user IS subscribed, only filters update failed
+        setTimeout(() => setState('hidden'), 4500)
+        return
+      }
+      trackEvent('newsletter_preferences_set', {
+        location: 'sticky_banner',
+        areas: prefs.areas.length,
+        modalities: prefs.modalities.length,
+        seniorities: prefs.seniorities.length,
+      })
+      setState('done')
+      setTimeout(() => setState('hidden'), 4500)
+    } catch {
+      setErrorMsg('No pudimos guardar los filtros. Tu suscripción está OK igual.')
+      setState('error')
+      setTimeout(() => setState('hidden'), 4500)
+    }
+  }
+
+  const finishWithoutFilters = () => {
+    trackEvent('newsletter_preferences_skipped', { location: 'sticky_banner' })
+    setState('done')
+    setTimeout(() => setState('hidden'), 3500)
+  }
+
   if (state === 'hidden' || state === 'dismissed') return null
+
+  // ─── State: pick_filters → show optional chip selector ───
+  if (state === 'pick_filters' || state === 'saving_filters') {
+    return (
+      <div className="subscribe-banner subscribe-banner--filters" role="region" aria-label="Personalizar suscripción">
+        <button
+          type="button"
+          className="subscribe-banner__close"
+          onClick={finishWithoutFilters}
+          aria-label="Saltar este paso"
+          title="Saltar"
+        >
+          ×
+        </button>
+        <div className="subscribe-banner__filters-head">
+          <span className="subscribe-banner__kicker">✓ Suscripto. Un paso más (opcional)</span>
+          <span className="subscribe-banner__msg">
+            ¿Querés que te mandemos solo lo que te interesa? Elegí filtros, o saltá y recibí todo.
+          </span>
+        </div>
+
+        <div className="subscribe-banner__filters-body">
+          {areas.length > 0 && (
+            <div className="subscribe-banner__filter-group">
+              <span className="subscribe-banner__filter-label">Áreas</span>
+              <div className="subscribe-banner__chips">
+                {areas.map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    className={`subscribe-banner__chip ${prefs.areas.includes(a) ? 'is-active' : ''}`}
+                    onClick={() => togglePref('areas', a)}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {seniorities.length > 0 && (
+            <div className="subscribe-banner__filter-group">
+              <span className="subscribe-banner__filter-label">Seniority</span>
+              <div className="subscribe-banner__chips">
+                {seniorities.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`subscribe-banner__chip ${prefs.seniorities.includes(s) ? 'is-active' : ''}`}
+                    onClick={() => togglePref('seniorities', s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {modalities.length > 0 && (
+            <div className="subscribe-banner__filter-group">
+              <span className="subscribe-banner__filter-label">Modalidad</span>
+              <div className="subscribe-banner__chips">
+                {modalities.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`subscribe-banner__chip ${prefs.modalities.includes(m) ? 'is-active' : ''}`}
+                    onClick={() => togglePref('modalities', m)}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="subscribe-banner__filters-foot">
+          <button
+            type="button"
+            className="subscribe-banner__skip"
+            onClick={finishWithoutFilters}
+            disabled={state === 'saving_filters'}
+          >
+            Mandame todos
+          </button>
+          <button
+            type="button"
+            className="subscribe-banner__submit"
+            onClick={saveFilters}
+            disabled={state === 'saving_filters'}
+          >
+            {state === 'saving_filters' ? 'Guardando…' : totalPrefs > 0 ? `Guardar (${totalPrefs})` : 'Guardar'}
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="subscribe-banner" role="region" aria-label="Suscripción al newsletter de Bondy">
@@ -1098,8 +1260,9 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
       <ApplyModal role={applying} onClose={() => setApplying(null)} />
 
       {/* Sticky-bottom banner: low-friction email-only signup, dismissible.
+          After signup, offers optional filter chips inline (areas/seniority/modality).
           Always rendered last so it overlays everything else. */}
-      <SubscribeBanner />
+      <SubscribeBanner areas={areas} modalities={modalities} seniorities={seniorities} />
     </div>
   )
 }
