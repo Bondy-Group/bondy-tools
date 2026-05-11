@@ -490,6 +490,9 @@ function SubscribeForm({ areas, modalities, seniorities }) {
   const [prefs, setPrefs] = useState({ areas: [], modalities: [], seniorities: [] })
   const [state, setState] = useState('idle') // idle | submitting | done | error
   const [errorMsg, setErrorMsg] = useState('')
+  // Honeypot: hidden field that real users never see. Bots that fill every
+  // input get silently dropped server-side.
+  const [hpField, setHpField] = useState('')
 
   const togglePref = (key, value) => {
     setPrefs((p) => {
@@ -507,7 +510,7 @@ function SubscribeForm({ areas, modalities, seniorities }) {
       const res = await fetch('/api/job-subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, preferences: prefs }),
+        body: JSON.stringify({ email, preferences: prefs, hp_field: hpField }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.ok) {
@@ -576,6 +579,17 @@ function SubscribeForm({ areas, modalities, seniorities }) {
       </div>
 
       <form className="subscribe__form" onSubmit={submit}>
+        {/* Honeypot — hidden from humans, bots fill it and get silently dropped */}
+        <input
+          type="text"
+          name="hp_field"
+          tabIndex={-1}
+          autoComplete="off"
+          value={hpField}
+          onChange={(e) => setHpField(e.target.value)}
+          style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+          aria-hidden="true"
+        />
         <input
           type="email"
           placeholder="tu@email.com"
