@@ -635,6 +635,100 @@ function ApplyModal({ role, onClose }) {
 // Main App
 // ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
+// HeroSubscribeMini — compact, subtle subscribe card placed beside
+// the hero sub-paragraph. Single email field + submit. Reuses the
+// same POST /api/job-subscribe endpoint as SubscribeForm/Banner.
+// ─────────────────────────────────────────────────────────────
+function HeroSubscribeMini({ audience = 'candidates' }) {
+  const [email, setEmail] = useState('')
+  const [state, setState] = useState('idle')
+  const [errorMsg, setErrorMsg] = useState('')
+  const [hpField, setHpField] = useState('')
+
+  const isRecruiters = audience === 'recruiters'
+  const label = isRecruiters ? 'Roles HR por email' : 'Roles tech por email'
+  const sub = 'Un mail semanal con los roles nuevos. Sin spam.'
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (state === 'submitting') return
+    setState('submitting')
+    setErrorMsg('')
+    try {
+      const res = await fetch('/api/job-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, preferences: { areas: [], modalities: [], seniorities: [] }, hp_field: hpField, audience }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        const msg =
+          data.error === 'invalid_email'
+            ? 'Email inválido.'
+            : data.error === 'rate_limited'
+            ? 'Probaste muchas veces. Esperá un minuto.'
+            : 'Algo falló. Probá de nuevo.'
+        setErrorMsg(msg)
+        setState('error')
+        return
+      }
+      setState('done')
+      trackEvent('newsletter_subscribe', { location: 'hero_mini', with_preferences: false, audience })
+    } catch {
+      setErrorMsg('No pudimos conectarnos. Probá de nuevo.')
+      setState('error')
+    }
+  }
+
+  if (state === 'done') {
+    return (
+      <aside className="hero-mini hero-mini--done" aria-live="polite">
+        <div className="hero-mini__check" aria-hidden="true">✓</div>
+        <div className="hero-mini__done-text">
+          Listo. Te llega un mail para confirmar.
+        </div>
+      </aside>
+    )
+  }
+
+  return (
+    <aside className="hero-mini" aria-label={label}>
+      <div className="hero-mini__label">{label}</div>
+      <form className="hero-mini__form" onSubmit={submit} noValidate>
+        <input
+          type="email"
+          required
+          placeholder="tu@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={state === 'submitting'}
+          className="hero-mini__input"
+          aria-label="Email para suscripción"
+        />
+        <button
+          type="submit"
+          disabled={state === 'submitting' || !email}
+          className="hero-mini__submit"
+        >
+          {state === 'submitting' ? '…' : 'Suscribirme'}
+        </button>
+        <input
+          type="text"
+          name="company_url"
+          value={hpField}
+          onChange={(e) => setHpField(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+        />
+      </form>
+      <div className="hero-mini__sub">{state === 'error' ? errorMsg : sub}</div>
+    </aside>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
 // SubscribeBanner — sticky bottom bar that nudges signup without
 // blocking the page. Dismissible (X). Once dismissed, persists in
 // localStorage for 30 days so we don't pester the same person.
@@ -1371,9 +1465,12 @@ export default function BuscoTrabajoClient({ initialRoles, bondyRoles = [], upda
             {COPY.windowText}
           </span>
         </div>
-        <p className="hero__sub">
-          {COPY.sub}
-        </p>
+        <div className="hero__sub-row">
+          <p className="hero__sub">
+            {COPY.sub}
+          </p>
+          <HeroSubscribeMini audience={audience} />
+        </div>
       </section>
 
       {/* Stats */}

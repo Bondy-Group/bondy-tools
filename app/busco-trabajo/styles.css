@@ -128,6 +128,107 @@
 }
 .bt-root .hero__sub { font-size: 16px; line-height: 1.7; color: var(--bondy-ink-sub); max-width: 600px; margin: 0; }
 
+/* ─── Hero subscribe mini — sutil, al lado del párrafo del hero ─── */
+.bt-root .hero__sub-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 32px;
+  align-items: start;
+  margin-top: 0;
+}
+.bt-root .hero-mini {
+  border: 1px solid var(--bondy-rule);
+  background: #FFFFFF;
+  padding: 16px 18px;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+.bt-root .hero-mini__label {
+  font-family: var(--bondy-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bondy-green);
+}
+.bt-root .hero-mini__form {
+  display: flex;
+  gap: 6px;
+  position: relative;
+}
+.bt-root .hero-mini__input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--bondy-rule);
+  background: var(--bondy-bg);
+  padding: 9px 11px;
+  font-family: var(--bondy-font-mono);
+  font-size: 13px;
+  color: var(--bondy-ink);
+  outline: none;
+  border-radius: 2px;
+  transition: border-color 0.15s;
+}
+.bt-root .hero-mini__input:focus {
+  border-color: var(--bondy-green);
+}
+.bt-root .hero-mini__submit {
+  background: var(--bondy-green);
+  color: #FFFFFF;
+  border: none;
+  padding: 9px 14px;
+  font-family: var(--bondy-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.bt-root .hero-mini__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.bt-root .hero-mini__sub {
+  font-family: var(--bondy-font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--bondy-ink-faint);
+}
+.bt-root .hero-mini--done {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  border-color: var(--bondy-green);
+  background: rgba(74,140,64,0.06);
+}
+.bt-root .hero-mini__check {
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bondy-green); color: #FFFFFF;
+  border-radius: 50%;
+  font-family: var(--bondy-font-mono);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.bt-root .hero-mini__done-text {
+  font-family: var(--bondy-font-mono);
+  font-size: 13px;
+  color: var(--bondy-ink-mid);
+  line-height: 1.5;
+}
+@media (max-width: 880px) {
+  .bt-root .hero__sub-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .bt-root .hero-mini { max-width: 100%; }
+}
+
 /* ───────────────────────────── Stats (minimal style — locked in) ───────── */
 .bt-root .stats {
   max-width: 1400px; margin: 0 auto; display: grid;
