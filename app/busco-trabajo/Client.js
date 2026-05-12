@@ -1257,7 +1257,7 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
         </div>
         <a
           className="tools-bar__cta"
-          href="https://wearebondy.com"
+          href="https://wearebondy.com/es/sumar-perfil?utm_source=tools&utm_medium=busco_trabajo&utm_campaign=sumar_perfil_header&source=tools_busco_trabajo"
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackEvent('cta_sumar_perfil_click', { location: 'header' })}
