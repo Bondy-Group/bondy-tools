@@ -58,7 +58,16 @@ const CRM_CATALOG = {
     'potential_clients',
     'referrals',
   ],
-  'Jobs & Market': ['jobs', 'market_signals', 'job_applications'],
+  'Jobs & Market': [
+    'jobs',
+    'market_signals',
+    'job_applications',
+    'job_subscribers',
+    'job_sources',
+    'reddit_alerts',
+    'reddit_radar_config',
+  ],
+  'Talent Pool': ['talent_pool', 'talent_pool_edits'],
   ATS: [
     'ats_users',
     'ats_user_invites',
@@ -70,7 +79,7 @@ const CRM_CATALOG = {
     'interviews',
     'question_bank',
   ],
-  Sistema: ['gmail_tokens', 'newsletter_subscribers'],
+  Sistema: ['gmail_tokens', 'newsletter_subscribers', 'newsletter_issues', 'newsletter_sends', '_radar_secrets'],
 }
 
 const TOOLS_CATALOG = {
@@ -155,6 +164,19 @@ const TABLE_SOURCES = {
   // Sistema
   gmail_tokens: { label: 'Gmail OAuth', detail: 'Tokens de Gmail OAuth (mara@wearebondy.com) — usados por send-draft flow' },
   newsletter_subscribers: { label: 'Form web', detail: 'Suscriptores a digest semanal /busco-trabajo + recursos-recruiters' },
+  newsletter_issues: { label: 'Cron weekly-digest', detail: 'Ediciones del digest semanal · generadas lunes 10am ART' },
+  newsletter_sends: { label: 'Cron weekly-digest', detail: 'Log de envíos de digest (por suscriptor) · alimenta tracking en Resend' },
+  job_subscribers: { label: 'Form web', detail: 'Suscriptores del job board · tabla real de suscripción (newsletter_subscribers es legacy)' },
+  job_sources: { label: 'Manual / config', detail: 'Configuración de fuentes del scraper (Greenhouse companies, Lever, etc.)' },
+
+  // Talent pool (manual + edits)
+  talent_pool: { label: 'Manual / curado', detail: 'Pool curado de talento por el equipo Bondy · candidatos prioritarios fuera de una search activa' },
+  talent_pool_edits: { label: 'App interna', detail: 'Audit log de cambios sobre talent_pool' },
+
+  // Reddit radar
+  reddit_alerts: { label: 'Reddit scraper', detail: 'Alertas de menciones en Reddit relevantes para Bondy (radar de mercado)' },
+  reddit_radar_config: { label: 'Manual / config', detail: 'Configuración de queries del Reddit radar' },
+  _radar_secrets: { label: 'Sistema', detail: 'Tabla de secretos del radar · no debería estar acá, mover a vault' },
 }
 
 const GROUP_SOURCE_FALLBACK = {
@@ -163,6 +185,7 @@ const GROUP_SOURCE_FALLBACK = {
   Operacional: { label: 'Manual', detail: 'Carga manual del equipo' },
   'Outreach & Leads': { label: 'Agentes / web', detail: 'Generada por agentes o forms del sitio' },
   'Jobs & Market': { label: 'Scrapers', detail: 'Datos externos recolectados por scrapers' },
+  'Talent Pool': { label: 'Manual / curado', detail: 'Pool curado de talento por el equipo' },
   ATS: { label: 'ATS app', detail: 'Usada por la ATS interna' },
   Sistema: { label: 'Sistema', detail: 'Tabla de sistema / infraestructura' },
   Tools: { label: 'Tools app', detail: 'Tabla operativa de la app tools.wearebondy.com' },
@@ -268,14 +291,64 @@ async function tryOpenApiIntrospection(project, projectKey) {
   return { ok: true, tables }
 }
 
+/**
+ * Lista las tablas reales del schema public via RPC (bypass RLS).
+ * Solo aplica al proyecto CRM (que tiene la RPC instalada).
+ * Devuelve array de strings o null si falla.
+ */
+async function listTablesViaRpc(project, projectKey) {
+  if (projectKey !== 'crm') return null
+  try {
+    const res = await fetch(`${project.url}/rest/v1/rpc/data_explorer_list_tables`, {
+      method: 'POST',
+      headers: {
+        apikey: project.serviceKey,
+        Authorization: `Bearer ${project.serviceKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    const rows = await res.json()
+    if (!Array.isArray(rows)) return null
+    return rows.map((r) => r.table_name).filter(Boolean)
+  } catch {
+    return null
+  }
+}
+
 async function buildFallbackCatalog(project, projectKey) {
   const catalog = projectKey === 'crm' ? CRM_CATALOG : TOOLS_CATALOG
+
+  // Source-of-truth: tablas reales desde la DB (solo CRM tiene RPC instalada).
+  // Si la RPC falla o estamos en otro proyecto, caemos al catálogo hardcodeado.
+  const realTables = await listTablesViaRpc(project, projectKey)
+
   const allTables = []
-  for (const [group, names] of Object.entries(catalog)) {
-    for (const name of names) {
+  let unmappedFound = []
+
+  if (realTables && realTables.length > 0) {
+    // Modo dinámico: usamos lo que está realmente en Supabase.
+    // El catálogo aporta solo el group; tablas no listadas caen en "Otros".
+    const inCatalog = new Set()
+    for (const list of Object.values(catalog)) {
+      for (const t of list) inCatalog.add(t)
+    }
+    for (const name of realTables) {
+      const group = groupForTable(projectKey, name)
       allTables.push({ name, group })
+      if (!inCatalog.has(name)) unmappedFound.push(name)
+    }
+  } else {
+    // Modo legacy: catálogo hardcodeado (si la RPC no existe / falla).
+    for (const [group, names] of Object.entries(catalog)) {
+      for (const name of names) {
+        allTables.push({ name, group })
+      }
     }
   }
+
   const tables = await Promise.all(
     allTables.map(async ({ name, group }) => {
       const rowCount = await countRows(project, name, projectKey)
@@ -289,7 +362,7 @@ async function buildFallbackCatalog(project, projectKey) {
       }
     })
   )
-  return tables
+  return { tables, unmappedFound, usedRealTables: !!realTables }
 }
 
 export async function GET(request) {
@@ -322,13 +395,17 @@ export async function GET(request) {
     })
   }
 
-  const tables = await buildFallbackCatalog(project, projectKey)
+  const fallback = await buildFallbackCatalog(project, projectKey)
+  const warning =
+    fallback.usedRealTables
+      ? `service_role no disponible (HTTP ${intro.status}). Tablas listadas desde Supabase via RPC (data_explorer_list_tables); schema de cada tabla se descubre al abrirla.${fallback.unmappedFound.length > 0 ? ` Sin clasificar en catálogo: ${fallback.unmappedFound.join(', ')}.` : ''}`
+      : `service_role no disponible (HTTP ${intro.status}) y la RPC data_explorer_list_tables tampoco respondió. Listando desde catálogo hardcodeado (puede estar desincronizado).`
+
   return NextResponse.json({
     project: projectKey,
     label: project.label,
-    tables,
-    introspectionMode: 'fallback',
-    introspectionWarning:
-      `service_role no disponible (HTTP ${intro.status}). Schema completo de cada tabla se descubre al abrirla.`,
+    tables: fallback.tables,
+    introspectionMode: fallback.usedRealTables ? 'rpc-list' : 'fallback',
+    introspectionWarning: warning,
   })
 }
