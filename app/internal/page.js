@@ -87,6 +87,17 @@ const resources = [
     adminOnly: true,
   },
   {
+    id: 'newsletter',
+    name: 'Bondy Thinking',
+    cat: 'Contenido', catKey: 'content',
+    desc: 'Editor del newsletter editorial. Compose, preview, test y send a los suscriptores confirmados.',
+    descShort: 'Editor + envío del newsletter editorial.',
+    glyph: 'NL',
+    shortcut: '⌘N', staticRank: 4, status: 'live',
+    href: '/internal/newsletter',
+    adminOnly: true,
+  },
+  {
     id: 'lead-analyzer',
     name: 'Lead Analyzer',
     cat: 'AI / Reportes', catKey: 'ai',
