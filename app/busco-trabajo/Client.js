@@ -1249,12 +1249,17 @@ export default function BuscoTrabajoClient({ initialRoles, bondyRoles = [], upda
     <div className="bt-root">
       {/* Top bar */}
       <header className="tools-bar">
-        <div className="tools-bar__brand">
+        <a
+          className="tools-bar__brand"
+          href="/"
+          aria-label="Volver al home de Bondy Tools"
+          style={{ textDecoration: 'none', color: 'inherit' }}
+        >
           <BondyLogo size={20} />
           <span className="tools-bar__brand-name">BONDY</span>
           <span className="tools-bar__sep">/</span>
           <span className="tools-bar__crumb">{COPY.crumb}</span>
-        </div>
+        </a>
         <a
           className="tools-bar__cta"
           href="https://wearebondy.com/es/sumar-perfil?utm_source=tools&utm_medium=busco_trabajo&utm_campaign=sumar_perfil_header&source=tools_busco_trabajo"
