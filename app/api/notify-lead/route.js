@@ -1,200 +1,155 @@
+/**
+ * POST /api/notify-lead
+ *
+ * Recibe leads del form /contact en wearebondy.com y notifica al equipo:
+ *   1. Email a hello@wearebondy.com vía Resend (antes era Gmail OAuth que fallaba)
+ *   2. Post a Slack #comercial (channel ID CC7KPD9A9)
+ *
+ * MIGRACIÓN (mayo 2026): Gmail OAuth → Resend + Slack
+ * Razón: tokens de Gmail expiraban silenciosamente, los leads no llegaban a hello@.
+ * El contrato API se mantiene idéntico (mismo body + mismo secret) — el form de
+ * /contact en wearebondy.com sigue funcionando sin cambios.
+ *
+ * Autenticación: header x-notify-secret == NOTIFY_LEAD_SECRET
+ * Body: { name, email, message, company?, role?, service?, lang? }
+ */
 import { NextResponse } from 'next/server'
+import { sendEmail } from '@/lib/resend'
 
-const SUPABASE_URL = 'https://tchppyxhapxtjemxrbqm.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjaHBweXhoYXB4dGplbXhyYnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzE5NTUsImV4cCI6MjA4NzUwNzk1NX0.GwH_UZV_62cOkd8x1UknkajQVk1eDosLL0DkV8hsjhw'
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 const NOTIFY_LEAD_SECRET = process.env.NOTIFY_LEAD_SECRET || 'bondy-notify-lead-internal'
-const NOTIFY_EMAIL_TO = 'hello@wearebondy.com'
-const SENDER_EMAIL = 'mara@wearebondy.com'
+const NOTIFY_EMAIL_TO = process.env.NOTIFY_LEAD_EMAIL || 'hello@wearebondy.com'
+const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN || ''
+const SLACK_COMERCIAL_CHANNEL = process.env.SLACK_COMERCIAL_CHANNEL_ID || 'CC7KPD9A9'
 
-async function getRefreshToken(email) {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/gmail_tokens?email=eq.${encodeURIComponent(email)}&select=refresh_token,access_token,expires_at`,
-    {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-      },
-    }
-  )
-  const data = await res.json()
-  return data?.[0] || null
-}
-
-async function refreshAccessToken(refreshToken) {
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
-      client_secret: GOOGLE_CLIENT_SECRET,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error('Error refreshing token: ' + JSON.stringify(data))
-  return data.access_token
-}
-
-async function updateAccessToken(email, accessToken) {
-  await fetch(`${SUPABASE_URL}/rest/v1/gmail_tokens?email=eq.${encodeURIComponent(email)}`, {
-    method: 'PATCH',
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ access_token: accessToken, updated_at: new Date().toISOString() }),
-  })
-}
-
-async function buildRawEmail(to, subject, htmlBody, fromEmail) {
-  const emailLines = [
-    `From: Bondy Leads <${fromEmail}>`,
-    `To: ${to}`,
-    `Subject: ${subject}`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/html; charset=utf-8',
-    '',
-    htmlBody,
-  ]
-  return Buffer.from(emailLines.join('\r\n')).toString('base64url')
-}
-
-// Crea un draft y luego lo envía (funciona con gmail.compose scope)
-async function sendEmail(accessToken, to, subject, htmlBody, fromEmail) {
-  const raw = await buildRawEmail(to, subject, htmlBody, fromEmail)
-
-  // Paso 1: crear el draft
-  const draftRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ message: { raw } }),
-  })
-
-  if (!draftRes.ok) {
-    const err = await draftRes.text()
-    throw new Error('Gmail draft creation error: ' + err)
-  }
-
-  const draft = await draftRes.json()
-  const draftId = draft.id
-
-  // Paso 2: enviar el draft
-  const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts/send', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ id: draftId }),
-  })
-
-  if (!sendRes.ok) {
-    const err = await sendRes.text()
-    throw new Error('Gmail draft send error: ' + err)
-  }
-
-  return sendRes.json()
+function escapeHtml(s) {
+  if (s == null) return ''
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 function buildEmailHtml(lead) {
-  const { name, email, company, role, service, message, created_at } = lead
+  const { name, email, company, role, service, message, lang } = lead
+  const langLabel = lang === 'en' ? '🇺🇸 English' : '🇦🇷 Español'
 
-  const date = new Date(created_at || Date.now()).toLocaleString('es-AR', {
-    timeZone: 'America/Argentina/Buenos_Aires',
-    dateStyle: 'full',
-    timeStyle: 'short',
-  })
-
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Lead — Bondy</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .header { background: #1a1a1a; padding: 24px 32px; }
-    .header h1 { color: #ffffff; margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
-    .header p { color: #888; margin: 4px 0 0; font-size: 13px; }
-    .body { padding: 32px; }
-    .field { margin-bottom: 20px; }
-    .field label { display: block; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .field value { display: block; font-size: 15px; color: #1a1a1a; }
-    .message-box { background: #f8f8f8; border-left: 3px solid #1a1a1a; padding: 16px 20px; border-radius: 0 6px 6px 0; margin-top: 4px; }
-    .message-box p { margin: 0; font-size: 15px; color: #333; line-height: 1.6; white-space: pre-wrap; }
-    .divider { border: none; border-top: 1px solid #eee; margin: 24px 0; }
-    .footer { padding: 20px 32px; background: #fafafa; border-top: 1px solid #eee; }
-    .footer p { margin: 0; font-size: 12px; color: #aaa; }
-    .badge { display: inline-block; background: #1a1a1a; color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-bottom: 20px; }
-    a { color: #1a1a1a; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>🔔 New Lead — ${name}</h1>
-      <p>${date}</p>
-    </div>
-    <div class="body">
-      <span class="badge">wearebondy.com</span>
-
-      <div class="field">
-        <label>Nombre</label>
-        <value>${name || '—'}</value>
-      </div>
-
-      <div class="field">
-        <label>Email</label>
-        <value><a href="mailto:${email}">${email || '—'}</a></value>
-      </div>
-
-      ${company ? `
-      <div class="field">
-        <label>Empresa</label>
-        <value>${company}</value>
-      </div>` : ''}
-
-      ${role ? `
-      <div class="field">
-        <label>Rol / Cargo</label>
-        <value>${role}</value>
-      </div>` : ''}
-
-      ${service ? `
-      <div class="field">
-        <label>Servicio de interés</label>
-        <value>${service}</value>
-      </div>` : ''}
-
-      <hr class="divider">
-
-      <div class="field">
-        <label>Mensaje</label>
-        <div class="message-box">
-          <p>${message || '—'}</p>
-        </div>
-      </div>
-    </div>
-    <div class="footer">
-      <p>Este email fue generado automáticamente por el sistema de leads de Bondy.</p>
-    </div>
-  </div>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0; padding:0; background:#FEFCF9; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="padding:40px 20px; background:#FEFCF9;">
+    <tr><td align="center">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px; background:#FFFFFF; border:1px solid #E8E4DE;">
+        <tr><td style="padding:36px 40px 0 40px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td style="padding-right:10px;"><span style="display:inline-block; width:18px; height:1px; background:#4A8C40; vertical-align:middle;"></span></td>
+              <td style="font-family:-apple-system, sans-serif; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:#4A8C40; font-weight:500;">NUEVO LEAD · /contact</td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:18px 40px 0 40px;">
+          <h1 style="margin:0; font-family:'Special Elite', 'Courier Prime', Georgia, serif; font-size:28px; line-height:1.2; color:#3A3530; font-weight:normal;">${escapeHtml(name)}</h1>
+          <p style="margin:6px 0 0 0; font-size:14px; color:#5A5550;"><a href="mailto:${escapeHtml(email)}" style="color:#4A8C40; text-decoration:none;">${escapeHtml(email)}</a></p>
+        </td></tr>
+        <tr><td style="padding:24px 40px 0 40px;"><hr style="border:none; border-top:1px solid #E8E4DE; margin:0;"></td></tr>
+        <tr><td style="padding:20px 40px 0 40px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            ${row('Empresa', company)}
+            ${row('Rol', role)}
+            ${row('Servicio', service)}
+            ${row('Idioma', langLabel)}
+          </table>
+        </td></tr>
+        <tr><td style="padding:20px 40px 0 40px;"><hr style="border:none; border-top:1px solid #E8E4DE; margin:0;"></td></tr>
+        <tr><td style="padding:20px 40px 0 40px;">
+          <p style="margin:0 0 10px 0; font-family:-apple-system, sans-serif; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:#7A7874; font-weight:500;">Mensaje</p>
+          <div style="background:#FEFCF9; border-left:2px solid #4A8C40; padding:14px 18px;">
+            <p style="margin:0; font-size:14px; line-height:1.7; color:#3A3530; white-space:pre-wrap;">${escapeHtml(message || '—')}</p>
+          </div>
+        </td></tr>
+        <tr><td style="padding:28px 40px 40px 40px;">
+          <p style="margin:0; font-size:11px; color:#7A7874;">Reply a este email para responderle al lead.</p>
+        </td></tr>
+      </table>
+      <p style="margin:16px 0 0 0; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#7A7874;">BONDY · wearebondy.com</p>
+    </td></tr>
+  </table>
 </body>
-</html>
-  `.trim()
+</html>`
+}
+
+function row(label, value) {
+  if (!value) return ''
+  return `<tr>
+    <td style="padding:6px 0; width:130px; font-family:-apple-system, sans-serif; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:#7A7874;">${escapeHtml(label)}</td>
+    <td style="padding:6px 0; font-size:14px; color:#3A3530;">${escapeHtml(value)}</td>
+  </tr>`
+}
+
+function buildEmailText(lead) {
+  const { name, email, company, role, service, message } = lead
+  return [
+    `NUEVO LEAD · /contact`,
+    `═══════════════════`,
+    ``,
+    `${name}`,
+    `${email}`,
+    ``,
+    company ? `Empresa: ${company}` : null,
+    role ? `Rol: ${role}` : null,
+    service ? `Servicio: ${service}` : null,
+    ``,
+    `MENSAJE`,
+    message || '—',
+    ``,
+    `—`,
+    `Reply a este email para responderle al lead.`,
+  ].filter((l) => l !== null).join('\n')
+}
+
+async function postSlackComercial(lead) {
+  if (!SLACK_BOT_TOKEN) {
+    console.warn('[notify-lead] SLACK_BOT_TOKEN not set, skipping slack post')
+    return { skipped: true }
+  }
+  const { name, email, company, role, service, message, lang } = lead
+  const lines = [
+    `🟢 *Nuevo lead en /contact*`,
+    `*${name}* — <mailto:${email}|${email}>`,
+  ]
+  if (company) lines.push(`• Empresa: ${company}`)
+  if (role) lines.push(`• Rol: ${role}`)
+  if (service) lines.push(`• Servicio: ${service}`)
+  if (lang) lines.push(`• Idioma: ${lang === 'en' ? '🇺🇸 EN' : '🇦🇷 ES'}`)
+  if (message) {
+    const trimmed = String(message).slice(0, 400)
+    lines.push('', `> ${trimmed.replace(/\n/g, '\n> ')}`)
+  }
+
+  const res = await fetch('https://slack.com/api/chat.postMessage', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${SLACK_BOT_TOKEN}`,
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+    body: JSON.stringify({
+      channel: SLACK_COMERCIAL_CHANNEL,
+      text: lines.join('\n'),
+      unfurl_links: false,
+    }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!data.ok) console.error('[notify-lead] slack post failed', data)
+  return data
 }
 
 export async function POST(req) {
-  // Autenticación interna
   const authHeader = req.headers.get('x-notify-secret')
   if (authHeader !== NOTIFY_LEAD_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -209,43 +164,45 @@ export async function POST(req) {
 
   const { name, email, message } = lead
   if (!name || !email || !message) {
-    return NextResponse.json({ error: 'Missing required fields: name, email, message' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Missing required fields: name, email, message' },
+      { status: 400 }
+    )
   }
 
-  // Obtener token de Gmail del sender (mara@wearebondy.com)
-  const tokenRow = await getRefreshToken(SENDER_EMAIL)
-  if (!tokenRow) {
-    // Fallback: si no hay token, logueamos el error pero no rompemos
-    console.error(`[notify-lead] No Gmail token for ${SENDER_EMAIL}. Mara needs to log in at tools.wearebondy.com first.`)
-    return NextResponse.json({
-      error: `No Gmail token for ${SENDER_EMAIL}. Please log in at tools.wearebondy.com to authorize email sending.`,
-      lead_received: true,
-    }, { status: 503 })
+  // 1. Email a hello@ via Resend
+  const subject = `🟢 Nuevo lead: ${name}${lead.company ? ` (${lead.company})` : ''}`
+  const html = buildEmailHtml(lead)
+  const text = buildEmailText(lead)
+
+  const emailRes = await sendEmail({
+    to: NOTIFY_EMAIL_TO,
+    subject,
+    html,
+    text,
+    headers: {
+      // El reply va al lead directamente
+      'Reply-To': email,
+      'X-Entity-Ref-ID': `lead-${Date.now()}`,
+    },
+    tags: [
+      { name: 'campaign', value: 'lead-notification' },
+      { name: 'source', value: 'contact_form' },
+    ],
+  })
+
+  // 2. Slack en paralelo (no bloquea respuesta)
+  const slackRes = await postSlackComercial(lead)
+
+  // Si Resend está skipped (no API key) loggeo pero no fallo — Slack puede haber andado
+  if (emailRes.skipped) {
+    console.error('[notify-lead] Resend skipped:', emailRes.reason)
   }
 
-  // Refrescar access token si expiró
-  let accessToken = tokenRow.access_token
-  const isExpired = !tokenRow.expires_at || Date.now() / 1000 > tokenRow.expires_at - 60
-  if (isExpired) {
-    try {
-      accessToken = await refreshAccessToken(tokenRow.refresh_token)
-      await updateAccessToken(SENDER_EMAIL, accessToken)
-    } catch (err) {
-      console.error('[notify-lead] Token refresh failed:', err.message)
-      return NextResponse.json({ error: 'Token refresh failed: ' + err.message }, { status: 500 })
-    }
-  }
-
-  // Construir y enviar email
-  const subject = `New lead: ${name}`
-  const htmlBody = buildEmailHtml(lead)
-
-  try {
-    const result = await sendEmail(accessToken, NOTIFY_EMAIL_TO, subject, htmlBody, SENDER_EMAIL)
-    console.log(`[notify-lead] Email sent. messageId=${result.id}`)
-    return NextResponse.json({ ok: true, message_id: result.id })
-  } catch (err) {
-    console.error('[notify-lead] Send failed:', err.message)
-    return NextResponse.json({ error: err.message }, { status: 500 })
-  }
+  return NextResponse.json({
+    ok: true,
+    email_sent: !!emailRes.ok,
+    slack_posted: !slackRes.skipped && slackRes.ok !== false,
+    email_id: emailRes.id,
+  })
 }
