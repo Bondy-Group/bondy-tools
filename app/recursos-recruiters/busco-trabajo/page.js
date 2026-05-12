@@ -20,7 +20,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://wearebondy.com/og-image.png',
+        url: 'https://tools.wearebondy.com/og-busco-trabajo.png',
         width: 1200,
         height: 630,
         alt: 'Bondy — Roles para recruiters',
@@ -32,7 +32,7 @@ export const metadata = {
     title: 'Roles para recruiters · Bondy',
     description:
       'Roles abiertos de recruiting, sourcing, talent acquisition y people ops en LATAM, actualizados a diario.',
-    images: ['https://wearebondy.com/og-image.png'],
+    images: ['https://tools.wearebondy.com/og-busco-trabajo.png'],
   },
   robots: { index: true, follow: true },
 }

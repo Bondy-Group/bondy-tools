@@ -20,7 +20,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://wearebondy.com/og-image.png',
+        url: 'https://tools.wearebondy.com/og-busco-trabajo.png',
         width: 1200,
         height: 630,
         alt: 'Bondy — Busco Trabajo',
@@ -32,7 +32,7 @@ export const metadata = {
     title: 'Busco Trabajo · Bondy',
     description:
       'Roles tech en LATAM, actualizados a diario. Curados con el mismo criterio que aplicamos a nuestras búsquedas embebidas.',
-    images: ['https://wearebondy.com/og-image.png'],
+    images: ['https://tools.wearebondy.com/og-busco-trabajo.png'],
   },
   robots: { index: true, follow: true },
 }
