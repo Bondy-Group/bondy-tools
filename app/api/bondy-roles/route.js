@@ -42,7 +42,7 @@ export async function GET(req) {
   if (!res.ok) {
     const err = await res.text()
     console.error('[bondy-roles GET] supabase error', res.status, err)
-    return NextResponse.json({ error: 'Supabase error' }, { status: 500 })
+    return NextResponse.json({ error: 'Supabase error', detail: err, status: res.status }, { status: 500 })
   }
   const rows = await res.json()
   return NextResponse.json({ roles: rows })
@@ -112,7 +112,7 @@ export async function POST(req) {
   if (!insertRes.ok) {
     const err = await insertRes.text()
     console.error('[bondy-roles POST] supabase error', insertRes.status, err)
-    return NextResponse.json({ error: 'Could not create role' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not create role', detail: err, status: insertRes.status }, { status: 500 })
   }
   const rows = await insertRes.json()
   return NextResponse.json({ role: rows[0] }, { status: 201 })
