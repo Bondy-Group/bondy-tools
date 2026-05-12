@@ -5,7 +5,9 @@ import { requireJobBoardAdmin, supabaseHeaders, supabaseUrl } from '@/lib/job-bo
 
 /**
  * GET /api/bondy-applications/[id]/cv
- * Returns a signed URL (1 hour) to download the CV from the private bucket.
+ * Returns a signed URL (24 hours) to download the CV from the private bucket.
+ * 24h is safe — endpoint is admin-gated and the URL is only handed to the
+ * authenticated admin browser session, not exposed publicly.
  */
 export async function GET(_req, { params }) {
   const guard = await requireJobBoardAdmin()
@@ -22,13 +24,13 @@ export async function GET(_req, { params }) {
   const { cv_storage_path, cv_filename } = rows[0]
   if (!cv_storage_path) return NextResponse.json({ error: 'No CV attached' }, { status: 404 })
 
-  // Get signed URL from Supabase Storage (1 hour)
+  // Get signed URL from Supabase Storage (24 hours)
   const signRes = await fetch(
     `${supabaseUrl()}/storage/v1/object/sign/applications-cv/${encodeURI(cv_storage_path)}`,
     {
       method: 'POST',
       headers: supabaseHeaders(),
-      body: JSON.stringify({ expiresIn: 3600 }),
+      body: JSON.stringify({ expiresIn: 86400 }),
     }
   )
   if (!signRes.ok) {

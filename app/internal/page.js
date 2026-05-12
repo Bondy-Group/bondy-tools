@@ -76,6 +76,17 @@ const resources = [
     adminOnly: true,
   },
   {
+    id: 'applications',
+    name: 'Applications',
+    cat: 'Pipeline', catKey: 'pipeline',
+    desc: 'Inbox de aplicaciones a roles públicos + sumate al pool de talento. CVs y notas en una sola vista.',
+    descShort: 'Inbox de aplicaciones: roles + talent pool.',
+    glyph: 'AP',
+    staticRank: 3.5, status: 'live',
+    href: '/internal/applications',
+    adminOnly: true,
+  },
+  {
     id: 'lead-analyzer',
     name: 'Lead Analyzer',
     cat: 'AI / Reportes', catKey: 'ai',
