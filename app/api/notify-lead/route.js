@@ -1,14 +1,31 @@
 /**
  * POST /api/notify-lead
  *
- * Recibe leads del form /contact en wearebondy.com y notifica al equipo:
- *   1. Email a hello@wearebondy.com vía Resend (antes era Gmail OAuth que fallaba)
- *   2. Post a Slack #comercial (channel ID CC7KPD9A9)
+ * Notifica leads de /contact (wearebondy.com) por EMAIL a hello@wearebondy.com.
+ * NO postea a Slack — esa responsabilidad la tiene la edge function
+ * `notify-new-lead` de Supabase (ver docs/notifications.md).
  *
- * MIGRACIÓN (mayo 2026): Gmail OAuth → Resend + Slack
- * Razón: tokens de Gmail expiraban silenciosamente, los leads no llegaban a hello@.
- * El contrato API se mantiene idéntico (mismo body + mismo secret) — el form de
- * /contact en wearebondy.com sigue funcionando sin cambios.
+ * ─────────────────────────────────────────────────────────────────
+ * CONTEXTO HISTÓRICO (mayo 2026):
+ *
+ * Originalmente este endpoint usaba Gmail OAuth (mara@wearebondy.com) para mandar
+ * el mail a hello@. Los access tokens expiraban silenciosamente y los leads
+ * morían sin notificación. Lo migramos a Resend.
+ *
+ * En una iteración intermedia este endpoint también intentaba postear a Slack
+ * #comercial, lo que duplicaba el post que ya hace la edge function
+ * notify-new-lead (disparada por DB trigger on_new_contact_lead). Sacamos esa
+ * lógica para evitar el doble post.
+ *
+ * Pipeline actual de /contact:
+ *   1. POST /api/contact (bondy-new-site) → valida Turnstile + inserta en contact_leads
+ *   2. POST /api/notify-lead (este archivo) → email a hello@ via Resend
+ *   3. DB trigger on_new_contact_lead → edge function notify-new-lead → Slack #comercial
+ *      con botones de clasificación (prospect / spam / out_of_scope)
+ *
+ * Si necesitás cambiar algo del post a Slack, editá la edge function
+ * `notify-new-lead`, NO este archivo.
+ * ─────────────────────────────────────────────────────────────────
  *
  * Autenticación: header x-notify-secret == NOTIFY_LEAD_SECRET
  * Body: { name, email, message, company?, role?, service?, lang? }
@@ -21,8 +38,6 @@ export const dynamic = 'force-dynamic'
 
 const NOTIFY_LEAD_SECRET = process.env.NOTIFY_LEAD_SECRET || 'bondy-notify-lead-internal'
 const NOTIFY_EMAIL_TO = process.env.NOTIFY_LEAD_EMAIL || 'hello@wearebondy.com'
-const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN || ''
-const SLACK_COMERCIAL_CHANNEL = process.env.SLACK_COMERCIAL_CHANNEL_ID || 'CC7KPD9A9'
 
 function escapeHtml(s) {
   if (s == null) return ''
@@ -32,6 +47,14 @@ function escapeHtml(s) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
+}
+
+function row(label, value) {
+  if (!value) return ''
+  return `<tr>
+    <td style="padding:6px 0; width:130px; font-family:-apple-system, sans-serif; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:#7A7874;">${escapeHtml(label)}</td>
+    <td style="padding:6px 0; font-size:14px; color:#3A3530;">${escapeHtml(value)}</td>
+  </tr>`
 }
 
 function buildEmailHtml(lead) {
@@ -73,8 +96,11 @@ function buildEmailHtml(lead) {
             <p style="margin:0; font-size:14px; line-height:1.7; color:#3A3530; white-space:pre-wrap;">${escapeHtml(message || '—')}</p>
           </div>
         </td></tr>
-        <tr><td style="padding:28px 40px 40px 40px;">
-          <p style="margin:0; font-size:11px; color:#7A7874;">Reply a este email para responderle al lead.</p>
+        <tr><td style="padding:28px 40px 8px 40px;">
+          <p style="margin:0; font-size:11px; color:#7A7874;">Reply a este email para responderle al lead directamente.</p>
+        </td></tr>
+        <tr><td style="padding:8px 40px 40px 40px;">
+          <p style="margin:0; font-size:11px; color:#7A7874;">El post en Slack #comercial con botones de clasificación llega aparte (edge function notify-new-lead).</p>
         </td></tr>
       </table>
       <p style="margin:16px 0 0 0; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#7A7874;">BONDY · wearebondy.com</p>
@@ -84,69 +110,25 @@ function buildEmailHtml(lead) {
 </html>`
 }
 
-function row(label, value) {
-  if (!value) return ''
-  return `<tr>
-    <td style="padding:6px 0; width:130px; font-family:-apple-system, sans-serif; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:#7A7874;">${escapeHtml(label)}</td>
-    <td style="padding:6px 0; font-size:14px; color:#3A3530;">${escapeHtml(value)}</td>
-  </tr>`
-}
-
 function buildEmailText(lead) {
   const { name, email, company, role, service, message } = lead
   return [
-    `NUEVO LEAD · /contact`,
-    `═══════════════════`,
-    ``,
-    `${name}`,
-    `${email}`,
-    ``,
+    'NUEVO LEAD · /contact',
+    '═══════════════════',
+    '',
+    name,
+    email,
+    '',
     company ? `Empresa: ${company}` : null,
     role ? `Rol: ${role}` : null,
     service ? `Servicio: ${service}` : null,
-    ``,
-    `MENSAJE`,
+    '',
+    'MENSAJE',
     message || '—',
-    ``,
-    `—`,
-    `Reply a este email para responderle al lead.`,
+    '',
+    '—',
+    'Reply a este email para responderle al lead.',
   ].filter((l) => l !== null).join('\n')
-}
-
-async function postSlackComercial(lead) {
-  if (!SLACK_BOT_TOKEN) {
-    console.warn('[notify-lead] SLACK_BOT_TOKEN not set, skipping slack post')
-    return { skipped: true }
-  }
-  const { name, email, company, role, service, message, lang } = lead
-  const lines = [
-    `🟢 *Nuevo lead en /contact*`,
-    `*${name}* — <mailto:${email}|${email}>`,
-  ]
-  if (company) lines.push(`• Empresa: ${company}`)
-  if (role) lines.push(`• Rol: ${role}`)
-  if (service) lines.push(`• Servicio: ${service}`)
-  if (lang) lines.push(`• Idioma: ${lang === 'en' ? '🇺🇸 EN' : '🇦🇷 ES'}`)
-  if (message) {
-    const trimmed = String(message).slice(0, 400)
-    lines.push('', `> ${trimmed.replace(/\n/g, '\n> ')}`)
-  }
-
-  const res = await fetch('https://slack.com/api/chat.postMessage', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${SLACK_BOT_TOKEN}`,
-      'Content-Type': 'application/json; charset=utf-8',
-    },
-    body: JSON.stringify({
-      channel: SLACK_COMERCIAL_CHANNEL,
-      text: lines.join('\n'),
-      unfurl_links: false,
-    }),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!data.ok) console.error('[notify-lead] slack post failed', data)
-  return data
 }
 
 export async function POST(req) {
@@ -170,7 +152,7 @@ export async function POST(req) {
     )
   }
 
-  // 1. Email a hello@ via Resend
+  // Email a hello@ via Resend. NO postea a Slack — eso lo hace la edge function.
   const subject = `🟢 Nuevo lead: ${name}${lead.company ? ` (${lead.company})` : ''}`
   const html = buildEmailHtml(lead)
   const text = buildEmailText(lead)
@@ -181,7 +163,6 @@ export async function POST(req) {
     html,
     text,
     headers: {
-      // El reply va al lead directamente
       'Reply-To': email,
       'X-Entity-Ref-ID': `lead-${Date.now()}`,
     },
@@ -191,18 +172,14 @@ export async function POST(req) {
     ],
   })
 
-  // 2. Slack en paralelo (no bloquea respuesta)
-  const slackRes = await postSlackComercial(lead)
-
-  // Si Resend está skipped (no API key) loggeo pero no fallo — Slack puede haber andado
   if (emailRes.skipped) {
     console.error('[notify-lead] Resend skipped:', emailRes.reason)
+    return NextResponse.json({ error: 'email_service_not_configured' }, { status: 503 })
+  }
+  if (!emailRes.ok) {
+    console.error('[notify-lead] send failed:', emailRes)
+    return NextResponse.json({ error: 'send_failed', detail: emailRes }, { status: 500 })
   }
 
-  return NextResponse.json({
-    ok: true,
-    email_sent: !!emailRes.ok,
-    slack_posted: !slackRes.skipped && slackRes.ok !== false,
-    email_id: emailRes.id,
-  })
+  return NextResponse.json({ ok: true, email_id: emailRes.id })
 }
