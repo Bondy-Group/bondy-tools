@@ -174,7 +174,26 @@ export default function ApplicationsPage() {
                           </div>
                         </>
                       ) : (
-                        <span style={{ color: tw.inkFaint }}>—</span>
+                        <div>
+                          <span
+                            style={{
+                              fontSize: '10px',
+                              letterSpacing: '0.1em',
+                              textTransform: 'uppercase',
+                              color: tw.green,
+                              border: `1px solid ${tw.green}`,
+                              padding: '2px 6px',
+                              borderRadius: 2,
+                            }}
+                          >
+                            Talent Pool
+                          </span>
+                          {a.source && a.source !== 'general_pool' && (
+                            <div style={{ fontSize: '10px', color: tw.inkFaint, marginTop: 4 }}>
+                              via {a.source.replace(/_/g, ' ')}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </Td>
                     <Td>
