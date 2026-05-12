@@ -685,3 +685,157 @@
     text-align: center;
   }
 }
+
+/* ─────────────────────── Bondy own roles hero ─────────────────────── */
+.bt-root .bondy-hero {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.bt-root .bondy-hero__inner {
+  margin-top: 28px;
+  background: var(--bondy-bg);
+  border: 1.5px solid var(--bondy-green);
+  border-radius: 4px;
+  padding: 32px 36px 30px;
+  position: relative;
+}
+.bt-root .bondy-hero__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.bt-root .bondy-hero__dot {
+  position: relative;
+  display: inline-flex;
+  width: 9px;
+  height: 9px;
+}
+.bt-root .bondy-hero__dot-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--bondy-green);
+  opacity: 0.55;
+  animation: bondyHeroPulse 1.8s ease-out infinite;
+}
+.bt-root .bondy-hero__dot-core {
+  position: relative;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bondy-green);
+}
+.bt-root .bondy-hero__kicker-text {
+  font-family: var(--bondy-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #3B6D11;
+  font-weight: 500;
+}
+.bt-root .bondy-hero__title {
+  font-family: var(--bondy-font-display);
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1.15;
+  color: var(--bondy-ink);
+  margin: 0 0 10px;
+  letter-spacing: -0.005em;
+}
+.bt-root .bondy-hero__title em {
+  font-style: normal;
+  color: var(--bondy-green);
+}
+.bt-root .bondy-hero__sub {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--bondy-ink-sub);
+  margin: 0 0 22px;
+  max-width: 640px;
+}
+.bt-root .bondy-hero__chips {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bt-root .bondy-hero__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bondy-white);
+  border: 1px solid var(--bondy-rule);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--bondy-ink);
+  text-decoration: none;
+  transition: border-color 0.18s, transform 0.18s;
+}
+.bt-root .bondy-hero__chip:hover {
+  border-color: var(--bondy-green);
+  transform: translateY(-1px);
+}
+.bt-root .bondy-hero__chip-title { font-weight: 500; }
+.bt-root .bondy-hero__chip-sep { color: var(--bondy-ink-faint); }
+.bt-root .bondy-hero__chip-meta {
+  font-family: var(--bondy-font-mono);
+  font-size: 11px;
+  color: var(--bondy-ink-faint);
+  letter-spacing: 0.04em;
+}
+.bt-root .bondy-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--bondy-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bondy-bg);
+  background: var(--bondy-green);
+  padding: 12px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.18s, transform 0.18s;
+}
+.bt-root .bondy-hero__cta:hover {
+  background: var(--bondy-green-hover);
+  transform: translateY(-1px);
+}
+.bt-root .bondy-hero__divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 28px 6px 6px;
+}
+.bt-root .bondy-hero__divider-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--bondy-rule);
+}
+.bt-root .bondy-hero__divider-text {
+  font-family: var(--bondy-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--bondy-ink-faint);
+}
+
+@keyframes bondyHeroPulse {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  80%  { transform: scale(2.8); opacity: 0;    }
+  100% { transform: scale(2.8); opacity: 0;    }
+}
+
+/* Mobile tweaks */
+@media (max-width: 720px) {
+  .bt-root .bondy-hero { padding: 0 20px; }
+  .bt-root .bondy-hero__inner { padding: 24px 22px 22px; }
+  .bt-root .bondy-hero__title { font-size: 26px; }
+  .bt-root .bondy-hero__divider-text { font-size: 9px; letter-spacing: 0.18em; }
+}

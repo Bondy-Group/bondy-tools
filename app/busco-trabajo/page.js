@@ -1,4 +1,4 @@
-import { fetchOpenRoles, formatUpdateLabel, formatTodayLabel, AREAS, MODALITIES, SENIORITIES, SOURCES, LOCATIONS, LANGUAGES } from '@/lib/scraper-jobs'
+import { fetchOpenRoles, fetchBondyOpenRoles, formatUpdateLabel, formatTodayLabel, AREAS, MODALITIES, SENIORITIES, SOURCES, LOCATIONS, LANGUAGES } from '@/lib/scraper-jobs'
 import BuscoTrabajoClient from './Client'
 import './styles.css'
 
@@ -40,7 +40,13 @@ export const metadata = {
 export const revalidate = 1800 // 30 min
 
 export default async function BuscoTrabajoPage() {
-  const { roles, lastUpdate, newToday, activeSources } = await fetchOpenRoles({ days: 3, limit: 500 })
+  const [
+    { roles, lastUpdate, newToday, activeSources },
+    bondyRoles,
+  ] = await Promise.all([
+    fetchOpenRoles({ days: 3, limit: 500 }),
+    fetchBondyOpenRoles({ limit: 12 }),
+  ])
   const updateLabel = formatUpdateLabel(lastUpdate)
   const todayLabel = formatTodayLabel()
   // If the catalog gave us an active-sources list, use it; otherwise fall back to
@@ -50,6 +56,7 @@ export default async function BuscoTrabajoPage() {
   return (
     <BuscoTrabajoClient
       initialRoles={roles}
+      bondyRoles={bondyRoles}
       updateLabel={updateLabel}
       todayLabel={todayLabel}
       newToday={newToday}

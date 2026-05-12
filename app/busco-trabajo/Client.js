@@ -1105,7 +1105,7 @@ function PrefRow({ label, options, selected, onToggle }) {
   )
 }
 
-export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLabel, newToday = 0, areas, modalities, seniorities, sources, locations, languages = [], audience = 'candidates' }) {
+export default function BuscoTrabajoClient({ initialRoles, bondyRoles = [], updateLabel, todayLabel, newToday = 0, areas, modalities, seniorities, sources, locations, languages = [], audience = 'candidates' }) {
   const [roles, setRoles] = useState(initialRoles)
   const [filters, setFilters] = useState({ areas: [], modalities: [], seniorities: [], sources: [], locations: [], languages: [] })
   const [search, setSearch] = useState('')
@@ -1265,6 +1265,67 @@ export default function BuscoTrabajoClient({ initialRoles, updateLabel, todayLab
           Sumar mi perfil →
         </a>
       </header>
+
+      {/* ─── Bondy's own open roles (hero highlight above the scraped board) ─── */}
+      {bondyRoles.length > 0 && (
+        <section className="bondy-hero" aria-labelledby="bondy-hero-title">
+          <div className="bondy-hero__inner">
+            <div className="bondy-hero__kicker">
+              <span className="bondy-hero__dot" aria-hidden="true">
+                <span className="bondy-hero__dot-ring" />
+                <span className="bondy-hero__dot-core" />
+              </span>
+              <span className="bondy-hero__kicker-text">
+                {bondyRoles.length} {bondyRoles.length === 1 ? 'búsqueda activa en Bondy' : 'búsquedas activas en Bondy'}
+              </span>
+            </div>
+            <h2 id="bondy-hero-title" className="bondy-hero__title">
+              Roles abiertos en <em>Bondy.</em>
+            </h2>
+            <p className="bondy-hero__sub">
+              Estos son los roles que estamos llenando para nuestros clientes ahora mismo. Proceso acompañado, feedback siempre, sin ATS roto.
+            </p>
+
+            <ul className="bondy-hero__chips" aria-label="Roles abiertos en Bondy">
+              {bondyRoles.slice(0, 8).map((role) => (
+                <li key={role.slug}>
+                  <a
+                    className="bondy-hero__chip"
+                    href={`https://wearebondy.com/es/roles/${role.slug}?utm_source=tools&utm_medium=busco_trabajo&utm_campaign=bondy_roles_hero`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackEvent('bondy_roles_chip_click', { slug: role.slug })}
+                  >
+                    <span className="bondy-hero__chip-title">{role.title}</span>
+                    {role.seniority && (
+                      <span className="bondy-hero__chip-sep" aria-hidden="true">·</span>
+                    )}
+                    {role.seniority && (
+                      <span className="bondy-hero__chip-meta">{role.seniority}</span>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+
+            <a
+              className="bondy-hero__cta"
+              href="https://wearebondy.com/es/roles?utm_source=tools&utm_medium=busco_trabajo&utm_campaign=bondy_roles_hero_cta"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent('bondy_roles_cta_click', { location: 'hero' })}
+            >
+              Ver {bondyRoles.length === 1 ? 'el rol' : `los ${bondyRoles.length} roles`} de Bondy <span aria-hidden="true">→</span>
+            </a>
+          </div>
+
+          <div className="bondy-hero__divider" role="separator" aria-label="O explorá el listado abierto">
+            <span className="bondy-hero__divider-rule" />
+            <span className="bondy-hero__divider-text">O explorá el listado abierto · LATAM</span>
+            <span className="bondy-hero__divider-rule" />
+          </div>
+        </section>
+      )}
 
       {/* Hero */}
       <section className="hero">
