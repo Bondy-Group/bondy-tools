@@ -97,6 +97,83 @@ function groupForTable(projectKey, tableName) {
   return 'Otros'
 }
 
+/**
+ * Origen de los datos de cada tabla (de dónde se cargan / actualizan).
+ * Si una tabla no está acá, se infiere por el group de su catálogo (fallback).
+ *
+ * Cada entrada: { label, detail }
+ *  - label: string corto para el pill (ej. "Airtable", "Mercury")
+ *  - detail: tooltip largo (ej. "ETL desde base Airtable appx2N… cada 6h")
+ */
+const TABLE_SOURCES = {
+  // Bondy Master DB → ETL desde Airtable + placements
+  bondy_clients: { label: 'ETL Airtable', detail: 'ETL desde Airtable (Accounts) + Mercury para flags financieros' },
+  bondy_candidates: { label: 'ETL Airtable', detail: 'ETL desde Airtable (BASE General) — ~40k perfiles' },
+  bondy_searches: { label: 'ETL Airtable', detail: 'ETL desde Airtable (Opportunities)' },
+  bondy_timeline: { label: 'ETL Airtable', detail: 'Derivado de Airtable + placements + eventos manuales' },
+  bondy_candidate_searches: { label: 'ETL Airtable', detail: 'Tabla puente derivada de Opportunities ↔ Base General' },
+  bondy_roles: { label: 'ETL Airtable', detail: 'Derivado de Opportunities (Airtable)' },
+  bondy_applications: { label: 'ETL Airtable', detail: 'Derivado de Airtable + ATS interna' },
+
+  // Mirror directo de Airtable
+  Accounts: { label: 'Airtable', detail: 'Mirror directo de Airtable · Registro Comercial (appx2N660HZRJhWN5)' },
+  Contacts: { label: 'Airtable', detail: 'Mirror directo de Airtable · Contacts en empresas cliente' },
+  Opportunities: { label: 'Airtable', detail: 'Mirror directo de Airtable · ⚠️ fees frecuentemente en cero, NO usar para finanzas' },
+
+  // Operacional
+  placements: { label: 'Manual / seed', detail: 'Carga manual del equipo · fuente autoritativa de placements históricos' },
+  oportunidades_hold: { label: 'Manual', detail: 'Carga manual · oportunidades pausadas o en hold' },
+  clientes_reactivacion_drive: { label: 'Google Drive', detail: '97 ex-clientes extraídos de SCHMITMAN HR (Inactivos + Empresas Inactivas)' },
+  payments: { label: 'Mercury', detail: 'Pagos/cobros desde Mercury (fuente autoritativa de finanzas)' },
+
+  // Outreach & Leads
+  outreach_contacts: { label: 'Apollo + scrapers', detail: 'Contactos enriquecidos en Apollo por bondy-morning-prospecting + lead-generator' },
+  contact_leads: { label: 'Form web', detail: 'Leads entrantes del form de wearebondy.com · dispara notify-new-lead' },
+  Interactions: { label: 'Agentes outbound', detail: 'Logging de outreach B2B por agentes (lead-generator, sourcer, press)' },
+  warm_leads: { label: 'Mixto', detail: 'Combinación de contact_leads + outreach con engagement' },
+  lead_dossiers: { label: 'Enriquecimiento', detail: 'Dossiers generados por bondy-prospect-enrichment (Apollo + web research)' },
+  sourcing_pipeline: { label: 'Sourcer', detail: 'Pipeline activo de candidatos por search · poblado por bondy-sourcer' },
+  potential_clients: { label: 'Manual + agentes', detail: 'Empresas en evaluación · alimentado por Mara + agentes de prospecting' },
+  referrals: { label: 'Manual', detail: 'Referidos del equipo y network' },
+
+  // Jobs & Market
+  jobs: { label: 'Scraper (7 fuentes)', detail: 'bondy-job-scraper · GetOnBoard, YC, Remotive, Himalayas, WWR, Greenhouse, Lever' },
+  market_signals: { label: 'Scraper + web', detail: 'Señales de mercado (layoffs, rondas, hiring spikes) recolectadas por agentes' },
+  job_applications: { label: 'Form web', detail: 'Aplicaciones desde /busco-trabajo (tools.wearebondy.com)' },
+
+  // ATS
+  ats_users: { label: 'ATS app', detail: 'Usuarios internos del ATS de Bondy' },
+  ats_user_invites: { label: 'ATS app', detail: 'Invitaciones a usuarios del ATS' },
+  ats_notifications: { label: 'ATS app', detail: 'Notificaciones in-app del ATS' },
+  interview_reports: { label: 'ATS app', detail: 'Reports de entrevistas cargados desde la ATS' },
+  clients: { label: 'ATS app', detail: 'Clientes en la ATS (separado del CRM)' },
+  client_scorecards: { label: 'ATS app', detail: 'Scorecards de evaluación definidas por cliente' },
+  candidates: { label: 'ATS app', detail: 'Candidatos cargados en la ATS' },
+  interviews: { label: 'ATS app', detail: 'Entrevistas agendadas en la ATS' },
+  question_bank: { label: 'ATS app', detail: 'Banco de preguntas para entrevistas' },
+
+  // Sistema
+  gmail_tokens: { label: 'Gmail OAuth', detail: 'Tokens de Gmail OAuth (mara@wearebondy.com) — usados por send-draft flow' },
+  newsletter_subscribers: { label: 'Form web', detail: 'Suscriptores a digest semanal /busco-trabajo + recursos-recruiters' },
+}
+
+const GROUP_SOURCE_FALLBACK = {
+  'Bondy Master DB': { label: 'ETL Airtable', detail: 'Derivada del ETL desde Airtable' },
+  'Airtable mirror': { label: 'Airtable', detail: 'Mirror desde Airtable' },
+  Operacional: { label: 'Manual', detail: 'Carga manual del equipo' },
+  'Outreach & Leads': { label: 'Agentes / web', detail: 'Generada por agentes o forms del sitio' },
+  'Jobs & Market': { label: 'Scrapers', detail: 'Datos externos recolectados por scrapers' },
+  ATS: { label: 'ATS app', detail: 'Usada por la ATS interna' },
+  Sistema: { label: 'Sistema', detail: 'Tabla de sistema / infraestructura' },
+  Tools: { label: 'Tools app', detail: 'Tabla operativa de la app tools.wearebondy.com' },
+  Otros: { label: 'Supabase', detail: 'Origen no documentado en el explorador' },
+}
+
+function sourceForTable(projectKey, tableName, group) {
+  if (TABLE_SOURCES[tableName]) return TABLE_SOURCES[tableName]
+  return GROUP_SOURCE_FALLBACK[group] || GROUP_SOURCE_FALLBACK.Otros
+}
+
 const ADMIN_EMAILS = ['mara@wearebondy.com', 'lucia@wearebondy.com']
 
 async function countRows(project, tableName, projectKey) {
@@ -176,11 +253,13 @@ async function tryOpenApiIntrospection(project, projectKey) {
         }
       })
       const rowCount = await countRows(project, name, projectKey)
+      const group = groupForTable(projectKey, name)
       return {
         name,
         columns,
         rowCount,
-        group: groupForTable(projectKey, name),
+        group,
+        source: sourceForTable(projectKey, name, group),
         introspected: true,
       }
     })
@@ -205,6 +284,7 @@ async function buildFallbackCatalog(project, projectKey) {
         columns: [],
         rowCount,
         group,
+        source: sourceForTable(projectKey, name, group),
         introspected: false,
       }
     })

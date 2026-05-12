@@ -524,12 +524,47 @@ export default function DataExplorerPage() {
                   gap: 10,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
                   <h2 style={{ margin: 0, fontFamily: serif, fontSize: 18 }}>{selectedTable.name}</h2>
                   <span style={{ fontFamily: mono, fontSize: 11, color: tw.inkFaint }}>
                     {selectedTable.columns.length} columnas
                     {totalCount != null && ` · ${totalCount.toLocaleString('es-AR')} filas`}
                   </span>
+                  {selectedTable.source && (
+                    <span
+                      title={selectedTable.source.detail || ''}
+                      style={{
+                        fontFamily: mono,
+                        fontSize: 10,
+                        color: tw.green,
+                        background: tw.greenTint,
+                        border: `1px solid ${tw.green}`,
+                        padding: '2px 8px',
+                        borderRadius: 3,
+                        cursor: 'help',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <span style={{ opacity: 0.7 }}>fuente:</span>
+                      <b>{selectedTable.source.label}</b>
+                    </span>
+                  )}
+                  {selectedTable.group && (
+                    <span
+                      style={{
+                        fontFamily: mono,
+                        fontSize: 10,
+                        color: tw.inkSub,
+                        border: `1px solid ${tw.rule}`,
+                        padding: '2px 8px',
+                        borderRadius: 3,
+                      }}
+                    >
+                      {selectedTable.group}
+                    </span>
+                  )}
                   <div style={{ flex: 1 }} />
                   <span
                     title="La edición se habilita en una próxima versión"
