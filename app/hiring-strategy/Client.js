@@ -4,8 +4,11 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 /* ═══════════════════════════════════════════════════════════════════
-   Recursos para Recruiters — sub-hub bajo tools.wearebondy.com
-   Reusa el sistema visual de la landing v2 (.btl-* en globals.css).
+   Hiring Strategy — sub-hub para hiring managers, VPs y CEOs
+   bajo tools.wearebondy.com. Reusa el sistema visual btl.
+   Patrón gemelo a /recursos-recruiters/page.js y /busco-trabajo/Client.js.
+   Por ahora todas las tools son "próximamente". El primer release
+   será Market Pulse (PR 2).
    ═══════════════════════════════════════════════════════════════════ */
 
 const BondyLogo = ({ size = 22 }) => (
@@ -29,11 +32,11 @@ const BondyUnderline = ({ width = 360, color = '#4A8C40' }) => {
 const CONTENT = {
   es: {
     backToTools: '← tools.wearebondy.com',
-    kicker: 'tools.wearebondy.com · recursos para recruiters',
-    titleLeft: 'Recursos para ',
-    titleEm: 'Recruiters.',
-    ledeStrong: 'Una caja de herramientas para gente de talent.',
-    ledeRest: ' Materiales gratuitos para recruiters, sourcers, talent acquisition y people ops trabajando con equipos tech en LATAM. Empezamos por un job board específico para roles de recruiting.',
+    kicker: 'tools.wearebondy.com · hiring strategy',
+    titleLeft: 'Hiring ',
+    titleEm: 'Strategy.',
+    ledeStrong: 'Una caja de herramientas para hiring managers, VPs y fondos.',
+    ledeRest: ' Datos del mercado tech LATAM, benchmarks de compensación y playbooks de calibración para que tu próxima contratación no dependa del gut feeling.',
     metaTools: 'tools',
     metaAudience: 'audiencia',
     metaSince: 'desde',
@@ -44,23 +47,23 @@ const CONTENT = {
     tools: [
       {
         num: '01',
-        kicker: 'Job board · Recruiters',
-        title: 'Busco Trabajo',
-        titleEm: 'Trabajo',
-        desc: 'Roles abiertos de recruiting, sourcing, talent acquisition, people ops y talent development en LATAM y worldwide. Actualizados a diario.',
-        tools: ['Recruiter / Sourcer', 'Talent Acquisition', 'People Ops', 'Talent Development'],
-        cta: 'Entrar →',
-        href: '/recursos-recruiters/busco-trabajo',
-        status: 'live',
-        statusLabel: 'Activo · Sin login',
-      },
-      {
-        num: '02',
         kicker: 'Intel · Mercado tech',
         title: 'Market Pulse',
         titleEm: 'Pulse',
-        desc: 'Qué skills están subiendo, qué empresas más contratan tech, top stacks por categoría. Data real del mercado LATAM y US remoto, actualizada cada día.',
-        tools: ['Skills en alza', 'Top empresas hiring', 'Tendencias mes a mes'],
+        desc: 'Qué pide tu industria, qué piden tus competidores, empresas activas hiring el mismo perfil que vos y time-to-fill estimado. Data real del mercado, actualizada cada día.',
+        tools: ['Lo que pide tu industria', 'Tus competidores', 'Time-to-fill'],
+        cta: 'Próximamente',
+        href: '#',
+        status: 'soon',
+        statusLabel: 'Próximamente',
+      },
+      {
+        num: '02',
+        kicker: 'Compensación',
+        title: 'Comp Benchmarks',
+        titleEm: 'Benchmarks',
+        desc: 'Cuánto deberías pagar para ese rol, en ese país, en esa industria. Benchmarks de compensación basados en JDs reales del mercado LATAM y US remoto.',
+        tools: ['Por stack', 'Por seniority', 'Por país'],
         cta: 'Próximamente',
         href: '#',
         status: 'soon',
@@ -68,23 +71,11 @@ const CONTENT = {
       },
       {
         num: '03',
-        kicker: 'Outreach',
-        title: 'Plantillas de Outreach',
-        titleEm: 'Outreach',
-        desc: 'Plantillas y frameworks para escribir primer-touch que abre conversaciones con candidatos pasivos en tech.',
-        tools: ['First-touch', 'Follow-up', 'Calibradores'],
-        cta: 'Próximamente',
-        href: '#',
-        status: 'soon',
-        statusLabel: 'Próximamente',
-      },
-      {
-        num: '04',
         kicker: 'Calibración',
-        title: 'Calibradores de búsqueda',
-        titleEm: 'búsqueda',
-        desc: 'Cómo armar una scorecard que sirva, cómo calibrar con hiring managers difíciles, cómo saber si un perfil cuelga antes de la entrevista técnica.',
-        tools: ['Scorecards', 'Calibración inicial', 'Señales tempranas'],
+        title: 'Frameworks de Calibración',
+        titleEm: 'Calibración',
+        desc: 'Cómo armar una scorecard que sirva, cómo calibrar al equipo antes de arrancar, cómo evitar las trampas clásicas en la primera ronda. Material gratuito, sin embudo.',
+        tools: ['Scorecards', 'Calibración inicial', 'Primera ronda'],
         cta: 'Próximamente',
         href: '#',
         status: 'soon',
@@ -94,11 +85,11 @@ const CONTENT = {
   },
   en: {
     backToTools: '← tools.wearebondy.com',
-    kicker: 'tools.wearebondy.com · recruiter resources',
-    titleLeft: 'Recruiter ',
-    titleEm: 'Resources.',
-    ledeStrong: 'A toolbox for talent people.',
-    ledeRest: ' Free materials for recruiters, sourcers, talent acquisition and people ops working with tech teams across LATAM. We are starting with a job board specifically for recruiting roles.',
+    kicker: 'tools.wearebondy.com · hiring strategy',
+    titleLeft: 'Hiring ',
+    titleEm: 'Strategy.',
+    ledeStrong: 'A toolbox for hiring managers, VPs and funds.',
+    ledeRest: ' LATAM tech market data, compensation benchmarks and calibration playbooks so your next hire does not depend on gut feeling.',
     metaTools: 'tools',
     metaAudience: 'audience',
     metaSince: 'since',
@@ -109,23 +100,23 @@ const CONTENT = {
     tools: [
       {
         num: '01',
-        kicker: 'Job board · Recruiters',
-        title: 'Open Roles',
-        titleEm: 'Roles',
-        desc: 'Open roles in recruiting, sourcing, talent acquisition, people ops and talent development across LATAM and worldwide. Updated daily.',
-        tools: ['Recruiter / Sourcer', 'Talent Acquisition', 'People Ops', 'Talent Development'],
-        cta: 'Enter →',
-        href: '/recursos-recruiters/busco-trabajo',
-        status: 'live',
-        statusLabel: 'Live · No login',
-      },
-      {
-        num: '02',
         kicker: 'Intel · Tech market',
         title: 'Market Pulse',
         titleEm: 'Pulse',
-        desc: 'Which skills are rising, which companies are hiring most tech, top stacks by category. Real LATAM and US remote market data, updated daily.',
-        tools: ['Rising skills', 'Top hiring companies', 'Month-over-month trends'],
+        desc: 'What your industry asks for, what your competitors ask for, companies actively hiring the same profile and estimated time-to-fill. Real market data, updated daily.',
+        tools: ['What your industry wants', 'Your competitors', 'Time-to-fill'],
+        cta: 'Coming soon',
+        href: '#',
+        status: 'soon',
+        statusLabel: 'Coming soon',
+      },
+      {
+        num: '02',
+        kicker: 'Compensation',
+        title: 'Comp Benchmarks',
+        titleEm: 'Benchmarks',
+        desc: 'How much you should pay for that role, in that country, in that industry. Compensation benchmarks based on real JDs from LATAM and US remote markets.',
+        tools: ['By stack', 'By seniority', 'By country'],
         cta: 'Coming soon',
         href: '#',
         status: 'soon',
@@ -133,23 +124,11 @@ const CONTENT = {
       },
       {
         num: '03',
-        kicker: 'Outreach',
-        title: 'Outreach Templates',
-        titleEm: 'Templates',
-        desc: 'Templates and frameworks for first-touch messages that actually open conversations with passive tech candidates.',
-        tools: ['First-touch', 'Follow-up', 'Calibrators'],
-        cta: 'Coming soon',
-        href: '#',
-        status: 'soon',
-        statusLabel: 'Coming soon',
-      },
-      {
-        num: '04',
         kicker: 'Calibration',
-        title: 'Search Calibrators',
-        titleEm: 'Calibrators',
-        desc: 'How to build a useful scorecard, how to calibrate with tough hiring managers, how to spot a misalignment before the technical interview.',
-        tools: ['Scorecards', 'Initial calibration', 'Early signals'],
+        title: 'Calibration Frameworks',
+        titleEm: 'Frameworks',
+        desc: 'How to build a scorecard that actually works, how to calibrate the team before kickoff, how to avoid the classic first-round traps. Free material, no funnel.',
+        tools: ['Scorecards', 'Initial calibration', 'First round'],
         cta: 'Coming soon',
         href: '#',
         status: 'soon',
@@ -191,7 +170,7 @@ function Card({ a }) {
   return <Link href={a.href} className="btl-card">{inner}</Link>
 }
 
-export default function RecursosRecruitersPage() {
+export default function HiringStrategyClient() {
   const [lang, setLang] = useState('es')
   const [mounted, setMounted] = useState(false)
 

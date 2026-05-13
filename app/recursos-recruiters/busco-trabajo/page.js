@@ -1,6 +1,6 @@
 import { fetchRecruitingRoles, formatUpdateLabel, formatTodayLabel, RECRUITING_AREAS, MODALITIES, SENIORITIES, SOURCES, LOCATIONS, LANGUAGES } from '@/lib/scraper-jobs'
-import BuscoTrabajoClient from '../../busco-trabajo/Client'
-import '../../busco-trabajo/styles.css'
+import BuscoTrabajoClient from '../../busco-trabajo/jobs-tech/Client'
+import '../../busco-trabajo/jobs-tech/styles.css'
 
 export const metadata = {
   metadataBase: new URL('https://tools.wearebondy.com'),

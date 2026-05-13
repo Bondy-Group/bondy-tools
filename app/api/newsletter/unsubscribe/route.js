@@ -43,7 +43,7 @@ function htmlPage({ ok, message }) {
     <h1>${status} <em>${ok ? 'Te bajamos.' : ''}</em></h1>
     <p>${subline}</p>
     <p class="links">
-      <a href="https://tools.wearebondy.com/busco-trabajo">Volver al job board</a>
+      <a href="https://tools.wearebondy.com/busco-trabajo/jobs-tech">Volver al job board</a>
     </p>
   </div>
 </body>

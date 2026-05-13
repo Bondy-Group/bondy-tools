@@ -17,7 +17,7 @@ Mapa canónico de cómo cada form del sitio público dispara emails y posts a Sl
 | `/jobs` | `talent_pool` | — | Autoresponder con edit link | (pendiente) `#candidatos-inbound` |
 | `/referrals` | `referrals` | — | "Gracias por referir" | (pendiente) `#candidatos-inbound` |
 | `/thinking` (newsletter signup) | `newsletter_subscribers` | — | Confirm double opt-in (Resend) | — |
-| `/busco-trabajo` (digest signup) | `job_subscribers` (proj bondy-tools) | — | Welcome (Resend) | — |
+| `/busco-trabajo/jobs-tech` (digest signup) | `job_subscribers` (proj bondy-tools) | — | Welcome (Resend) | — |
 | `/roles/[slug]` apply | `bondy_applications` | — | — | — |
 
 Para los detalles operativos, ver más abajo.
@@ -148,7 +148,7 @@ UPDATE newsletter_subscribers SET confirmed_at = now()
 
 Para envío del newsletter cada quince días: editor en `tools.wearebondy.com/internal/newsletter`.
 
-### `/busco-trabajo` (job board digest)
+### `/busco-trabajo/jobs-tech` (job board digest)
 
 Independiente del resto. Vive 100% en `bondy-tools`.
 
