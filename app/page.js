@@ -270,7 +270,7 @@ export default function HomePage() {
             {c.titleLeft}
             <span className="btl-hero__title-tools">
               <em>{c.titleEm}</em>
-              <span className="btl-hero__under"><BondyUnderline width={420} /></span>
+              <span className="btl-hero__under"><BondyUnderline width={220} /></span>
             </span>
           </h1>
           <div className="btl-hero__row">

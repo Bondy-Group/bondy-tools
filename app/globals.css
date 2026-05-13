@@ -144,7 +144,7 @@ body {
   max-width: 1240px;
   width: 100%;
   margin: 0 auto;
-  padding: 80px 48px 80px;
+  padding: 56px 48px 72px;
   flex: 1;
 }
 
@@ -170,16 +170,16 @@ body {
 
 /* Hero */
 .btl-hero {
-  margin-bottom: 72px;
+  margin-bottom: 48px;
 }
 .btl-hero__title {
   font-family: var(--bondy-font-display);
-  font-size: clamp(5rem, 13vw, 11rem);
-  line-height: 0.92;
+  font-size: clamp(2.75rem, 6.8vw, 5.25rem);
+  line-height: 0.98;
   color: var(--bondy-ink);
-  text-shadow: 0.7px 0.7px 0 rgba(0, 0, 0, 0.22);
-  margin: 0 0 28px;
-  letter-spacing: -0.015em;
+  text-shadow: 0.5px 0.5px 0 rgba(0, 0, 0, 0.18);
+  margin: 0 0 24px;
+  letter-spacing: -0.01em;
   font-weight: 400;
 }
 .btl-hero__title em {

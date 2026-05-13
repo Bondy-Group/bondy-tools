@@ -253,7 +253,7 @@ export default function RecursosRecruitersPage() {
             {c.titleLeft}
             <span className="btl-hero__title-tools">
               <em>{c.titleEm}</em>
-              <span className="btl-hero__under"><BondyUnderline width={360} /></span>
+              <span className="btl-hero__under"><BondyUnderline width={180} /></span>
             </span>
           </h1>
           <div className="btl-hero__row">
