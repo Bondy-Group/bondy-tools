@@ -14,6 +14,12 @@
  *
  * Failure model: per-subscriber failures are logged but don't abort the run.
  * The endpoint always returns a summary so the cron log shows totals.
+ *
+ * Dry-run mode: append `?dry_run=1` (or pass header `x-dry-run: 1`) to
+ * exercise the whole pipeline — fetch roles, build subscriber lists, render
+ * HTML, apply filters — WITHOUT calling Resend and WITHOUT touching
+ * last_sent_at. The response includes `dryRun: true` and `wouldSend` instead
+ * of `sent`. Use this to validate after deploys or schema changes.
  */
 
 import { NextResponse } from 'next/server'
@@ -75,6 +81,13 @@ async function run(request) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   }
 
+  // Dry-run: do everything except actually call Resend / mutate the DB.
+  // Accept either `?dry_run=1` or header `x-dry-run: 1`. Anything truthy works.
+  const url = new URL(request.url)
+  const qpDry = url.searchParams.get('dry_run')
+  const hdrDry = request.headers.get('x-dry-run')
+  const isDryRun = isTruthy(qpDry) || isTruthy(hdrDry)
+
   // Pull the last 7 days of roles from BOTH pools. Tech pool feeds the
   // `busco-trabajo` subscribers; recruiting pool feeds the
   // `busco-trabajo-recruiters` ones. We don't mix them — a tech subscriber
@@ -89,7 +102,7 @@ async function run(request) {
   const subscribers = await listActiveSubscribers()
   const week = weekLabel()
 
-  const results = { sent: 0, skippedEmpty: 0, skippedNoKey: 0, failed: 0, byAudience: { candidates: 0, recruiters: 0 } }
+  const results = { sent: 0, wouldSend: 0, skippedEmpty: 0, skippedNoKey: 0, failed: 0, byAudience: { candidates: 0, recruiters: 0 } }
 
   for (const sub of subscribers) {
     try {
@@ -113,6 +126,14 @@ async function run(request) {
         ? (filtered.length === 1 ? 'rol de recruiting nuevo' : 'roles de recruiting nuevos')
         : (filtered.length === 1 ? 'rol tech nuevo' : 'roles tech nuevos')
       const subject = `${filtered.length} ${noun} · Bondy`
+
+      // Dry-run: render + filter were exercised above; stop short of Resend
+      // and don't bump last_sent_at. Count the would-have-been send.
+      if (isDryRun) {
+        results.wouldSend++
+        results.byAudience[audience] = (results.byAudience[audience] || 0) + 1
+        continue
+      }
 
       const send = await sendEmail({
         to: sub.email,
@@ -148,6 +169,7 @@ async function run(request) {
   }
 
   console.log('[cron] weekly digest done', {
+    dryRun: isDryRun,
     totalTechRoles: techRoles.length,
     totalRecruitingRoles: recRoles.length,
     subscribers: subscribers.length,
@@ -156,12 +178,19 @@ async function run(request) {
 
   return NextResponse.json({
     ok: true,
+    dryRun: isDryRun,
     week,
     totalTechRoles: techRoles.length,
     totalRecruitingRoles: recRoles.length,
     subscribers: subscribers.length,
     ...results,
   })
+}
+
+function isTruthy(v) {
+  if (v == null) return false
+  const s = String(v).toLowerCase().trim()
+  return s === '1' || s === 'true' || s === 'yes' || s === 'on'
 }
 
 // Sort newest first by collected_at (when WE saw it), fallback to published_at.
