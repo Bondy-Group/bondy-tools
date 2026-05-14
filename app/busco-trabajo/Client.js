@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import SesionesCarreraCard from '@/app/_components/SesionesCarrera'
 
 /* ═══════════════════════════════════════════════════════════════════
    Busco Trabajo — sub-hub para candidatos bajo tools.wearebondy.com
@@ -333,7 +334,7 @@ export default function BuscoTrabajoLandingClient() {
               <strong>{c.ledeStrong}</strong>{c.ledeRest}
             </p>
             <div className="btl-hero__meta">
-              <div><strong>{String(all.length).padStart(2, '0')}</strong> · {c.metaTools}</div>
+              <div><strong>{String(all.length + 1).padStart(2, '0')}</strong> · {c.metaTools}</div>
               <div><strong>01</strong> · {c.metaAudience}</div>
               <div>{c.metaSince} <strong>2008</strong></div>
             </div>
@@ -342,11 +343,12 @@ export default function BuscoTrabajoLandingClient() {
 
         <div className="btl-sec-label">
           <span className="btl-sec-label__l">{c.sectionLeft}</span>
-          <span className="btl-sec-label__r">{liveCount} · {c.sectionRight}</span>
+          <span className="btl-sec-label__r">{liveCount + 1} · {c.sectionRight}</span>
         </div>
 
         <div className="btl-grid">
           {all.map((a) => <Card key={a.num} a={a} />)}
+          <SesionesCarreraCard pagina="busco-trabajo" lang={lang} num="07" />
         </div>
 
         <footer className="btl-foot">
