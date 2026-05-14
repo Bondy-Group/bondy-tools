@@ -28,14 +28,14 @@ const MONO = "'Courier Prime', 'Courier New', monospace"
 
 // product → label key (el VALUE enviado al backend va siempre en español)
 const PRODUCTS = [
-  { value: 'Exprés', es: 'Exprés', en: 'Exprés', meta_es: '1 sesión · 60 min', meta_en: '1 session · 60 min', precio: 'USD 90–110' },
-  { value: 'Plan de Carrera', es: 'Plan de Carrera', en: 'Career Plan', meta_es: '3 sesiones · 60 min c/u', meta_en: '3 sessions · 60 min each', precio: 'USD 270–320' },
-  { value: 'Todavía no sé', es: 'Todavía no sé', en: 'Not sure yet', meta_es: '', meta_en: '', precio: null },
+  { value: 'Exprés', es: 'Exprés', en: 'Exprés', meta_es: '1 sesión · 60 min', meta_en: '1 session · 60 min', precioOriginal: 'USD 90–110', precio: 'USD 45–55' },
+  { value: 'Plan de Carrera', es: 'Plan de Carrera', en: 'Career Plan', meta_es: '3 sesiones · 60 min c/u', meta_en: '3 sessions · 60 min each', precioOriginal: 'USD 270–320', precio: 'USD 135–160' },
+  { value: 'Todavía no sé', es: 'Todavía no sé', en: 'Not sure yet', meta_es: '', meta_en: '', precioOriginal: null, precio: null },
 ]
 
 const CONSULTORAS = [
-  { value: 'Mara', name: 'Mara', role_es: 'Founder · Bondy', role_en: 'Founder · Bondy' },
-  { value: 'Lucía', name: 'Lucía', role_es: 'Head of Delivery · Bondy', role_en: 'Head of Delivery · Bondy' },
+  { value: 'Mara', name: 'Mara Schmitman', role_es: 'Founder · Bondy', role_en: 'Founder · Bondy' },
+  { value: 'Lucía', name: 'Lucía Palomeque', role_es: 'Head of Delivery · Bondy', role_en: 'Head of Delivery · Bondy' },
 ]
 const ANY_CONSULTORA = 'La que tenga disponibilidad antes'
 
@@ -49,11 +49,12 @@ const T = {
     cardTitleEm: 'Carrera',
     cardKicker: 'Consultoría de carrera',
     cardStamp: 'Activo · Sin login',
-    cardTools: ['1 a 1', '60 min', 'Mara o Lucía'],
+    cardTools: ['1 a 1', '60 min', 'Mara o Lucía', '50% OFF'],
     cardCta: 'Pedir una sesión →',
     expHead: 'Una hora con alguien que mira procesos de selección todos los días.',
     expBody: 'Sesiones de consultoría de carrera. Trabajamos tu posicionamiento, tu CV y tu estrategia de búsqueda. No es colocación: el trabajo lo conseguís vos, nosotras te dejamos lista para hacerlo.',
     expPick: 'Elegí con quién querés tu sesión.',
+    promoBanner: 'Promo 50% OFF — en las dos sesiones, por tiempo limitado.',
     panelCta: 'Pedir una sesión →',
     formIntro: 'Contanos un poco antes de la sesión. Leemos cada solicitud y te respondemos si avanzamos.',
     f: {
@@ -88,11 +89,12 @@ const T = {
     cardTitleEm: 'Sessions',
     cardKicker: 'Career consulting',
     cardStamp: 'Live · No login',
-    cardTools: ['1-on-1', '60 min', 'Mara or Lucía'],
+    cardTools: ['1-on-1', '60 min', 'Mara or Lucía', '50% OFF'],
     cardCta: 'Request a session →',
     expHead: 'An hour with someone who looks at hiring processes every day.',
     expBody: 'Career consulting sessions. We work on your positioning, your CV and your search strategy. It is not placement: you land the job, we get you ready to do it.',
     expPick: 'Choose who you want your session with.',
+    promoBanner: '50% OFF promo — on both sessions, for a limited time.',
     panelCta: 'Request a session →',
     formIntro: 'Tell us a bit before the session. We read every request and reply if we move forward.',
     f: {
@@ -144,7 +146,12 @@ const S = {
   },
   expHead: { fontFamily: DISPLAY, fontSize: '1.5rem', lineHeight: 1.2, color: INK_MID, margin: '0 0 14px', fontWeight: 400 },
   expBody: { fontSize: 14, lineHeight: 1.7, color: INK_SUB, margin: '0 0 8px' },
-  expPick: { fontSize: 14, color: INK, fontWeight: 600, margin: '0 0 26px' },
+  expPick: { fontSize: 14, color: INK, fontWeight: 600, margin: '0 0 14px' },
+  promoBanner: {
+    display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: MONO, fontSize: 11,
+    letterSpacing: '0.03em', color: GREEN, background: 'rgba(74,140,64,0.08)',
+    border: '1px solid rgba(74,140,64,0.32)', borderRadius: 999, padding: '6px 14px', margin: '0 0 24px',
+  },
   panels: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 },
   panel: {
     background: '#fff', border: `1px solid ${RULE}`, borderRadius: 12,
@@ -156,7 +163,13 @@ const S = {
   prod: { borderTop: `1px solid ${RULE}`, padding: '13px 0' },
   prodName: { fontWeight: 600, fontSize: 14, color: INK },
   prodMeta: { fontFamily: MONO, fontSize: 11, color: FAINT, margin: '3px 0 6px' },
+  prodPriceRow: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
   prodPrice: { fontFamily: DISPLAY, fontSize: '1rem', color: GREEN },
+  prodPriceOld: { fontFamily: MONO, fontSize: 12, color: FAINT, textDecoration: 'line-through' },
+  promoBadge: {
+    fontFamily: MONO, fontSize: 9, letterSpacing: '0.05em', color: '#fff',
+    background: GREEN, borderRadius: 4, padding: '2px 6px',
+  },
   btnGreen: {
     fontFamily: MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
     background: GREEN, color: '#fff', border: 'none', borderRadius: 8,
@@ -317,6 +330,7 @@ export default function SesionesCarreraCard({ pagina = 'busco-trabajo', lang = '
                 <h2 style={S.expHead}>{c.expHead}</h2>
                 <p style={S.expBody}>{c.expBody}</p>
                 <p style={S.expPick}>{c.expPick}</p>
+                <div style={S.promoBanner}>{c.promoBanner}</div>
                 <div style={S.panels} className="sc-panels">
                   {CONSULTORAS.map((p) => (
                     <div key={p.value} style={S.panel}>
@@ -326,7 +340,11 @@ export default function SesionesCarreraCard({ pagina = 'busco-trabajo', lang = '
                         <div key={pr.value} style={S.prod}>
                           <div style={S.prodName}>{lang === 'en' ? pr.en : pr.es}</div>
                           <div style={S.prodMeta}>{lang === 'en' ? pr.meta_en : pr.meta_es}</div>
-                          <div style={S.prodPrice}>{pr.precio}</div>
+                          <div style={S.prodPriceRow}>
+                            <span style={S.prodPrice}>{pr.precio}</span>
+                            <span style={S.prodPriceOld}>{pr.precioOriginal}</span>
+                            <span style={S.promoBadge}>−50%</span>
+                          </div>
                         </div>
                       ))}
                       <button style={S.btnGreen} onClick={() => openWithConsultora(p.value)}>

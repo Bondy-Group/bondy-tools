@@ -109,12 +109,13 @@ export async function GET(req) {
           : 'Mara'
     patch.estado = 'approved'
     patch.consultora_asignada = consultora
-    const precio = (PRODUCTOS[row.producto] || {}).precio || null
+    const prod = PRODUCTOS[row.producto] || {}
     const mail = renderApprovalEmail({
       nombre: row.nombre,
       producto: row.producto,
       consultora,
-      precio,
+      precio: prod.precio || null,
+      precioOriginal: prod.precioOriginal || null,
       paymentInstructions: paymentInstructions(),
     })
     emailResult = await sendEmail({
