@@ -40,9 +40,9 @@ export const metadata = {
 export const revalidate = 1800 // 30 min
 
 export default async function BuscoTrabajoRecruitersPage() {
-  // Same FOMO window as /busco-trabajo: only roles published in the last 3 days.
-  // Will appear empty until the scraper runs with the HR expansion patch applied.
-  const { roles, lastUpdate, newToday, activeSources } = await fetchRecruitingRoles({ days: 3, limit: 500 })
+  // Ventana de 14 días (collected_at). Más amplia que /busco-trabajo (tech, 3d):
+  // el scraper de HR tiene menos volumen, con 3 días el board queda casi vacío.
+  const { roles, lastUpdate, newToday, activeSources } = await fetchRecruitingRoles({ days: 14, limit: 500 })
   const updateLabel = formatUpdateLabel(lastUpdate)
   const todayLabel = formatTodayLabel()
   const visibleSources = (activeSources && activeSources.length > 0) ? activeSources : SOURCES
