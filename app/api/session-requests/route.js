@@ -27,9 +27,13 @@ import {
   PAGINA_VALUES,
 } from '@/lib/session-requests'
 import { postSessionRequestMessage } from '@/lib/slack-sessions'
+import { sendEmail } from '@/lib/resend'
+import { renderSubmissionNotifyEmail } from '@/lib/email/session-requests'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+const NOTIFY_TO = process.env.SESSION_NOTIFY_EMAIL || 'hello@wearebondy.com'
 
 // Rate limiter naive en memoria — best-effort, se resetea en cold start.
 const HITS = new Map()
@@ -123,8 +127,26 @@ export async function POST(req) {
     return NextResponse.json({ ok: false, error: 'storage' }, { status: 500 })
   }
 
+  // Notificación al equipo por email (hello@) — canal confiable, no depende
+  // de Slack. Incluye los links de acción. Best-effort: si falla, la
+  // solicitud igual quedó guardada y no rompemos el funnel del usuario.
+  try {
+    const mail = renderSubmissionNotifyEmail({ row: ins.row })
+    await sendEmail({
+      to: NOTIFY_TO,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+      from: 'Bondy · Sesiones de Carrera <jobs@wearebondy.com>',
+      replyTo: ins.row.email,
+      tags: [{ name: 'type', value: 'session-notify' }],
+    })
+  } catch (e) {
+    console.error('[session-requests] notify email threw', e)
+  }
+
   // Slack es best-effort: si Rex no está en el canal o falla, la solicitud
-  // igual quedó guardada. No rompemos el funnel del usuario.
+  // igual quedó guardada y ya salió el email. No rompemos el funnel.
   try {
     const posted = await postSessionRequestMessage(ins.row)
     if (posted.ok && posted.ts) {
