@@ -34,8 +34,8 @@ const PRODUCTS = [
 ]
 
 const CONSULTORAS = [
-  { value: 'Mara', name: 'Mara Schmitman', role_es: 'Founder · Bondy', role_en: 'Founder · Bondy' },
-  { value: 'Lucía', name: 'Lucía Palomeque', role_es: 'Head of Delivery · Bondy', role_en: 'Head of Delivery · Bondy' },
+  { value: 'Mara', name: 'Mara Schmitman', role_es: 'Founder · Bondy', role_en: 'Founder · Bondy', linkedin: 'https://www.linkedin.com/in/mara-schmitman2/' },
+  { value: 'Lucía', name: 'Lucía Palomeque', role_es: 'Head of Delivery · Bondy', role_en: 'Head of Delivery · Bondy', linkedin: 'https://www.linkedin.com/in/luciapalomeque/' },
 ]
 const ANY_CONSULTORA = 'La que tenga disponibilidad antes'
 
@@ -158,7 +158,13 @@ const S = {
     padding: '24px 24px 26px', display: 'flex', flexDirection: 'column',
     boxShadow: '0 1px 0 rgba(232,228,222,0.8), 0 8px 24px -18px rgba(58,53,48,0.18)',
   },
+  panelNameRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 },
   panelName: { fontFamily: DISPLAY, fontSize: '1.4rem', color: INK, margin: 0, fontWeight: 400 },
+  linkedinLink: {
+    fontFamily: MONO, fontSize: 10, letterSpacing: '0.04em', color: GREEN,
+    textDecoration: 'none', border: `1px solid ${RULE}`, borderRadius: 999,
+    padding: '3px 9px', whiteSpace: 'nowrap', flexShrink: 0,
+  },
   panelRole: { fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: FAINT, margin: '3px 0 16px' },
   prod: { borderTop: `1px solid ${RULE}`, padding: '13px 0' },
   prodName: { fontWeight: 600, fontSize: 14, color: INK },
@@ -334,7 +340,14 @@ export default function SesionesCarreraCard({ pagina = 'busco-trabajo', lang = '
                 <div style={S.panels} className="sc-panels">
                   {CONSULTORAS.map((p) => (
                     <div key={p.value} style={S.panel}>
-                      <div style={S.panelName}>{p.name}</div>
+                      <div style={S.panelNameRow}>
+                        <span style={S.panelName}>{p.name}</span>
+                        {p.linkedin && (
+                          <a href={p.linkedin} target="_blank" rel="noopener noreferrer" style={S.linkedinLink}>
+                            LinkedIn ↗
+                          </a>
+                        )}
+                      </div>
                       <div style={S.panelRole}>{lang === 'en' ? p.role_en : p.role_es}</div>
                       {PRODUCTS.filter((pr) => pr.value !== 'Todavía no sé').map((pr) => (
                         <div key={pr.value} style={S.prod}>
