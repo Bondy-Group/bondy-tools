@@ -120,7 +120,7 @@ export default function AudienciaPage() {
               <Section title="Seniority"><Breakdown map={cand.seniorities} /></Section>
             </div>
 
-            <Pending />
+            <EmailFunnel email={data.email} tab={tab} />
           </>
         )}
 
@@ -150,7 +150,7 @@ export default function AudienciaPage() {
               <Breakdown map={data.newsletter.by_source} />
             </Section>
 
-            <Pending />
+            <EmailFunnel email={data.email} tab={tab} />
           </>
         )}
 
@@ -231,17 +231,44 @@ function Breakdown({ map }) {
   )
 }
 
-function Pending() {
-  return (
-    <div style={{ marginTop: 28, border: `1px dashed ${tw.rule}`, padding: '18px 20px', background: tw.white, opacity: 0.85 }}>
-      <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: tw.inkFaint, marginBottom: 6 }}>
-        Opens · Clicks · Deliverability — pendiente
+function EmailFunnel({ email, tab }) {
+  // email === null → la tabla email_events no respondió: dejamos la sección
+  // en estado "pendiente" (no rompemos el panel).
+  const f = email
+    ? (tab === 'tech' ? email.tech : tab === 'hr' ? email.hr : tab === 'newsletter' ? email.newsletter : null)
+    : null
+  const hasData = f && f.total_events > 0
+
+  if (!hasData) {
+    return (
+      <div style={{ marginTop: 28, border: `1px dashed ${tw.rule}`, padding: '18px 20px', background: tw.white, opacity: 0.85 }}>
+        <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: tw.inkFaint, marginBottom: 6 }}>
+          Opens · Clicks · Deliverability
+        </div>
+        <p style={{ margin: 0, fontFamily: ui, fontSize: 12.5, color: tw.inkSub, lineHeight: 1.6 }}>
+          {email
+            ? 'Webhook de Resend activo. Todavía no llegaron eventos para este público — la sección se llena sola cuando salga el próximo envío.'
+            : <>Webhook de Resend (<code>email.sent / delivered / opened / clicked / bounced</code>) → tabla <code>email_events</code>. Aún sin datos: se enciende sola cuando empiecen a llegar eventos.</>}
+        </p>
       </div>
-      <p style={{ margin: 0, fontFamily: ui, fontSize: 12.5, color: tw.inkSub, lineHeight: 1.6 }}>
-        Estos datos sólo viven en Resend y no se guardan en Supabase. Para tenerlos acá hace falta un webhook
-        de Resend (<code>email.sent / delivered / opened / clicked / bounced</code>) → tabla <code>email_events</code>.
-        Es código en bondy-tools → handoff a Mateo Dev. Una vez que exista, esta sección se enciende sola.
-      </p>
-    </div>
+    )
+  }
+
+  const base = f.delivered || f.sent || 0
+  const pct = (n) => (base > 0 ? `${Math.round((n / base) * 1000) / 10}%` : '—')
+  return (
+    <Section title="Opens · Clicks · Deliverability">
+      <Cards>
+        <StatCard label="Enviados" value={f.sent} />
+        <StatCard label="Entregados" value={f.delivered} highlight />
+        <StatCard label="Abiertos" value={`${f.opened} · ${pct(f.opened)}`} />
+        <StatCard label="Clicks" value={`${f.clicked} · ${pct(f.clicked)}`} />
+        <StatCard label="Bounces" value={f.bounced} muted />
+        <StatCard label="Spam" value={f.complained} muted />
+      </Cards>
+      <div style={{ marginTop: 10, fontFamily: mono, fontSize: 10, color: tw.inkFaint }}>
+        último evento: {f.last_event_at ? fmtDate(f.last_event_at) : '—'} · {f.total_events} eventos registrados
+      </div>
+    </Section>
   )
 }
