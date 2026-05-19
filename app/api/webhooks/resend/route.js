@@ -40,7 +40,33 @@ export async function POST(request) {
   const timestamp = request.headers.get('svix-timestamp')
   const signatureHeader = request.headers.get('svix-signature')
 
-  if (!verifySvix({ secret, id, timestamp, signatureHeader, body })) {
+  const sigOk = verifySvix({ secret, id, timestamp, signatureHeader, body })
+
+  // ── TEMP DEBUG (diagnóstico webhook — quitar tras validar) ────────────
+  // Registra TODO POST entrante para distinguir "Resend no entrega" de
+  // "secret no matchea". El funnel ignora event_type != 'email.*'.
+  try {
+    let parsedType = null
+    try { parsedType = JSON.parse(body)?.type || null } catch { /* noop */ }
+    await insertEmailEvent({
+      svix_id: id ? `dbg_${id}` : `dbg_${Date.now()}`,
+      event_type: 'webhook.debug',
+      email_id: null, recipient: null, subject: null,
+      campaign: null, audience: null, link: null,
+      event_at: new Date().toISOString(),
+      raw: {
+        sig_ok: sigOk,
+        had_sig_headers: !!(id && timestamp && signatureHeader),
+        svix_id: id, svix_timestamp: timestamp,
+        body_len: body.length, parsed_type: parsedType,
+      },
+    })
+  } catch (e) {
+    console.error('[resend-webhook] debug capture failed', e)
+  }
+  // ── /TEMP DEBUG ───────────────────────────────────────────────────────
+
+  if (!sigOk) {
     return NextResponse.json({ ok: false, error: 'invalid_signature' }, { status: 401 })
   }
 
