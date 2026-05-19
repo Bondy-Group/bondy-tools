@@ -124,6 +124,19 @@ export async function GET(request) {
       service_key_len: key.length,
       service_key_ref_claim: key ? (() => { try { return JSON.parse(Buffer.from(key.split('.')[1], 'base64').toString()).ref } catch { return 'unparseable' } })() : null,
       probe,
+      scraper: await (async () => {
+        const sk = process.env.SCRAPER_SUPABASE_SERVICE_KEY || ''
+        const ref = sk ? (() => { try { return JSON.parse(Buffer.from(sk.split('.')[1], 'base64').toString()).ref } catch { return 'unparseable' } })() : null
+        let p = { attempted: false }
+        try {
+          const r = await fetch(`https://tchppyxhapxtjemxrbqm.supabase.co/rest/v1/email_events?select=count`, {
+            method: 'GET',
+            headers: { apikey: sk, Authorization: `Bearer ${sk}`, Prefer: 'count=exact' },
+          })
+          p = { attempted: true, status: r.status, body: (await r.text()).slice(0, 200) }
+        } catch (e) { p = { attempted: true, threw: String(e).slice(0, 200) } }
+        return { key_present: !!sk, key_ref_claim: ref, probe: p }
+      })(),
     })
   }
   // ── /TEMP DIAG ────────────────────────────────────────────────────────
