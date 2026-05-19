@@ -256,6 +256,7 @@ function EmailFunnel({ email, tab }) {
 
   const base = f.delivered || f.sent || 0
   const pct = (n) => (base > 0 ? `${Math.round((n / base) * 1000) / 10}%` : '—')
+  const engaged = (email && email.engaged && email.engaged[tab]) || []
   return (
     <Section title="Opens · Clicks · Deliverability">
       <Cards>
@@ -269,6 +270,50 @@ function EmailFunnel({ email, tab }) {
       <div style={{ marginTop: 10, fontFamily: mono, fontSize: 10, color: tw.inkFaint }}>
         último evento: {f.last_event_at ? fmtDate(f.last_event_at) : '—'} · {f.total_events} eventos registrados
       </div>
+      <EngagedList people={engaged} />
     </Section>
+  )
+}
+
+function EngagedList({ people }) {
+  if (!people || people.length === 0) {
+    return (
+      <div style={{ marginTop: 18, fontFamily: ui, fontSize: 12, color: tw.inkFaint }}>
+        Todavía no hay aperturas ni clicks registrados para este público.
+      </div>
+    )
+  }
+  const Tag = ({ children, color }) => (
+    <span style={{ fontFamily: mono, fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color, border: `1px solid ${color}`, borderRadius: 2, padding: '1px 5px', whiteSpace: 'nowrap' }}>
+      {children}
+    </span>
+  )
+  return (
+    <div style={{ marginTop: 22 }}>
+      <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: tw.inkFaint, marginBottom: 10 }}>
+        Quién — {people.length} {people.length === 1 ? 'persona' : 'personas'}
+      </div>
+      <div style={{ border: `1px solid ${tw.rule}` }}>
+        {people.map((p, i) => (
+          <div key={p.recipient} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderTop: i ? `1px solid ${tw.rule}` : 'none', flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: ui, fontSize: 12.5, color: tw.inkSub, flex: '1 1 220px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {p.recipient}
+            </span>
+            <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {p.clicked && <Tag color={tw.green}>click{p.click_count > 1 ? ` ×${p.click_count}` : ''}</Tag>}
+              {p.opened && <Tag color={tw.inkSub}>abrió{p.open_count > 1 ? ` ×${p.open_count}` : ''}</Tag>}
+              {p.bounced && <Tag color={tw.inkFaint}>bounce</Tag>}
+              {p.complained && <Tag color={tw.inkFaint}>spam</Tag>}
+            </span>
+            <span style={{ fontFamily: mono, fontSize: 9, color: tw.inkFaint, flex: '0 0 auto' }}>
+              {p.last_click_at ? fmtDate(p.last_click_at) : p.last_open_at ? fmtDate(p.last_open_at) : ''}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 8, fontFamily: mono, fontSize: 9, color: tw.inkFaint }}>
+        Ordenado: clicks primero, luego aperturas, más reciente arriba.
+      </div>
+    </div>
   )
 }
