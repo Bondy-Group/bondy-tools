@@ -72,6 +72,7 @@ export default function AudienciaPage() {
             ['tech', 'Candidatos tech'],
             ['hr', 'Candidatos HR'],
             ['newsletter', 'Newsletter'],
+            ['engagement', 'Engagement'],
           ].map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)} style={{
               fontFamily: mono, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -152,6 +153,10 @@ export default function AudienciaPage() {
 
             <EmailFunnel email={data.email} tab={tab} />
           </>
+        )}
+
+        {data && tab === 'engagement' && (
+          <EngagementTab email={data.email} />
         )}
 
         {data && data.unmapped_sources && data.unmapped_sources.length > 0 && (
@@ -316,4 +321,162 @@ function EngagedList({ people }) {
       </div>
     </div>
   )
+}
+
+function shortUrl(u) {
+  try {
+    const x = new URL(u)
+    const p = (x.pathname + x.search).replace(/\/$/, '')
+    return x.hostname.replace(/^www\./, '') + (p && p !== '/' ? p : '')
+  } catch {
+    return u
+  }
+}
+
+function EngagementTab({ email }) {
+  if (!email) {
+    return (
+      <div style={{ border: `1px dashed ${tw.rule}`, padding: '18px 20px', background: tw.white, opacity: 0.85, fontFamily: ui, fontSize: 12.5, color: tw.inkSub, lineHeight: 1.6 }}>
+        El webhook de Resend todavía no devolvió datos. Esta pestaña se llena sola con el primer envío real.
+      </div>
+    )
+  }
+  const hot = email.hot || []
+  const links = email.topLinks || []
+  const sup = email.suppression || []
+
+  return (
+    <>
+      <p style={{ margin: '0 0 24px 0', fontFamily: ui, fontSize: 13, color: tw.inkFaint, lineHeight: 1.6, maxWidth: 680 }}>
+        Cross-público, todos los envíos. El engagement acá es señal de sourcing:
+        quién está activo y receptivo, qué roles tiran, y qué emails sacar para
+        cuidar la reputación del dominio.
+      </p>
+
+      {/* #1 Candidatos calientes */}
+      <Section title={`Candidatos calientes — ${hot.length}`}>
+        {hot.length === 0 ? (
+          <Empty>Sin aperturas ni clicks todavía. Se puebla con el primer digest real.</Empty>
+        ) : (
+          <div style={{ border: `1px solid ${tw.rule}` }}>
+            <Row head cols={['Email', 'Clicks', 'Aperturas', 'Score', 'Último']} />
+            {hot.map((p, i) => (
+              <Row
+                key={p.recipient}
+                i={i}
+                cols={[
+                  p.recipient,
+                  String(p.clicks),
+                  String(p.opens),
+                  String(p.score),
+                  p.last_at ? fmtDate(p.last_at) : '—',
+                ]}
+                strong={p.clicks > 0}
+              />
+            ))}
+          </div>
+        )}
+        <Hint>Score = clicks×3 + aperturas. La lista de arriba es la cola priorizada para el sourcer.</Hint>
+      </Section>
+
+      {/* #2 Roles / links más clickeados */}
+      <div style={{ marginTop: 32 }}>
+        <Section title={`Qué se clickea más — ${links.length} links`}>
+          {links.length === 0 ? (
+            <Empty>Sin clicks registrados todavía.</Empty>
+          ) : (
+            <div style={{ border: `1px solid ${tw.rule}` }}>
+              <Row head cols={['Destino', 'Clicks', 'Personas únicas', 'Último']} />
+              {links.map((l, i) => (
+                <Row
+                  key={l.url}
+                  i={i}
+                  cols={[l.url, String(l.clicks), String(l.unique_clickers), l.last_at ? fmtDate(l.last_at) : '—']}
+                  display={[shortUrl(l.url), null, null, null]}
+                  href={l.url}
+                  strong
+                />
+              ))}
+            </div>
+          )}
+          <Hint>Qué roles/links quiere la audiencia → qué destacar en el próximo digest.</Hint>
+        </Section>
+      </div>
+
+      {/* #5 Lista de supresión */}
+      <div style={{ marginTop: 32 }}>
+        <Section title={`Lista de supresión — ${sup.length}`}>
+          {sup.length === 0 ? (
+            <Empty>Sin hard bounces ni quejas de spam. Reputación limpia.</Empty>
+          ) : (
+            <>
+              <div style={{ border: `1px solid ${tw.rule}` }}>
+                <Row head cols={['Email', 'Motivo', 'Fecha']} />
+                {sup.map((s, i) => (
+                  <Row
+                    key={s.recipient}
+                    i={i}
+                    cols={[
+                      s.recipient,
+                      [s.bounced && 'hard bounce', s.complained && 'spam'].filter(Boolean).join(' + '),
+                      s.last_at ? fmtDate(s.last_at) : '—',
+                    ]}
+                  />
+                ))}
+              </div>
+              <Hint>Sacar estos emails de la base protege la entregabilidad. Copiá la lista y dásela al cron de limpieza o pedímelo y lo automatizo.</Hint>
+            </>
+          )}
+        </Section>
+      </div>
+    </>
+  )
+}
+
+function Row({ cols, display, head, i, strong, href }) {
+  const widths = cols.length === 5
+    ? ['1fr', '80px', '90px', '70px', '110px']
+    : cols.length === 4
+      ? ['1fr', '80px', '120px', '110px']
+      : ['1fr', '160px', '110px']
+  return (
+    <div style={{
+      display: 'grid', gridTemplateColumns: widths.join(' '), gap: 12,
+      padding: head ? '8px 12px' : '9px 12px',
+      borderTop: i ? `1px solid ${tw.rule}` : 'none',
+      background: head ? tw.bg : 'transparent',
+      alignItems: 'center',
+    }}>
+      {cols.map((c, idx) => {
+        const txt = display && display[idx] != null ? display[idx] : c
+        if (head) {
+          return <span key={idx} style={{ fontFamily: mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: tw.inkFaint }}>{c}</span>
+        }
+        const isFirst = idx === 0
+        const style = {
+          fontFamily: isFirst ? ui : mono,
+          fontSize: isFirst ? 12.5 : 11,
+          color: isFirst ? (strong ? tw.inkMid : tw.inkSub) : tw.inkSub,
+          fontWeight: isFirst && strong ? 600 : 400,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }
+        if (isFirst && href) {
+          return (
+            <a key={idx} href={href} target="_blank" rel="noreferrer" style={{ ...style, color: tw.green, textDecoration: 'none' }} title={c}>
+              {txt} ↗
+            </a>
+          )
+        }
+        return <span key={idx} style={style} title={isFirst ? c : undefined}>{txt}</span>
+      })}
+    </div>
+  )
+}
+
+function Empty({ children }) {
+  return <div style={{ fontFamily: ui, fontSize: 12.5, color: tw.inkFaint, padding: '10px 0' }}>{children}</div>
+}
+
+function Hint({ children }) {
+  return <div style={{ marginTop: 8, fontFamily: mono, fontSize: 9, color: tw.inkFaint, lineHeight: 1.5 }}>{children}</div>
 }
