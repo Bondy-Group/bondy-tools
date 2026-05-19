@@ -120,6 +120,17 @@ const resources = [
     adminOnly: true,
   },
   {
+    id: 'audiencia',
+    name: 'Audiencia',
+    cat: 'Pipeline', catKey: 'pipeline',
+    desc: 'Panel unificado del lado oferta: candidatos tech, candidatos HR y suscriptores del newsletter. Altas por hora, preferencias, envíos.',
+    descShort: 'Métricas de audiencia: tech, HR y newsletter.',
+    glyph: 'AU',
+    staticRank: 4.5, status: 'live',
+    href: '/internal/audiencia',
+    adminOnly: true,
+  },
+  {
     id: 'lead-analyzer',
     name: 'Lead Analyzer',
     cat: 'AI / Reportes', catKey: 'ai',

@@ -2,7 +2,7 @@ import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 
 // Routes that only Mara and Lucía can access
-const RESTRICTED_PREFIXES = ['/internal/job-board', '/internal/applications', '/internal/proposals', '/internal/data-explorer', '/internal/job-scraper-source', '/internal/newsletter', '/internal/talent-pool', '/internal/job-subscribers']
+const RESTRICTED_PREFIXES = ['/internal/job-board', '/internal/applications', '/internal/proposals', '/internal/data-explorer', '/internal/job-scraper-source', '/internal/newsletter', '/internal/talent-pool', '/internal/job-subscribers', '/internal/audiencia']
 const JOB_BOARD_ADMINS = ['mara@wearebondy.com', 'lucia@wearebondy.com']
 
 export default withAuth(
