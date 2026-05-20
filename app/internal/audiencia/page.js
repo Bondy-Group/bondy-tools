@@ -106,8 +106,8 @@ export default function AudienciaPage() {
             {cand.send_count_max === 0 && cand.last_sent && (
               <Note>
                 ⚠ <b>send_count = 0 para todos</b> aunque el último digest salió el {fmtDate(cand.last_sent)}.
-                El endpoint marca <code>last_sent_at</code> pero no incrementa el contador → fix de 1 línea en
-                <code> weekly-digest/route.js</code> (handoff Mateo Dev).
+                El incremento en <code>markSent()</code> está bien (fix `0d31613`); si esto aparece de nuevo, revisar
+                que <code>weekly-digest/route.js</code> realmente llame a <code>markSent()</code> después de cada envío.
               </Note>
             )}
 
