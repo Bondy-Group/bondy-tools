@@ -1,16 +1,22 @@
 /**
  * GET/POST /api/cron/weekly-digest
  *
- * Triggered by Vercel Cron every Monday at 10:00 ART (13:00 UTC).
+ * Triggered by Vercel Cron on Mon + Tue at 10:00 ART (13:00 UTC). Each run
+ * processes up to `DAILY_CAP` "due" subscribers (those who haven't received a
+ * digest in the last 6 days) — so Monday catches the first batch, Tuesday
+ * catches whatever didn't fit. No explicit partitioning by id; the `dueOnly`
+ * filter handles it. To add more days, just add cron entries in vercel.json.
+ *
  * Vercel sends GET requests with the header:
  *   Authorization: Bearer ${CRON_SECRET}
  *
  * What it does:
- *   1. Fetches active subscribers
- *   2. Fetches roles collected in the last 7 days
+ *   1. Fetches active subscribers due for a digest (capped at DAILY_CAP)
+ *   2. Fetches roles collected in the last 7 days (both tech + recruiting)
  *   3. For each subscriber, filters roles by their preferences (if any)
  *   4. Sends a personalized digest via Resend
  *   5. Updates last_sent_at
+ *   6. Counts remaining due subscribers and surfaces overflow in the response
  *
  * Failure model: per-subscriber failures are logged but don't abort the run.
  * The endpoint always returns a summary so the cron log shows totals.
@@ -24,7 +30,7 @@
 
 import { NextResponse } from 'next/server'
 import { fetchOpenRoles, fetchRecruitingRoles } from '@/lib/scraper-jobs'
-import { listActiveSubscribers, markSent } from '@/lib/subscribers'
+import { listActiveSubscribers, markSent, countDueActive } from '@/lib/subscribers'
 import { sendEmail } from '@/lib/resend'
 import { renderWeeklyDigest, renderWeeklyDigestText } from '@/lib/email/weekly-digest'
 
@@ -34,6 +40,22 @@ export const maxDuration = 60
 
 const HOST = 'https://tools.wearebondy.com'
 const MAX_ROLES_PER_EMAIL = 25
+
+// How many subscribers can be processed in a single cron run. The cron is
+// scheduled multiple days per week (see vercel.json); each day picks up the
+// next batch of "due" subscribers, so any single-day overflow rolls into the
+// next day automatically. Tuned conservatively below Resend free (100/day)
+// and Vercel `maxDuration: 60` (~80–100 sequential Resend calls).
+// Override via `WEEKLY_DIGEST_DAILY_CAP` env var if needed.
+const DAILY_CAP = (() => {
+  const n = Number(process.env.WEEKLY_DIGEST_DAILY_CAP)
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 80
+})()
+
+// `dueDays = 6` lets a Tuesday cron correctly exclude subs that received on
+// Monday, and the following Monday correctly includes them again. Tied to the
+// weekly cadence — do not change without revisiting the cron schedule too.
+const DUE_DAYS = 6
 
 // ─────────────────────────────────────────────────────────────
 // Auth
@@ -99,7 +121,11 @@ async function run(request) {
   const techRoles = sortNewest(techRes.roles || [])
   const recRoles = sortNewest(recRes.roles || [])
 
-  const subscribers = await listActiveSubscribers()
+  const subscribers = await listActiveSubscribers({
+    limit: DAILY_CAP,
+    dueOnly: true,
+    dueDays: DUE_DAYS,
+  })
   const week = weekLabel()
 
   const results = { sent: 0, wouldSend: 0, skippedEmpty: 0, skippedNoKey: 0, failed: 0, byAudience: { candidates: 0, recruiters: 0 } }
@@ -168,11 +194,23 @@ async function run(request) {
     }
   }
 
+  // Overflow check: if there are still due subs after this run, the daily
+  // cap is being exceeded. On the last cron day of the week this means real
+  // pending subscribers will roll into next week. Surfaced in the response
+  // and logs so an alerter can pick it up.
+  // Skipped on dry-run because it'd return the same as before the (no-op)
+  // run and be noisy.
+  const pendingAfter = isDryRun ? null : await countDueActive({ dueDays: DUE_DAYS })
+  const overflow = typeof pendingAfter === 'number' && pendingAfter > 0
+
   console.log('[cron] weekly digest done', {
     dryRun: isDryRun,
     totalTechRoles: techRoles.length,
     totalRecruitingRoles: recRoles.length,
     subscribers: subscribers.length,
+    dailyCap: DAILY_CAP,
+    pendingAfter,
+    overflow,
     ...results,
   })
 
@@ -183,6 +221,9 @@ async function run(request) {
     totalTechRoles: techRoles.length,
     totalRecruitingRoles: recRoles.length,
     subscribers: subscribers.length,
+    dailyCap: DAILY_CAP,
+    pendingAfter,
+    overflow,
     ...results,
   })
 }
