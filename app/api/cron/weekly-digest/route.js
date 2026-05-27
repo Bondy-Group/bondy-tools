@@ -121,11 +121,25 @@ async function run(request) {
   const techRoles = sortNewest(techRes.roles || [])
   const recRoles = sortNewest(recRes.roles || [])
 
-  const subscribers = await listActiveSubscribers({
+  // Process recruiters first (smaller audience, must not get crowded out by
+  // the candidates batch competing for the same DAILY_CAP slots). Each query
+  // is gated by `dueOnly` so reruns within `DUE_DAYS` don't double-send.
+  const recSubs = await listActiveSubscribers({
     limit: DAILY_CAP,
     dueOnly: true,
     dueDays: DUE_DAYS,
+    source: 'busco-trabajo-recruiters',
   })
+  const candCap = Math.max(0, DAILY_CAP - recSubs.length)
+  const candSubs = candCap > 0
+    ? await listActiveSubscribers({
+        limit: candCap,
+        dueOnly: true,
+        dueDays: DUE_DAYS,
+        source: 'busco-trabajo',
+      })
+    : []
+  const subscribers = [...recSubs, ...candSubs]
   const week = weekLabel()
 
   const results = { sent: 0, wouldSend: 0, skippedEmpty: 0, skippedNoKey: 0, failed: 0, byAudience: { candidates: 0, recruiters: 0 } }
@@ -140,9 +154,14 @@ async function run(request) {
       const filtered = filterRolesForSubscriber(pool, sub.preferences).slice(0, MAX_ROLES_PER_EMAIL)
       const unsubscribeUrl = `${HOST}/api/newsletter/unsubscribe?token=${encodeURIComponent(sub.unsubscribe_token)}`
 
-      // Don't send empty digests — wait for next week.
+      // Don't send empty digests — but DO bump last_sent_at so the subscriber
+      // doesn't stay permanently "due" and crowd out fresher subs on the next
+      // cron run. They simply wait for the next weekly cycle. Without this,
+      // subs with overly strict filters (e.g. Junior + Recruiting + Remote)
+      // get re-tried every day and never advance off the queue head.
       if (filtered.length === 0) {
         results.skippedEmpty++
+        if (!isDryRun) await markSent(sub.id)
         continue
       }
 
