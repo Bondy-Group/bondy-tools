@@ -44,7 +44,7 @@ export default async function BuscoTrabajoPage() {
     { roles, lastUpdate, newToday, activeSources },
     bondyRoles,
   ] = await Promise.all([
-    fetchOpenRoles({ days: 3, limit: 500 }),
+    fetchOpenRoles({ days: 7, limit: 500 }),
     fetchBondyOpenRoles({ limit: 12 }),
   ])
   const updateLabel = formatUpdateLabel(lastUpdate)
