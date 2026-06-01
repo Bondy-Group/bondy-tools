@@ -115,7 +115,11 @@ async function run(request) {
   // `busco-trabajo-recruiters` ones. We don't mix them — a tech subscriber
   // never sees recruiter roles and vice-versa.
   const [techRes, recRes] = await Promise.all([
-    fetchOpenRoles({ days: 7, limit: 500 }),
+    // FIX 2026-06-01: the candidate digest is LATAM-only and "nuevos esta
+    // semana" — so it requires roles workable from LATAM AND published within
+    // the last 7 days (not just re-collected). The public job board stays broad.
+    // fetchRecruitingRoles already applies its own LATAM gate at scrape time.
+    fetchOpenRoles({ days: 7, limit: 500, latamOnly: true, publishedWithinDays: 7 }),
     fetchRecruitingRoles({ days: 7, limit: 500 }),
   ])
   const techRoles = sortNewest(techRes.roles || [])
