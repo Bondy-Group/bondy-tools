@@ -1328,8 +1328,12 @@ export default function BuscoTrabajoClient({ initialRoles, bondyRoles = [], upda
         crumb: 'Recursos para Recruiters / Busco Trabajo',
         kicker: 'Bondy · Roles para recruiters',
         h1Line1: 'Roles de recruiting & talent en LATAM,',
-        windowText: <>Mostramos solo roles publicados en los <em>últimos 3 días</em></>,
-        sub: `Posiciones para recruiters, sourcers, talent acquisition, people ops y talent development. Sin avisos viejos: agregamos avisos de ${sourcesCount} fuentes todos los días y solo dejamos a la vista lo publicado en las últimas 72 horas. Sin login, sin fricción. Curados con el mismo criterio que aplicamos a nuestras búsquedas embebidas.`,
+        // NOTE (2026-06-01): the recruiting board is low-volume and filters by
+        // "still open / re-confirmed recently" (collected_at, ~14d), NOT a 72h
+        // publish window like the tech board. Copy reflects the real value prop
+        // (daily re-check, closed roles drop) instead of an inaccurate "72h".
+        windowText: <>Roles activos, <em>revisados a diario</em></>,
+        sub: `Posiciones para recruiters, sourcers, talent acquisition, people ops y talent development. Agregamos avisos de ${sourcesCount} fuentes y revisamos la lista todos los días: si una búsqueda se cierra, sale. Sin login, sin fricción. Curados con el mismo criterio que aplicamos a nuestras búsquedas embebidas.`,
       }
     : {
         crumb: 'Busco Trabajo',
