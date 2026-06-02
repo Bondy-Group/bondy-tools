@@ -44,7 +44,10 @@ export default async function BuscoTrabajoPage() {
     { roles, lastUpdate, newToday, activeSources },
     bondyRoles,
   ] = await Promise.all([
-    fetchOpenRoles({ days: 7, limit: 500 }),
+    // FIX 2026-06-01: the public board only shows roles with an aging of at
+    // most 72h (posted in the last 3 days). days:7 is the coarse DB window;
+    // maxAgeHours:72 is the real freshness cap applied per-role.
+    fetchOpenRoles({ days: 7, limit: 500, maxAgeHours: 72 }),
     fetchBondyOpenRoles({ limit: 12 }),
   ])
   const updateLabel = formatUpdateLabel(lastUpdate)
