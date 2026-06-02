@@ -47,7 +47,9 @@ export default async function BuscoTrabajoPage() {
     // FIX 2026-06-01: the public board only shows roles with an aging of at
     // most 72h (posted in the last 3 days). days:7 is the coarse DB window;
     // maxAgeHours:72 is the real freshness cap applied per-role.
-    fetchOpenRoles({ days: 7, limit: 500, maxAgeHours: 72 }),
+    // latamOnly:true (2026-06-01): the board is the LATAM candidate board, so it
+    // drops US-only / EU-only / India / APAC just like the digest does.
+    fetchOpenRoles({ days: 7, limit: 500, maxAgeHours: 72, latamOnly: true }),
     fetchBondyOpenRoles({ limit: 12 }),
   ])
   const updateLabel = formatUpdateLabel(lastUpdate)
