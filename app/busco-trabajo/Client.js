@@ -93,6 +93,19 @@ const CONTENT = {
       },
       {
         num: '04',
+        kicker: 'Talent pool · Actualización',
+        title: 'Actualizá tus Datos',
+        titleEm: 'Datos',
+        desc: 'Ya estás en la base de Bondy. Contanos en qué estás hoy (stack, seniority, disponibilidad) y te tenemos presente cuando salga una búsqueda que encaje con tu perfil. Dos minutos.',
+        tools: ['Ya estás en la base', '2 min', 'Editable'],
+        cta: 'Actualizar →',
+        href: '/busco-trabajo/actualizar-datos',
+        external: false,
+        status: 'live',
+        statusLabel: 'Activo · Sin login',
+      },
+      {
+        num: '05',
         kicker: 'Referidos',
         title: 'Referir a alguien',
         titleEm: 'alguien',
@@ -105,7 +118,7 @@ const CONTENT = {
         statusLabel: 'Activo · Sin login',
       },
       {
-        num: '05',
+        num: '06',
         kicker: 'Intel · Mercado tech',
         title: 'Market Pulse',
         titleEm: 'Pulse',
@@ -118,7 +131,7 @@ const CONTENT = {
         statusLabel: 'Activo · Sin login',
       },
       {
-        num: '06',
+        num: '07',
         kicker: 'Alertas',
         title: 'Alertas Personalizadas',
         titleEm: 'Personalizadas',
@@ -188,6 +201,19 @@ const CONTENT = {
       },
       {
         num: '04',
+        kicker: 'Talent pool · Update',
+        title: 'Update your Info',
+        titleEm: 'Info',
+        desc: 'You are already in the Bondy base. Tell us where you are today (stack, seniority, availability) and we keep you in mind when a search fits your profile. Two minutes.',
+        tools: ['Already in the base', '2 min', 'Editable'],
+        cta: 'Update →',
+        href: '/busco-trabajo/actualizar-datos',
+        external: false,
+        status: 'live',
+        statusLabel: 'Live · No login',
+      },
+      {
+        num: '05',
         kicker: 'Referrals',
         title: 'Refer Someone',
         titleEm: 'Someone',
@@ -200,7 +226,7 @@ const CONTENT = {
         statusLabel: 'Live · No login',
       },
       {
-        num: '05',
+        num: '06',
         kicker: 'Intel · Tech market',
         title: 'Market Pulse',
         titleEm: 'Pulse',
@@ -213,7 +239,7 @@ const CONTENT = {
         statusLabel: 'Live · No login',
       },
       {
-        num: '06',
+        num: '07',
         kicker: 'Alerts',
         title: 'Custom Alerts',
         titleEm: 'Alerts',
@@ -348,7 +374,7 @@ export default function BuscoTrabajoLandingClient() {
 
         <div className="btl-grid">
           {all.map((a) => <Card key={a.num} a={a} />)}
-          <SesionesCarreraCard pagina="busco-trabajo" lang={lang} num="07" />
+          <SesionesCarreraCard pagina="busco-trabajo" lang={lang} num="08" />
         </div>
 
         <footer className="btl-foot">
