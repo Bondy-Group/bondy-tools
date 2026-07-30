@@ -88,7 +88,9 @@ export default function ActualizarDatosClient() {
   })
   const [addInput, setAddInput] = useState('')
   const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const [hp, setHp] = useState('')
 
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }))
   const toggle = (k, val) => setF((p) => ({ ...p, [k]: p[k].includes(val) ? p[k].filter((x) => x !== val) : [...p[k], val] }))
@@ -102,7 +104,7 @@ export default function ActualizarDatosClient() {
     setAddInput('')
   }
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     if (!f.nombre.trim() || !f.apellido.trim() || !f.linkedin.trim()) {
       setError('Completá nombre, apellido y tu LinkedIn para continuar.')
@@ -110,9 +112,23 @@ export default function ActualizarDatosClient() {
       return
     }
     setError('')
-    // TODO: POST a /api/actualizar-datos (Airtable + enrichment + scorecard).
-    setSent(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setSending(true)
+    try {
+      const res = await fetch('/api/actualizar-datos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...f, hp_field: hp }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) throw new Error(data.error || 'error')
+      setSent(true)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (err) {
+      setError('Hubo un problema al guardar. Probá de nuevo en un momento.')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } finally {
+      setSending(false)
+    }
   }
 
   const stackDef = f.area ? STACKS[f.area] : null
@@ -246,7 +262,8 @@ export default function ActualizarDatosClient() {
           <label className="au-label">¿Qué querés contarnos sobre vos que no te preguntamos?</label>
           <textarea className="au-in" rows={4} value={f.observaciones} onChange={(e) => set('observaciones', e.target.value)}
             placeholder="Lo que quieras: en qué te gustaría crecer, qué tipo de equipo buscás, un proyecto del que estés orgulloso, algo que no entra en un campo..." />
-          <button type="submit" className="au-cta">Guardar mi perfil →</button>
+          <input type="text" name="hp_field" value={hp} onChange={(e) => setHp(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }} />
+          <button type="submit" className="au-cta" disabled={sending}>{sending ? 'Guardando...' : 'Guardar mi perfil →'}</button>
           <p className="au-hint" style={{ marginTop: 14 }}>Si preferís que no te contactemos, respondé el correo y te damos de baja de la lista.</p>
         </div>
 
