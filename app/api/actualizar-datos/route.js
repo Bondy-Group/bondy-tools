@@ -30,6 +30,14 @@ const T_INTAKE = 'Intake de perfiles'
 const T_SEARCHES = 'Búsquedas activas'
 const SLACK_CHANNEL = 'C0BLKHT3MUN' // #candidatos-match
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN || ''
+const ACTION_SECRET = process.env.SESSION_ACTION_SECRET || 'bondy-session-action-internal'
+const RECRUITERS = ['Lucía', 'Rodrigo', 'Mara']
+
+function actionUrl(origin, id, action, recruiter) {
+  let u = `${origin}/api/candidatos-match/action?id=${encodeURIComponent(id)}&action=${action}&secret=${encodeURIComponent(ACTION_SECRET)}`
+  if (recruiter) u += `&recruiter=${encodeURIComponent(recruiter)}`
+  return u
+}
 
 const AREA_LABELS = {
   back: 'Backend', front: 'Frontend', full: 'Full Stack',
@@ -149,7 +157,7 @@ function scoreAgainst(search, payload, blob) {
   return { score, matched, missing, gateFail }
 }
 
-async function postSlack({ payload, search, result }) {
+async function postSlack({ payload, search, result, recordId, origin }) {
   if (!SLACK_BOT_TOKEN) return { skipped: true }
   const nombre = `${(payload.nombre || '').trim()} ${(payload.apellido || '').trim()}`.trim()
   const rol = search.get('Rol') || 'la búsqueda'
@@ -168,20 +176,41 @@ async function postSlack({ payload, search, result }) {
     'Gracias.',
   ].join('\n')
 
-  const text = [
-    `:dart: *Nuevo match · ${rol}*`,
-    `*${nombre}* · score ${result.score}/100 · ${area}`,
-    payload.linkedin ? `LinkedIn: ${payload.linkedin}` : '',
-    payload.email ? `Email: ${payload.email}` : '',
-    `Cumple: ${cumple}`,
-    `Falta: ${falta}`,
-    '',
-    'Para copiar y enviar desde tu casilla:',
-    '```',
-    draft,
-    '```',
-    'Reaccioná con :raised_hand: si lo tomás, y :white_check_mark: cuando lo enviaste.',
-  ].filter((l) => l !== '').join('\n')
+  const text = `Nuevo match · ${rol} · ${nombre} (${result.score}/100)`
+
+  const blocks = [
+    { type: 'section', text: { type: 'mrkdwn', text: `:dart: *Nuevo match · ${rol}*` } },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*Candidato*\n${nombre}` },
+        { type: 'mrkdwn', text: `*Score*\n${result.score}/100 · ${area}` },
+        { type: 'mrkdwn', text: `*LinkedIn*\n${payload.linkedin ? `<${payload.linkedin}|ver perfil>` : '—'}` },
+        { type: 'mrkdwn', text: `*Email*\n${payload.email || '—'}` },
+      ],
+    },
+    { type: 'section', text: { type: 'mrkdwn', text: `*Cumple:* ${cumple}\n*Falta:* ${falta}` } },
+    { type: 'section', text: { type: 'mrkdwn', text: `*Para copiar y enviar desde tu casilla:*\n\`\`\`${draft}\`\`\`` } },
+  ]
+
+  if (recordId && origin) {
+    blocks.push({
+      type: 'actions',
+      elements: [
+        ...RECRUITERS.map((r) => ({
+          type: 'button',
+          text: { type: 'plain_text', text: `Lo toma ${r}`, emoji: true },
+          url: actionUrl(origin, recordId, 'take', r),
+          style: 'primary',
+        })),
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: 'Marcar enviado', emoji: true },
+          url: actionUrl(origin, recordId, 'sent'),
+        },
+      ],
+    })
+  }
 
   const res = await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',
@@ -189,7 +218,7 @@ async function postSlack({ payload, search, result }) {
       Authorization: `Bearer ${SLACK_BOT_TOKEN}`,
       'Content-Type': 'application/json; charset=utf-8',
     },
-    body: JSON.stringify({ channel: SLACK_CHANNEL, text, unfurl_links: false }),
+    body: JSON.stringify({ channel: SLACK_CHANNEL, text, blocks, unfurl_links: false }),
   })
   return res.json().catch(() => ({}))
 }
@@ -198,6 +227,9 @@ export async function POST(request) {
   try {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       request.headers.get('x-real-ip') || ''
+    const proto = request.headers.get('x-forwarded-proto') || 'https'
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'tools.wearebondy.com'
+    const origin = `${proto}://${host}`
     if (rateLimited(ip)) {
       return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 })
     }
@@ -268,7 +300,7 @@ export async function POST(request) {
           `\n[CV: ${payload.cvBase64 ? (cvResult || 'error desconocido') : 'sin archivo adjunto'}]`
 
         if (best.resultado === 'Matchea') {
-          const slack = await postSlack({ payload, search: best.search, result: best })
+          const slack = await postSlack({ payload, search: best.search, result: best, recordId, origin })
           if (slack && slack.ok === false) motivo += `\n[slack error: ${slack.error}]`
           if (slack && slack.skipped) motivo += `\n[slack: sin SLACK_BOT_TOKEN]`
           debug.slack = slack?.ok === true ? 'ok' : (slack?.error || (slack?.skipped ? 'no_token' : 'unknown'))
