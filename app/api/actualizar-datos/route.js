@@ -157,7 +157,7 @@ function scoreAgainst(search, payload, blob) {
   return { score, matched, missing, gateFail }
 }
 
-async function postSlack({ payload, search, result, recordId, origin }) {
+async function postSlack({ payload, search, result, resultado, recordId, origin }) {
   if (!SLACK_BOT_TOKEN) return { skipped: true }
   const nombre = `${(payload.nombre || '').trim()} ${(payload.apellido || '').trim()}`.trim()
   const rol = search.get('Rol') || 'la búsqueda'
@@ -176,10 +176,16 @@ async function postSlack({ payload, search, result, recordId, origin }) {
     'Gracias.',
   ].join('\n')
 
-  const text = `Nuevo match · ${rol} · ${nombre} (${result.score}/100)`
+  const HEAD = {
+    'Matchea': `:dart: *Match · ${rol}*`,
+    'A revisar': `:warning: *A revisar · ${rol}* (score bajo el umbral)`,
+    'No matchea': `:new: *Perfil actualizado · no matchea con ${rol} hoy*`,
+  }
+  const head = HEAD[resultado] || `:new: *Perfil actualizado · ${rol}*`
+  const text = `${resultado || 'Perfil'} · ${rol} · ${nombre} (${result.score}/100)`
 
   const blocks = [
-    { type: 'section', text: { type: 'mrkdwn', text: `:dart: *Nuevo match · ${rol}*` } },
+    { type: 'section', text: { type: 'mrkdwn', text: head } },
     {
       type: 'section',
       fields: [
@@ -190,8 +196,11 @@ async function postSlack({ payload, search, result, recordId, origin }) {
       ],
     },
     { type: 'section', text: { type: 'mrkdwn', text: `*Cumple:* ${cumple}\n*Falta:* ${falta}` } },
-    { type: 'section', text: { type: 'mrkdwn', text: `*Para copiar y enviar desde tu casilla:*\n\`\`\`${draft}\`\`\`` } },
   ]
+  // El texto de outreach listo para enviar solo tiene sentido si matchea.
+  if (resultado === 'Matchea') {
+    blocks.push({ type: 'section', text: { type: 'mrkdwn', text: `*Para copiar y enviar desde tu casilla:*\n\`\`\`${draft}\`\`\`` } })
+  }
 
   if (recordId) {
     blocks.push({
@@ -290,12 +299,10 @@ export async function POST(request) {
           `\nFalta: ${best.missing.join('; ') || '—'}` +
           `\n[CV: ${payload.cvBase64 ? (cvResult || 'error desconocido') : 'sin archivo adjunto'}]`
 
-        if (best.resultado === 'Matchea') {
-          const slack = await postSlack({ payload, search: best.search, result: best, recordId, origin })
-          if (slack && slack.ok === false) motivo += `\n[slack error: ${slack.error}]`
-          if (slack && slack.skipped) motivo += `\n[slack: sin SLACK_BOT_TOKEN]`
-          debug.slack = slack?.ok === true ? 'ok' : (slack?.error || (slack?.skipped ? 'no_token' : 'unknown'))
-        }
+        const slack = await postSlack({ payload, search: best.search, result: best, resultado: best.resultado, recordId, origin })
+        if (slack && slack.ok === false) motivo += `\n[slack error: ${slack.error}]`
+        if (slack && slack.skipped) motivo += `\n[slack: sin SLACK_BOT_TOKEN]`
+        debug.slack = slack?.ok === true ? 'ok' : (slack?.error || (slack?.skipped ? 'no_token' : 'unknown'))
 
         await base(T_INTAKE).update(recordId, {
           Score: best.score,
