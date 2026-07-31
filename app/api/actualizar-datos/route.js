@@ -19,7 +19,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { uploadCvToDrive } from '@/lib/cv-drive'
+import { uploadCvToSupabase } from '@/lib/cv-supabase'
 const Airtable = require('airtable')
 
 export const runtime = 'nodejs'
@@ -262,8 +262,8 @@ export async function POST(request) {
     if (payload.cvBase64) {
       try {
         const fname = `CV - ${fields['Nombre y apellido'] || 'candidato'} - ${new Date().toISOString().slice(0, 10)}.pdf`
-        const { link } = await uploadCvToDrive({ base64: payload.cvBase64, filename: fname })
-        await base(T_INTAKE).update(recordId, { 'CV (Drive)': link })
+        const { url } = await uploadCvToSupabase({ base64: payload.cvBase64, filename: fname })
+        await base(T_INTAKE).update(recordId, { 'CV / PDF': [{ url, filename: fname }] })
         cvResult = 'ok'
       } catch (cvErr) {
         cvResult = String((cvErr && cvErr.message) || cvErr)
