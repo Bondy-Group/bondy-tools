@@ -207,11 +207,12 @@ export async function POST(request) {
     const recordId = created[0].id
 
     // 2 + 3. Match + Slack (best-effort, no rompe el guardado)
+    let debug = { matched: false }
     try {
       const blob = buildBlob(payload)
-      const searches = await base(T_SEARCHES)
-        .select({ filterByFormula: "{Estado} = 'Abierta'" })
-        .firstPage()
+      // Traemos todas y filtramos "Abierta" en JS (más robusto que filterByFormula).
+      const all = await base(T_SEARCHES).select().firstPage()
+      const searches = all.filter((s) => (s.get('Estado') || '') === 'Abierta')
 
       let best = null
       for (const s of searches) {
@@ -227,29 +228,37 @@ export async function POST(request) {
         if (!best || cand.score > best.score) best = cand
       }
 
+      debug = { matched: !!best, openSearches: searches.length, resultado: best?.resultado, score: best?.score }
+
       if (best) {
-        const motivo =
+        let motivo =
           `Búsqueda: ${best.search.get('Rol')} · score ${best.score}/100 (umbral ${best.umbral}).` +
           (best.gateFail ? ' Dealbreaker: no acepta la modalidad requerida.' : '') +
           `\nCumple: ${best.matched.join('; ') || '—'}` +
           `\nFalta: ${best.missing.join('; ') || '—'}`
-        const upd = {
+
+        if (best.resultado === 'Matchea') {
+          const slack = await postSlack({ payload, search: best.search, result: best })
+          if (slack && slack.ok === false) motivo += `\n[slack error: ${slack.error}]`
+          if (slack && slack.skipped) motivo += `\n[slack: sin SLACK_BOT_TOKEN]`
+          debug.slack = slack?.ok === true ? 'ok' : (slack?.error || (slack?.skipped ? 'no_token' : 'unknown'))
+        }
+
+        await base(T_INTAKE).update(recordId, {
           Score: best.score,
           'Resultado match': best.resultado,
           'Motivo match': motivo,
           'Búsqueda match': [best.search.id],
-        }
-        await base(T_INTAKE).update(recordId, upd)
-
-        if (best.resultado === 'Matchea') {
-          await postSlack({ payload, search: best.search, result: best })
-        }
+        })
       }
     } catch (matchErr) {
-      console.error('[actualizar-datos] match/slack falló (fila igual guardada):', matchErr)
+      const msg = String((matchErr && matchErr.message) || matchErr)
+      debug = { matched: false, error: msg }
+      // Dejamos el error visible en el propio registro para diagnosticar sin logs.
+      try { await base(T_INTAKE).update(recordId, { 'Motivo match': `MATCH_ERROR: ${msg}` }) } catch {}
     }
 
-    return NextResponse.json({ ok: true, id: recordId })
+    return NextResponse.json({ ok: true, id: recordId, debug })
   } catch (err) {
     console.error('[actualizar-datos] crash', err)
     return NextResponse.json({ ok: false, error: 'server_error' }, { status: 500 })
