@@ -100,6 +100,20 @@ function techsIn(text) {
   return TECHS.filter((tech) => t.includes(tech))
 }
 
+// Arma el "blob" de señales del candidato para matchear contra los must-haves.
+function buildBlob(payload) {
+  const parts = [
+    AREA_LABELS[payload.area] || '',
+    (payload.stack || []).join(' '),
+    (payload.custom || []).join(' '),
+    payload.area === 'data' && payload.extra && payload.extra !== 'No' ? 'databricks' : '',
+    payload.area === 'ml' && payload.extra && payload.extra !== 'No' ? 'machine learning ml' : '',
+    (payload.aiTools || []).join(' '),
+    payload.seniority || '',
+  ]
+  return parts.join(' ').toLowerCase()
+}
+
 // Score determinístico del candidato contra una búsqueda. Devuelve {score, matched, missing, gateFail}.
 function scoreAgainst(search, payload, blob) {
   const mustText = search.get('Must-haves') || ''
