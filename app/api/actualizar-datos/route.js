@@ -53,6 +53,8 @@ const TECHS = [
   'machine learning', 'ml', 'airflow', 'dbt', 'kafka', 'delta lake', 'etl', 'big data',
   'react', 'typescript', 'next', 'vue', 'angular', 'node', 'java', 'kotlin', 'swift',
   'kubernetes', 'terraform', 'docker', 'graphql', 'scala', 'snowflake', 'pytorch', 'tensorflow',
+  '.net', 'c#', 'go', 'rust', 'php', 'ruby', 'rails', 'django', 'fastapi', 'spring',
+  'git', 'plc', 'scada', 'flutter', 'react native', 'selenium', 'cypress', 'playwright',
 ]
 
 const getBase = () => new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(BASE_ID)
