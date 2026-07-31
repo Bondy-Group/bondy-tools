@@ -264,7 +264,8 @@ export async function POST(request) {
           `Búsqueda: ${best.search.get('Rol')} · score ${best.score}/100 (umbral ${best.umbral}).` +
           (best.gateFail ? ' Dealbreaker: no acepta la modalidad requerida.' : '') +
           `\nCumple: ${best.matched.join('; ') || '—'}` +
-          `\nFalta: ${best.missing.join('; ') || '—'}`
+          `\nFalta: ${best.missing.join('; ') || '—'}` +
+          `\n[CV: ${payload.cvBase64 ? (cvResult || 'error desconocido') : 'sin archivo adjunto'}]`
 
         if (best.resultado === 'Matchea') {
           const slack = await postSlack({ payload, search: best.search, result: best })
