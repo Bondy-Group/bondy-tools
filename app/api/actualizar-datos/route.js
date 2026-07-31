@@ -19,6 +19,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { uploadCvToDrive } from '@/lib/cv-drive'
 const Airtable = require('airtable')
 
 export const runtime = 'nodejs'
@@ -206,6 +207,20 @@ export async function POST(request) {
     const created = await base(T_INTAKE).create([{ fields }], { typecast: true })
     const recordId = created[0].id
 
+    // 1b. CV a Drive (best-effort, no rompe el guardado)
+    let cvResult = null
+    if (payload.cvBase64) {
+      try {
+        const fname = `CV - ${fields['Nombre y apellido'] || 'candidato'} - ${new Date().toISOString().slice(0, 10)}.pdf`
+        const { link } = await uploadCvToDrive({ base64: payload.cvBase64, filename: fname })
+        await base(T_INTAKE).update(recordId, { 'CV (Drive)': link })
+        cvResult = 'ok'
+      } catch (cvErr) {
+        cvResult = String((cvErr && cvErr.message) || cvErr)
+        try { await base(T_INTAKE).update(recordId, { 'Motivo match': `CV_ERROR: ${cvResult}` }) } catch {}
+      }
+    }
+
     // 2 + 3. Match + Slack (best-effort, no rompe el guardado)
     let debug = { matched: false }
     try {
@@ -258,7 +273,7 @@ export async function POST(request) {
       try { await base(T_INTAKE).update(recordId, { 'Motivo match': `MATCH_ERROR: ${msg}` }) } catch {}
     }
 
-    return NextResponse.json({ ok: true, id: recordId, debug })
+    return NextResponse.json({ ok: true, id: recordId, debug: { ...debug, cv: cvResult } })
   } catch (err) {
     console.error('[actualizar-datos] crash', err)
     return NextResponse.json({ ok: false, error: 'server_error' }, { status: 500 })

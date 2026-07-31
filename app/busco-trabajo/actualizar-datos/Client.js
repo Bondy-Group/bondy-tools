@@ -59,6 +59,15 @@ const BUSQUEDA = ['Activamente', 'De forma pasiva, si aparece algo interesante',
 const SENIORITY = ['Semi Senior', 'Senior', 'Staff / Lead']
 const INGLES = ['Básico', 'Intermedio', 'Avanzado', 'Bilingüe']
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(String(r.result).split(',')[1] || '')
+    r.onerror = reject
+    r.readAsDataURL(file)
+  })
+}
+
 function Chip({ on, onClick, children, dashed }) {
   return (
     <span className={`au-chip${on ? ' on' : ''}${dashed ? ' dashed' : ''}`} onClick={onClick} role="button" tabIndex={0}
@@ -91,6 +100,16 @@ export default function ActualizarDatosClient() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [hp, setHp] = useState('')
+  const [cvFile, setCvFile] = useState(null)
+
+  const onCv = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.type !== 'application/pdf') { setError('El archivo tiene que ser un PDF.'); return }
+    if (file.size > 3 * 1024 * 1024) { setError('El PDF es muy grande (máximo 3MB). Subilo más liviano o dejalo y completá a mano.'); return }
+    setError('')
+    setCvFile(file)
+  }
 
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }))
   const toggle = (k, val) => setF((p) => ({ ...p, [k]: p[k].includes(val) ? p[k].filter((x) => x !== val) : [...p[k], val] }))
@@ -114,10 +133,15 @@ export default function ActualizarDatosClient() {
     setError('')
     setSending(true)
     try {
+      let cvBase64
+      let cvName
+      if (cvFile) {
+        try { cvBase64 = await fileToBase64(cvFile); cvName = cvFile.name } catch {}
+      }
       const res = await fetch('/api/actualizar-datos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...f, hp_field: hp }),
+        body: JSON.stringify({ ...f, cvBase64, cvName, hp_field: hp }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.ok) throw new Error(data.error || 'error')
@@ -172,8 +196,10 @@ export default function ActualizarDatosClient() {
           <input className="au-in" type="url" value={f.linkedin} onChange={(e) => set('linkedin', e.target.value)} placeholder="https://www.linkedin.com/in/tu-perfil" />
           <label className="au-label" style={{ marginTop: 20 }}>Subí tu CV o tu perfil de LinkedIn en PDF <span className="au-hint">(recomendado)</span></label>
           <label className="au-drop">
-            <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={() => {}} />
-            Arrastrá el archivo o hacé click para subirlo <b>(PDF)</b>
+            <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={onCv} />
+            {cvFile
+              ? <>Archivo: <b>{cvFile.name}</b> (click para cambiar)</>
+              : <>Arrastrá el archivo o hacé click para subirlo <b>(PDF)</b></>}
           </label>
           <p className="au-hint" style={{ marginTop: 12, lineHeight: 1.6 }}>Sugerencia: en tu perfil de LinkedIn entrá a <b style={{ color: '#3A3530' }}>Más → Guardar como PDF</b> y subí ese archivo. Con eso completamos los campos por vos y te ahorrás el trabajo. Si preferís, dejalo vacío y completás a mano más abajo.</p>
         </div>
