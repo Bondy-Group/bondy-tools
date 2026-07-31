@@ -193,21 +193,12 @@ async function postSlack({ payload, search, result, recordId, origin }) {
     { type: 'section', text: { type: 'mrkdwn', text: `*Para copiar y enviar desde tu casilla:*\n\`\`\`${draft}\`\`\`` } },
   ]
 
-  if (recordId && origin) {
+  if (recordId) {
     blocks.push({
       type: 'actions',
       elements: [
-        ...RECRUITERS.map((r) => ({
-          type: 'button',
-          text: { type: 'plain_text', text: `Lo toma ${r}`, emoji: true },
-          url: actionUrl(origin, recordId, 'take', r),
-          style: 'primary',
-        })),
-        {
-          type: 'button',
-          text: { type: 'plain_text', text: 'Marcar enviado', emoji: true },
-          url: actionUrl(origin, recordId, 'sent'),
-        },
+        { type: 'button', text: { type: 'plain_text', text: 'Lo tomo', emoji: true }, action_id: 'take', value: recordId, style: 'primary' },
+        { type: 'button', text: { type: 'plain_text', text: 'Marcar enviado', emoji: true }, action_id: 'sent', value: recordId },
       ],
     })
   }
