@@ -98,11 +98,10 @@ function normalize(payload) {
   if (payload.area === 'data' && payload.extra) fields['Databricks en prod'] = payload.extra
   if (payload.area === 'ml' && payload.extra) fields['ML/IA en prod'] = payload.extra
   // Salario a número
-  const sal = parseInt(String(payload.salario || '').replace(/[^\d]/g, ''), 10)
-  if (!Number.isNaN(sal) && sal > 0) {
-    if (payload.moneda === 'ARS') fields['Salario deseado ARS'] = sal
-    else fields['Salario deseado USD'] = sal
-  }
+  const usd = parseInt(String(payload.salarioUsd || '').replace(/[^\d]/g, ''), 10)
+  const ars = parseInt(String(payload.salarioArs || '').replace(/[^\d]/g, ''), 10)
+  if (!Number.isNaN(usd) && usd > 0) fields['Salario deseado USD'] = usd
+  if (!Number.isNaN(ars) && ars > 0) fields['Salario deseado ARS'] = ars
   // Limpiar undefined
   Object.keys(fields).forEach((k) => fields[k] === undefined && delete fields[k])
   return fields
