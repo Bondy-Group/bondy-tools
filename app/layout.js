@@ -1,6 +1,7 @@
 import './globals.css'
 import Script from 'next/script'
 import { Providers } from './providers'
+import BugReporter from './_components/BugReporter'
 
 export const metadata = {
   title: 'Bondy Tools',
@@ -52,6 +53,9 @@ export default function RootLayout({ children }) {
         </Script>
 
         <Providers>{children}</Providers>
+
+        {/* Bichito reporta-bugs — flota en todas las páginas de tools */}
+        <BugReporter />
       </body>
     </html>
   )
