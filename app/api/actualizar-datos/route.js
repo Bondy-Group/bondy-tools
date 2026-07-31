@@ -99,7 +99,10 @@ function normalize(payload) {
   if (payload.area === 'ml' && payload.extra) fields['ML/IA en prod'] = payload.extra
   // Salario a número
   const sal = parseInt(String(payload.salario || '').replace(/[^\d]/g, ''), 10)
-  if (!Number.isNaN(sal) && sal > 0) fields['Salario deseado USD'] = sal
+  if (!Number.isNaN(sal) && sal > 0) {
+    if (payload.moneda === 'ARS') fields['Salario deseado ARS'] = sal
+    else fields['Salario deseado USD'] = sal
+  }
   // Limpiar undefined
   Object.keys(fields).forEach((k) => fields[k] === undefined && delete fields[k])
   return fields

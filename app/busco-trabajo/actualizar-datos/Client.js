@@ -93,7 +93,7 @@ export default function ActualizarDatosClient() {
     nombre: '', apellido: '', linkedin: '', email: '', ciudad: '', salario: '',
     seniority: '', ingles: '', observaciones: '',
     area: '', stack: [], custom: [], extra: '', aiTools: [], aiLevel: '',
-    modalidad: '', busqueda: '',
+    modalidad: '', busqueda: '', moneda: 'USD',
   })
   const [addInput, setAddInput] = useState('')
   const [sent, setSent] = useState(false)
@@ -273,7 +273,16 @@ export default function ActualizarDatosClient() {
           </div>
           <div className="au-row">
             <div><label className="au-label">Ciudad</label><input className="au-in" value={f.ciudad} onChange={(e) => set('ciudad', e.target.value)} placeholder="Ej: CABA" /></div>
-            <div><label className="au-label">Expectativa salarial (USD/mes)</label><input className="au-in" type="number" value={f.salario} onChange={(e) => set('salario', e.target.value)} placeholder="Ej: 4000" /></div>
+            <div>
+              <label className="au-label">Expectativa salarial (mensual)</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <select className="au-in" style={{ maxWidth: 92 }} value={f.moneda} onChange={(e) => set('moneda', e.target.value)}>
+                  <option value="USD">USD</option>
+                  <option value="ARS">ARS</option>
+                </select>
+                <input className="au-in" type="number" value={f.salario} onChange={(e) => set('salario', e.target.value)} placeholder={f.moneda === 'ARS' ? 'Ej: 3000000' : 'Ej: 4000'} />
+              </div>
+            </div>
           </div>
           <label className="au-label">Modalidad</label>
           <Seg opts={MODALIDAD} value={f.modalidad} onChange={(v) => set('modalidad', v)} />
