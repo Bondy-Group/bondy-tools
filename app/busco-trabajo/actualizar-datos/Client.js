@@ -58,6 +58,13 @@ function fileToBase64(file) {
   })
 }
 
+// Match por límite de palabra (mismo criterio que el backend): evita que
+// 'html' dispare 'ml', o 'django' dispare 'go'.
+function techHit(blob, tech) {
+  const esc = tech.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp('(?:^|[^a-z0-9])' + esc + '(?![a-z0-9])').test(blob)
+}
+
 function Chip({ on, onClick, children, dashed }) {
   return (
     <span className={`au-chip${on ? ' on' : ''}${dashed ? ' dashed' : ''}`} onClick={onClick} role="button" tabIndex={0}
@@ -147,6 +154,17 @@ export default function ActualizarDatosClient({ prefill = null, token = '' }) {
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [searches, setSearches] = useState([])
+  const [screening, setScreening] = useState({})
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/actualizar-datos')
+      .then((r) => r.json())
+      .then((d) => { if (alive && d && Array.isArray(d.searches)) setSearches(d.searches) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [])
 
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }))
   const toggle = (k, val) => setF((s) => ({ ...s, [k]: s[k].includes(val) ? s[k].filter((x) => x !== val) : [...s[k], val] }))
@@ -156,6 +174,20 @@ export default function ActualizarDatosClient({ prefill = null, token = '' }) {
   const skillSuggest = isTech ? SKILLS_TECH : SKILLS_OTHER
 
   const pickArea = (k) => setF((s) => ({ ...s, area: k, especializacion: [] }))
+
+  // Búsqueda abierta que mejor pega con el stack/área elegido (por overlap de techs).
+  const matchBlob = [
+    f.area === 'otro' ? f.areaOtro : (AREA_LABELS[f.area] || ''),
+    ...(f.especializacion || []),
+    ...(f.skills || []),
+    f.seniority || '',
+  ].join(' ').toLowerCase()
+  let matchedSearch = null
+  for (const sr of searches) {
+    const n = (sr.techs || []).filter((t) => techHit(matchBlob, t)).length
+    if (n > 0 && (!matchedSearch || n > matchedSearch._n)) matchedSearch = { ...sr, _n: n }
+  }
+  const setScreen = (k, v) => setScreening((s) => ({ ...s, [k]: v }))
 
   const addSkill = (raw) => {
     const v = (raw ?? skillInput).trim()
@@ -211,10 +243,21 @@ export default function ActualizarDatosClient({ prefill = null, token = '' }) {
       let cvBase64, cvName
       if (cvFile) { try { cvBase64 = await fileToBase64(cvFile); cvName = cvFile.name } catch {} }
       const areaOut = f.area === 'otro' ? (f.areaOtro.trim() || 'Otro') : AREA_LABELS[f.area]
+      // Screening: solo las respuestas de la búsqueda con la que matcheó ahora.
+      const screeningOut = {}
+      let screeningText = ''
+      if (matchedSearch && matchedSearch.questions && matchedSearch.questions.length) {
+        const lines = []
+        for (const q of matchedSearch.questions) {
+          const val = String(screening[q.key] || '').trim()
+          if (val) { screeningOut[q.key] = val; lines.push(`- ${q.label} → ${val}`) }
+        }
+        if (lines.length) screeningText = `Búsqueda: ${matchedSearch.rol}${matchedSearch.cliente ? ` (${matchedSearch.cliente})` : ''}\n${lines.join('\n')}`
+      }
       const res = await fetch('/api/actualizar-datos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...f, area: f.area, areaLabel: areaOut, especializacion: isTech ? f.especializacion : [], token, cvBase64, cvName, hp_field: hp, turnstileToken: tsToken }),
+        body: JSON.stringify({ ...f, area: f.area, areaLabel: areaOut, especializacion: isTech ? f.especializacion : [], token, cvBase64, cvName, hp_field: hp, turnstileToken: tsToken, screening: screeningOut, screeningText, screeningSearchId: (matchedSearch && matchedSearch.id) || '', screeningRol: (matchedSearch && matchedSearch.rol) || '' }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.ok) throw new Error(data.error || 'error')
@@ -380,6 +423,23 @@ export default function ActualizarDatosClient({ prefill = null, token = '' }) {
               </div>
             </div>
 
+            {matchedSearch && matchedSearch.questions && matchedSearch.questions.length > 0 && (
+              <div className="au-card au-match">
+                <span className="au-step">★ Encaja con una búsqueda abierta</span>
+                <p className="au-lead" style={{ fontSize: 14, margin: '2px 0 6px' }}>
+                  Tu perfil pega con <b>{matchedSearch.rol}</b>{matchedSearch.cliente ? ` · ${matchedSearch.cliente}` : ''}. Contanos un poco más para pasarte al equipo <span className="au-hint">(opcional)</span>:
+                </p>
+                {matchedSearch.questions.map((q) => (
+                  <div key={q.key}>
+                    <label className="au-label">{q.label}</label>
+                    {q.type === 'select'
+                      ? <Seg opts={q.options} value={screening[q.key] || ''} onChange={(v) => setScreen(q.key, v)} />
+                      : <textarea className="au-in" rows={2} value={screening[q.key] || ''} onChange={(e) => setScreen(q.key, e.target.value)} placeholder="Tu respuesta" />}
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="au-card">
               <span className="au-step">05 — Idiomas</span>
               <label className="au-label">Nivel de inglés {REQ}</label>
@@ -519,6 +579,8 @@ function Styles() {
       .au-seg span{flex:1;min-width:90px;text-align:center;font-size:13px;padding:9px;border:1px solid var(--rule);background:var(--bg);color:var(--sub);cursor:pointer}
       .au-seg span.on{border-color:var(--green);color:var(--green);background:rgba(74,140,64,.06)}
       .au-cond{border-left:2px solid rgba(74,140,64,.35);padding-left:16px;margin-top:12px}
+      .au-match{border-color:rgba(74,140,64,.5);background:rgba(74,140,64,.05)}
+      .au-match .au-step{color:var(--green)}
       .au-check{display:flex;gap:10px;align-items:flex-start;margin-top:16px;font-size:13px;color:var(--sub);cursor:pointer}
       .au-check input{margin-top:3px}
       .au-turn{margin-top:18px;min-height:0}

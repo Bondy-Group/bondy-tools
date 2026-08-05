@@ -103,6 +103,11 @@ function normalizeIntake(payload) {
     'Estado intake': 'Nuevo',
     Recibido: new Date().toISOString(),
   }
+  // Screening auto: respuestas a las preguntas de la búsqueda con la que matcheó.
+  const sc = payload.screening || {}
+  if (['No', 'Menos de 2 años', '2+ años'].includes(sc.databricks_prod)) fields['Databricks en prod'] = sc.databricks_prod
+  if (['No', 'Sí, alguno', 'Sí, es mi día a día'].includes(sc.ml_prod)) fields['ML/IA en prod'] = sc.ml_prod
+  if (payload.screeningText && String(payload.screeningText).trim()) fields['Screening (auto)'] = String(payload.screeningText).trim()
   const usd = parseInt(String(payload.salarioUsd || '').replace(/[^\d]/g, ''), 10)
   const ars = parseInt(String(payload.salarioArs || '').replace(/[^\d]/g, ''), 10)
   if (!Number.isNaN(usd) && usd > 0) fields['Salario deseado USD'] = usd
@@ -113,7 +118,47 @@ function normalizeIntake(payload) {
 
 function techsIn(text) {
   const t = (text || '').toLowerCase()
-  return TECHS.filter((tech) => t.includes(tech))
+  return TECHS.filter((tech) => {
+    // Límite de palabra: evita falsos positivos como 'go' en "negocio" o
+    // 'scala' en "escala". Los tokens propios (pyspark) se detectan aparte.
+    const esc = tech.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return new RegExp('(?:^|[^a-z0-9])' + esc + '(?![a-z0-9])').test(t)
+  })
+}
+
+// Etiqueta corta y legible de un must-have (primer fragmento, capado).
+function shortLabel(line) {
+  let x = String(line || '').split(/[,(]/)[0].trim()
+  if (x.length > 48) x = x.slice(0, 48).trim() + '…'
+  return x
+}
+
+// Genera hasta 2 preguntas de screening a partir de los Must-haves de una
+// búsqueda. Los dos must-haves "conocidos" (Databricks / ML-IA en prod) usan
+// selects con las opciones exactas del Intake para mapear a esos campos.
+function genQuestions(mustText) {
+  const lines = String(mustText || '').split('\n').map((l) => l.trim()).filter(Boolean)
+  const out = []
+  const seen = new Set()
+  const push = (q) => { if (out.length < 2 && !seen.has(q.key)) { seen.add(q.key); out.push(q) } }
+  for (const line of lines) {
+    const low = line.toLowerCase()
+    if (/databricks/.test(low)) {
+      push({ key: 'databricks_prod', type: 'select', label: '¿Trabajaste con Databricks en producción?', options: ['No', 'Menos de 2 años', '2+ años'] })
+    }
+    if (/machine learning|ml\/ia|\bml\b|\bia\b.*producci|implementad[oa].*producci/.test(low)) {
+      push({ key: 'ml_prod', type: 'select', label: '¿Implementaste ML/IA en producción?', options: ['No', 'Sí, alguno', 'Sí, es mi día a día'] })
+    }
+  }
+  for (const line of lines) {
+    if (out.length >= 2) break
+    const low = line.toLowerCase()
+    if (/databricks|machine learning|ml\/ia/.test(low)) continue
+    const t = techsIn(line)
+    if (!t.length) continue
+    push({ key: 't_' + t[0].replace(/[^a-z0-9]/g, ''), type: 'text', label: `Contanos tu experiencia con ${shortLabel(line)}: ¿cuántos años y en qué contexto?` })
+  }
+  return out
 }
 
 // Blob de señales del candidato para matchear contra los must-haves.
@@ -124,6 +169,7 @@ function buildBlob(payload) {
     (payload.skills || []).join(' '),
     (payload.aiTools || []).join(' '),
     payload.seniority || '',
+    payload.screeningText || '',
   ]
   return parts.join(' ').toLowerCase()
 }
@@ -197,6 +243,9 @@ async function postSlack({ payload, search, result, resultado, recordId }) {
     },
     { type: 'section', text: { type: 'mrkdwn', text: `*Cumple:* ${cumple}\n*Falta:* ${falta}` } },
   ]
+  if (payload.screeningText && String(payload.screeningText).trim()) {
+    blocks.push({ type: 'section', text: { type: 'mrkdwn', text: `*Screening:*\n${payload.screeningText}` } })
+  }
   if (resultado === 'Matchea') {
     blocks.push({ type: 'section', text: { type: 'mrkdwn', text: `*Para copiar y enviar desde tu casilla:*\n\`\`\`${draft}\`\`\`` } })
   }
@@ -216,6 +265,32 @@ async function postSlack({ payload, search, result, resultado, recordId }) {
     body: JSON.stringify({ channel: SLACK_CHANNEL, text, blocks, unfurl_links: false }),
   })
   return res.json().catch(() => ({}))
+}
+
+// GET /api/actualizar-datos → búsquedas abiertas (con techs y preguntas auto)
+// para que el form muestre preguntas pertinentes cuando el candidato matchea.
+export async function GET() {
+  try {
+    const base = getBase()
+    const all = await base(T_SEARCHES).select().firstPage()
+    const searches = all
+      .filter((s) => (s.get('Estado') || '') === 'Abierta')
+      .map((s) => {
+        const must = s.get('Must-haves') || ''
+        return {
+          id: s.id,
+          rol: s.get('Rol') || '',
+          cliente: s.get('Cliente') || '',
+          umbral: s.get('Umbral de match') || 70,
+          techs: techsIn(must),
+          questions: genQuestions(must),
+        }
+      })
+      .filter((s) => s.techs.length > 0)
+    return NextResponse.json({ ok: true, searches })
+  } catch (e) {
+    return NextResponse.json({ ok: true, searches: [] })
+  }
 }
 
 export async function POST(request) {
