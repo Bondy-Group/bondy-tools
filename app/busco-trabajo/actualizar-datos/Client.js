@@ -576,7 +576,7 @@ function Styles() {
       .au-area{font-size:13px;padding:9px 14px;border:1px solid var(--rule);background:var(--bg);color:var(--sub);cursor:pointer;user-select:none}
       .au-area.on{border-color:var(--green);color:var(--green);background:rgba(74,140,64,.08);font-weight:600}
       .au-seg{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
-      .au-seg span{flex:1;min-width:90px;text-align:center;font-size:13px;padding:9px;border:1px solid var(--rule);background:var(--bg);color:var(--sub);cursor:pointer}
+      .au-seg span{flex:1 1 auto;min-width:104px;text-align:center;font-size:13px;line-height:1.3;padding:9px 10px;border:1px solid var(--rule);background:var(--bg);color:var(--sub);cursor:pointer;word-break:break-word}
       .au-seg span.on{border-color:var(--green);color:var(--green);background:rgba(74,140,64,.06)}
       .au-cond{border-left:2px solid rgba(74,140,64,.35);padding-left:16px;margin-top:12px}
       .au-match{border-color:rgba(74,140,64,.5);background:rgba(74,140,64,.05)}
@@ -595,7 +595,20 @@ function Styles() {
         .au-row,.au-row3{grid-template-columns:1fr}
         .au-card{padding:20px}
         .au-add{flex-direction:column}
-        .au-seg span{min-width:100%}
+        .au-addbtn{padding:11px}
+        .au-seg span{flex:1 1 100%;min-width:100%}
+        .au-nav-btns{flex-direction:column-reverse;align-items:stretch;gap:10px}
+        .au-nav-btns>span{display:none}
+        .au-cta,.au-ghost{width:100%;justify-content:center}
+        .au-prog{padding:12px 0 10px}
+        .au-areas{gap:6px}
+        .au-area{font-size:12px;padding:8px 12px}
+      }
+      @media(max-width:380px){
+        .au-h1{font-size:1.7rem}
+        .au-prog-steps{font-size:9px}
+        .au-card{padding:16px}
+        .au-step{font-size:9px}
       }
     `}</style>
   )
