@@ -1,4 +1,7 @@
 import ActualizarDatosClient from './Client'
+import { findCandidate, recordToPrefill, signToken } from '@/lib/actualizar-datos-store'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   metadataBase: new URL('https://tools.wearebondy.com'),
@@ -20,6 +23,23 @@ export const metadata = {
   robots: { index: false, follow: true },
 }
 
-export default function ActualizarDatosPage() {
-  return <ActualizarDatosClient />
+export default async function ActualizarDatosPage({ searchParams }) {
+  const t = typeof searchParams?.t === 'string' ? searchParams.t : ''
+  const e = typeof searchParams?.e === 'string' ? searchParams.e : ''
+
+  let prefill = null
+  let token = ''
+  if (t || e) {
+    try {
+      const record = await findCandidate({ token: t, emailToken: e })
+      if (record) {
+        prefill = recordToPrefill(record)
+        token = signToken(record.id) // token válido para el submit (re-verificado en el server)
+      }
+    } catch {
+      // Si falla la resolución, cae al form abierto sin romper la página.
+    }
+  }
+
+  return <ActualizarDatosClient prefill={prefill} token={token} />
 }
